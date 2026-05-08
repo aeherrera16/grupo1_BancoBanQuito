@@ -1,19 +1,21 @@
 package ec.edu.espe.banquito.switchpagos.model;
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.Objects;
+
+import ec.edu.espe.banquito.switchpagos.enums.PaymentDetailStatusEnum;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
-import jakarta.persistence.Temporal;
-import jakarta.persistence.TemporalType;
-
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
-import java.util.Objects;
+import jakarta.persistence.Version;
 
 @Entity
 @Table(name = "PAYMENT_DETAIL")
@@ -23,6 +25,10 @@ public class PaymentDetail {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", nullable = false)
     private Integer id;
+
+    @Version
+    @Column(name = "version")
+    private Integer version;
 
     // Regla 8: Relación de hijo a padre
     @ManyToOne
@@ -51,8 +57,9 @@ public class PaymentDetail {
     @Column(name = "beneficiary_email", length = 255)
     private String beneficiaryEmail;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, length = 30)
-    private String status;
+    private PaymentDetailStatusEnum status;
 
     @Column(name = "rejection_reason", length = 255)
     private String rejectionReason;
@@ -60,7 +67,6 @@ public class PaymentDetail {
     @Column(name = "notification_status", length = 30)
     private String notificationStatus;
 
-    @Temporal(TemporalType.TIMESTAMP)
     @Column(name = "executed_at")
     private LocalDateTime executedAt;
 
@@ -81,6 +87,14 @@ public class PaymentDetail {
 
     public void setId(Integer id) {
         this.id = id;
+    }
+
+    public Integer getVersion() {
+        return version;
+    }
+
+    public void setVersion(Integer version) {
+        this.version = version;
     }
 
     public PaymentBatch getPaymentBatch() {
@@ -147,11 +161,11 @@ public class PaymentDetail {
         this.beneficiaryEmail = beneficiaryEmail;
     }
 
-    public String getStatus() {
+    public PaymentDetailStatusEnum getStatus() {
         return status;
     }
 
-    public void setStatus(String status) {
+    public void setStatus(PaymentDetailStatusEnum status) {
         this.status = status;
     }
 

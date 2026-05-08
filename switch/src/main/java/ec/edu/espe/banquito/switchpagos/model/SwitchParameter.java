@@ -1,16 +1,18 @@
 package ec.edu.espe.banquito.switchpagos.model;
 
-import jakarta.persistence.*;
-
 import java.time.LocalDateTime;
 import java.util.Objects;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 
 @Entity
 @Table(name = "SWITCH_PARAMETER")
 public class SwitchParameter {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "code", nullable = false, length = 50)
     private String code; // La PK es un String
 
@@ -26,7 +28,6 @@ public class SwitchParameter {
     @Column(name = "description", length = 255)
     private String description;
 
-    @Temporal(TemporalType.TIMESTAMP)
     @Column(name = "last_update")
     private LocalDateTime lastUpdate;
 

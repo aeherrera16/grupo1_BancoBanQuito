@@ -1,9 +1,16 @@
 package ec.edu.espe.banquito.switchpagos.model;
 
-import jakarta.persistence.*;
-
 import java.time.LocalDateTime;
 import java.util.Objects;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
 
 @Entity
 @Table(name = "DETAIL_STATUS_LOG")
@@ -31,7 +38,6 @@ public class DetailStatusLog {
     @Column(name = "error_description", length = 255)
     private String errorDescription;
 
-    @Temporal(TemporalType.TIMESTAMP)
     @Column(name = "changed_at")
     private LocalDateTime changedAt;
 

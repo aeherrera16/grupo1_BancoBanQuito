@@ -1,13 +1,19 @@
 package ec.edu.espe.banquito.switchpagos;
 
+import ec.edu.espe.banquito.switchpagos.config.LocalPostgresDatabaseInitializer;
+import ec.edu.espe.banquito.switchpagos.config.ValidationRulesProperties;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 
 @SpringBootApplication
+@EnableConfigurationProperties(ValidationRulesProperties.class)
 public class SwitchPagosApplication {
 
     public static void main(String[] args) {
-        SpringApplication.run(SwitchPagosApplication.class, args);
+        SpringApplication application = new SpringApplication(SwitchPagosApplication.class);
+        application.addInitializers(new LocalPostgresDatabaseInitializer());
+        application.run(args);
     }
 
 }
