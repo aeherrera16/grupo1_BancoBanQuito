@@ -2,7 +2,6 @@ package ec.edu.espe.banquito.core.service;
 
 import ec.edu.espe.banquito.core.dto.CustomerRequestDTO;
 import ec.edu.espe.banquito.core.dto.CustomerResponseDTO;
-import ec.edu.espe.banquito.core.enums.CustomerStatusEnum;
 import ec.edu.espe.banquito.core.exception.ClienteNoEncontradoException;
 import ec.edu.espe.banquito.core.model.Customer;
 import ec.edu.espe.banquito.core.model.CustomerSubtype;
@@ -62,24 +61,24 @@ public class CustomerService implements ICustomerService {
         customer.setEmail(request.getEmail());
         customer.setMobilePhone(request.getMobilePhone());
         customer.setAddress(request.getAddress());
-        customer.setStatus(CustomerStatusEnum.ACTIVO);
+        customer.setStatus("ACTIVO");
 
         log.info("Creando cliente con identificación: {}", customer.getIdentification());
         return toResponse(customerRepository.save(customer));
     }
 
     private CustomerResponseDTO toResponse(Customer customer) {
-        return new CustomerResponseDTO(
-                customer.getId(),
-                customer.getCustomerType(),
-                customer.getIdentificationType(),
-                customer.getIdentification(),
-                customer.getFirstName(),
-                customer.getLastName(),
-                customer.getEmail(),
-                customer.getMobilePhone(),
-                customer.getAddress(),
-                customer.getStatus()
-        );
+        CustomerResponseDTO dto = new CustomerResponseDTO();
+        dto.setId(customer.getId());
+        dto.setCustomerType(customer.getCustomerType());
+        dto.setIdentificationType(customer.getIdentificationType());
+        dto.setIdentification(customer.getIdentification());
+        dto.setFirstName(customer.getFirstName());
+        dto.setLastName(customer.getLastName());
+        dto.setEmail(customer.getEmail());
+        dto.setMobilePhone(customer.getMobilePhone());
+        dto.setAddress(customer.getAddress());
+        dto.setStatus(customer.getStatus());
+        return dto;
     }
 }

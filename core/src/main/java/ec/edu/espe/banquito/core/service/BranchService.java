@@ -45,11 +45,11 @@ public class BranchService implements IBranchService {
     }
 
     private BranchResponseDTO toResponse(Branch branch) {
-        return new BranchResponseDTO(
-                branch.getId(),
-                branch.getBranchCode(),
-                branch.getName(),
-                branch.getCity()
-        );
+        BranchResponseDTO dto = new BranchResponseDTO();
+        dto.setId(branch.getId());
+        dto.setBranchCode(branch.getBranchCode());
+        dto.setName(branch.getName());
+        dto.setCity(branch.getCity());
+        return dto;
     }
 }

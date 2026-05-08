@@ -1,15 +1,13 @@
 package ec.edu.espe.banquito.core.dto;
 
 import ec.edu.espe.banquito.core.enums.CustomerTypeEnum;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.time.LocalDate;
 
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
+@Getter
+@Setter
 public class CustomerRequestDTO {
     private Integer customerSubtypeId;
     private CustomerTypeEnum customerType;

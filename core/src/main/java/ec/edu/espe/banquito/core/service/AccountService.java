@@ -177,32 +177,31 @@ public class AccountService implements IAccountService {
     }
 
     private AccountResponseDTO toResponse(Account account) {
-        String customerName = account.getCustomer().getFirstName() + " " + account.getCustomer().getLastName();
-        return new AccountResponseDTO(
-                account.getId(),
-                account.getAccountNumber(),
-                customerName,
-                account.getBranch().getName(),
-                account.getAccountSubtype().getDescription(),
-                account.getStatus(),
-                account.getAccountingBalance(),
-                account.getAvailableBalance(),
-                account.getIsFavorite(),
-                account.getOpeningDate()
-        );
+        AccountResponseDTO dto = new AccountResponseDTO();
+        dto.setId(account.getId());
+        dto.setAccountNumber(account.getAccountNumber());
+        dto.setCustomerFullName(account.getCustomer().getFirstName() + " " + account.getCustomer().getLastName());
+        dto.setBranchName(account.getBranch().getName());
+        dto.setAccountSubtypeDescription(account.getAccountSubtype().getDescription());
+        dto.setStatus(account.getStatus());
+        dto.setAccountingBalance(account.getAccountingBalance());
+        dto.setAvailableBalance(account.getAvailableBalance());
+        dto.setIsFavorite(account.getIsFavorite());
+        dto.setOpeningDate(account.getOpeningDate());
+        return dto;
     }
 
     private TransactionResponseDTO toTransactionResponse(AccountTransaction tx, String accountNumber, String message) {
-        return new TransactionResponseDTO(
-                tx.getId(),
-                accountNumber,
-                tx.getMovementType(),
-                tx.getAmount(),
-                tx.getResultingBalance(),
-                tx.getTransactionDate(),
-                tx.getTransactionUuid(),
-                tx.getStatus(),
-                message
-        );
+        TransactionResponseDTO dto = new TransactionResponseDTO();
+        dto.setId(Math.toIntExact(tx.getId()));
+        dto.setAccountNumber(accountNumber);
+        dto.setMovementType(tx.getMovementType());
+        dto.setAmount(tx.getAmount());
+        dto.setResultingBalance(tx.getResultingBalance());
+        dto.setTransactionDate(tx.getTransactionDate());
+        dto.setTransactionUuid(tx.getTransactionUuid());
+        dto.setStatus(tx.getStatus());
+        dto.setMessage(message);
+        return dto;
     }
 }

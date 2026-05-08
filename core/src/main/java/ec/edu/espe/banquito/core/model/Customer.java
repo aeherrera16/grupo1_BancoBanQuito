@@ -1,6 +1,5 @@
 package ec.edu.espe.banquito.core.model;
 
-import ec.edu.espe.banquito.core.enums.CustomerStatusEnum;
 import ec.edu.espe.banquito.core.enums.CustomerTypeEnum;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -75,9 +74,8 @@ public class Customer {
     @Column(name = "longitude", precision = 11, scale = 8)
     private BigDecimal longitude;
 
-    @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, length = 15)
-    private CustomerStatusEnum status;
+    private String status;
 
     @Column(name = "registration_date", insertable = false, updatable = false)
     private LocalDateTime registrationDate;
@@ -107,7 +105,7 @@ public class Customer {
                 "id=" + id +
                 ", customerType=" + customerType +
                 ", identification='" + identification + '\'' +
-                ", status=" + status +
+                ", status='" + status + '\'' +
                 '}';
     }
 }

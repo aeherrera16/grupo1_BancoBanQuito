@@ -1,16 +1,14 @@
 package ec.edu.espe.banquito.core.dto;
 
 import ec.edu.espe.banquito.core.enums.AccountStatusEnum;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
+@Getter
+@Setter
 public class AccountResponseDTO {
     private Integer id;
     private String accountNumber;

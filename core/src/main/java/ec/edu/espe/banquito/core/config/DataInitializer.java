@@ -1,8 +1,6 @@
 package ec.edu.espe.banquito.core.config;
 
 import ec.edu.espe.banquito.core.enums.AccountStatusEnum;
-import ec.edu.espe.banquito.core.enums.CustomerStatusEnum;
-import ec.edu.espe.banquito.core.enums.CustomerSubtypeStatusEnum;
 import ec.edu.espe.banquito.core.enums.CustomerTypeEnum;
 import ec.edu.espe.banquito.core.model.*;
 import ec.edu.espe.banquito.core.repository.*;
@@ -42,13 +40,13 @@ public class DataInitializer implements CommandLineRunner {
         CustomerSubtype personal = new CustomerSubtype();
         personal.setName("PERSONAL");
         personal.setDescription("Clientes personas naturales");
-        personal.setStatus(CustomerSubtypeStatusEnum.ACTIVO);
+        personal.setStatus("ACTIVO");
         customerSubtypeRepository.save(personal);
 
         CustomerSubtype empresarial = new CustomerSubtype();
         empresarial.setName("EMPRESARIAL");
         empresarial.setDescription("Clientes personas juridicas");
-        empresarial.setStatus(CustomerSubtypeStatusEnum.ACTIVO);
+        empresarial.setStatus("ACTIVO");
         customerSubtypeRepository.save(empresarial);
         log.info("CustomerSubtypes creados");
     }
@@ -103,7 +101,7 @@ public class DataInitializer implements CommandLineRunner {
         bryan.setEmail("bryan@banquito.com");
         bryan.setMobilePhone("0991234567");
         bryan.setAddress("Quito, Ecuador");
-        bryan.setStatus(CustomerStatusEnum.ACTIVO);
+        bryan.setStatus("ACTIVO");
         customerRepository.save(bryan);
 
         Customer ana = new Customer();
@@ -117,7 +115,7 @@ public class DataInitializer implements CommandLineRunner {
         ana.setEmail("ana@banquito.com");
         ana.setMobilePhone("0987654321");
         ana.setAddress("Guayaquil, Ecuador");
-        ana.setStatus(CustomerStatusEnum.ACTIVO);
+        ana.setStatus("ACTIVO");
         customerRepository.save(ana);
         log.info("Customers creados");
     }

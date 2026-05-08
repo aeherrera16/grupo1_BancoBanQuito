@@ -44,6 +44,10 @@ public class AccountTransaction {
     @Column(name = "status", nullable = false, length = 15)
     private String status;
 
+    @Version
+    @Column(name = "version", nullable = false)
+    private Integer version;
+
     @Column(name = "description", length = 255)
     private String description;
 

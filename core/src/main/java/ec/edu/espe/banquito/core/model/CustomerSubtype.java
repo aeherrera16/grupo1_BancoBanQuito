@@ -1,6 +1,5 @@
 package ec.edu.espe.banquito.core.model;
 
-import ec.edu.espe.banquito.core.enums.CustomerSubtypeStatusEnum;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -25,9 +24,8 @@ public class CustomerSubtype {
     @Column(name = "description", length = 255)
     private String description;
 
-    @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, length = 15)
-    private CustomerSubtypeStatusEnum status;
+    private String status;
 
     @Column(name = "observations", length = 255)
     private String observations;
@@ -59,7 +57,7 @@ public class CustomerSubtype {
         return "CustomerSubtype{" +
                 "id=" + id +
                 ", name='" + name + '\'' +
-                ", status=" + status +
+                ", status='" + status + '\'' +
                 '}';
     }
 }
