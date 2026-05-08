@@ -40,12 +40,14 @@ public class DataInitializer implements CommandLineRunner {
 
     private void initCustomerSubtypes() {
         CustomerSubtype personal = new CustomerSubtype();
+        personal.setCustomerType("NATURAL");
         personal.setName("PERSONAL");
         personal.setDescription("Clientes personas naturales");
         personal.setStatus(CustomerSubtypeStatusEnum.ACTIVO);
         customerSubtypeRepository.save(personal);
 
         CustomerSubtype empresarial = new CustomerSubtype();
+        empresarial.setCustomerType("JURIDICO");
         empresarial.setName("EMPRESARIAL");
         empresarial.setDescription("Clientes personas juridicas");
         empresarial.setStatus(CustomerSubtypeStatusEnum.ACTIVO);
@@ -70,13 +72,19 @@ public class DataInitializer implements CommandLineRunner {
 
     private void initAccountSubtypes() {
         AccountSubtype ahorros = new AccountSubtype();
+        ahorros.setSuperType("PASIVO");
         ahorros.setCode("AHO");
+        ahorros.setName("Ahorros");
         ahorros.setDescription("Cuenta de Ahorros");
+        ahorros.setStatus("ACTIVO");
         accountSubtypeRepository.save(ahorros);
 
         AccountSubtype corriente = new AccountSubtype();
+        corriente.setSuperType("PASIVO");
         corriente.setCode("CTE");
+        corriente.setName("Corriente");
         corriente.setDescription("Cuenta Corriente");
+        corriente.setStatus("ACTIVO");
         accountSubtypeRepository.save(corriente);
         log.info("AccountSubtypes creados");
     }
@@ -86,7 +94,12 @@ public class DataInitializer implements CommandLineRunner {
         general.setCode("TRN-GEN");
         general.setDescription("Transaccion General");
         transactionSubtypeRepository.save(general);
-        log.info("TransactionSubtypes creado");
+
+        TransactionSubtype transfer = new TransactionSubtype();
+        transfer.setCode("TRANSFER");
+        transfer.setDescription("Transferencia entre cuentas");
+        transactionSubtypeRepository.save(transfer);
+        log.info("TransactionSubtypes creados");
     }
 
     private void initCustomers() {

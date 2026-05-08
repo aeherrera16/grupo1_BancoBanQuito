@@ -30,6 +30,10 @@ public class Branch {
     @Column(name = "creation_date", insertable = false, updatable = false)
     private LocalDateTime creationDate;
 
+    @Version
+    @Column(name = "version", nullable = false)
+    private Integer version;
+
     public Branch() {}
 
     public Branch(Integer id) {

@@ -19,6 +19,9 @@ public class CustomerSubtype {
     @Column(name = "id", nullable = false)
     private Integer id;
 
+    @Column(name = "customer_type", nullable = false, length = 15)
+    private String customerType;
+
     @Column(name = "name", nullable = false, length = 50, unique = true)
     private String name;
 
@@ -34,6 +37,10 @@ public class CustomerSubtype {
 
     @Column(name = "creation_date", insertable = false, updatable = false)
     private LocalDateTime creationDate;
+
+    @Version
+    @Column(name = "version", nullable = false)
+    private Integer version;
 
     public CustomerSubtype() {}
 

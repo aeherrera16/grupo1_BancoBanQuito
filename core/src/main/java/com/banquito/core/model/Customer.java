@@ -82,6 +82,10 @@ public class Customer {
     @Column(name = "registration_date", insertable = false, updatable = false)
     private LocalDateTime registrationDate;
 
+    @Version
+    @Column(name = "version", nullable = false)
+    private Integer version;
+
     public Customer() {}
 
     public Customer(Integer id) {

@@ -47,7 +47,11 @@ public class AccountTransaction {
     @Column(name = "description", length = 255)
     private String description;
 
-    @Column(name = "transaction_date", insertable = false, updatable = false)
+    @Version
+    @Column(name = "version", nullable = false)
+    private Integer version;
+
+    @Column(name = "transaction_date", nullable = false)
     private LocalDateTime transactionDate;
 
     public AccountTransaction() {}
