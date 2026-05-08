@@ -1,4 +1,5 @@
-package ec.edu.espe.banquito.core.config;
+-
+    package ec.edu.espe.banquito.core.config;
 
 import ec.edu.espe.banquito.core.enums.CustomerTypeEnum;
 import ec.edu.espe.banquito.core.model.*;
