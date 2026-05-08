@@ -1,7 +1,8 @@
 package ec.edu.espe.banquito.core.controller;
 
-import ec.edu.espe.banquito.core.model.Branch;
-import ec.edu.espe.banquito.core.service.BranchService;
+import ec.edu.espe.banquito.core.dto.BranchRequestDTO;
+import ec.edu.espe.banquito.core.dto.BranchResponseDTO;
+import ec.edu.espe.banquito.core.service.IBranchService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -16,20 +17,20 @@ import java.util.List;
 @RequiredArgsConstructor
 public class BranchController {
 
-    private final BranchService branchService;
+    private final IBranchService branchService;
 
     @GetMapping
-    public ResponseEntity<List<Branch>> findAll() {
+    public ResponseEntity<List<BranchResponseDTO>> findAll() {
         return ResponseEntity.ok(branchService.findAll());
     }
 
     @GetMapping("/{code}")
-    public ResponseEntity<Branch> findByCode(@PathVariable String code) {
+    public ResponseEntity<BranchResponseDTO> findByCode(@PathVariable String code) {
         return ResponseEntity.ok(branchService.findByCode(code));
     }
 
     @PostMapping
-    public ResponseEntity<Branch> create(@RequestBody Branch branch) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(branchService.create(branch));
+    public ResponseEntity<BranchResponseDTO> create(@RequestBody BranchRequestDTO request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(branchService.create(request));
     }
 }

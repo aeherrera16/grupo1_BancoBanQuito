@@ -1,14 +1,24 @@
 package ec.edu.espe.banquito.core.service;
 
+import ec.edu.espe.banquito.core.dto.AccountRequestDTO;
+import ec.edu.espe.banquito.core.dto.AccountResponseDTO;
+import ec.edu.espe.banquito.core.dto.TransactionResponseDTO;
+import ec.edu.espe.banquito.core.enums.AccountStatusEnum;
 import ec.edu.espe.banquito.core.enums.MovementTypeEnum;
 import ec.edu.espe.banquito.core.exception.CuentaInactivaException;
 import ec.edu.espe.banquito.core.exception.CuentaNoEncontradaException;
 import ec.edu.espe.banquito.core.exception.SaldoInsuficienteException;
 import ec.edu.espe.banquito.core.exception.TransaccionDuplicadaException;
 import ec.edu.espe.banquito.core.model.Account;
+import ec.edu.espe.banquito.core.model.AccountSubtype;
 import ec.edu.espe.banquito.core.model.AccountTransaction;
+import ec.edu.espe.banquito.core.model.Branch;
+import ec.edu.espe.banquito.core.model.Customer;
 import ec.edu.espe.banquito.core.repository.AccountRepository;
+import ec.edu.espe.banquito.core.repository.AccountSubtypeRepository;
 import ec.edu.espe.banquito.core.repository.AccountTransactionRepository;
+import ec.edu.espe.banquito.core.repository.BranchRepository;
+import ec.edu.espe.banquito.core.repository.CustomerRepository;
 import ec.edu.espe.banquito.core.repository.TransactionSubtypeRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -22,29 +32,56 @@ import java.util.UUID;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class AccountService {
+public class AccountService implements IAccountService {
 
     private final AccountRepository accountRepository;
     private final AccountTransactionRepository transactionRepository;
     private final TransactionSubtypeRepository transactionSubtypeRepository;
+    private final CustomerRepository customerRepository;
+    private final BranchRepository branchRepository;
+    private final AccountSubtypeRepository accountSubtypeRepository;
 
     @Transactional(readOnly = true)
-    public Account findByAccountNumber(String accountNumber) {
-        return accountRepository.findByAccountNumber(accountNumber)
+    @Override
+    public AccountResponseDTO findByAccountNumber(String accountNumber) {
+        Account account = accountRepository.findByAccountNumber(accountNumber)
                 .orElseThrow(() -> new CuentaNoEncontradaException(accountNumber));
+        return toResponse(account);
     }
 
     @Transactional
-    public Account create(Account account) {
+    @Override
+    public AccountResponseDTO create(AccountRequestDTO request) {
+        Customer customer = customerRepository.findById(request.getCustomerId())
+                .orElseThrow(() -> new RuntimeException("Cliente no encontrado: " + request.getCustomerId()));
+        Branch branch = branchRepository.findById(request.getBranchId())
+                .orElseThrow(() -> new RuntimeException("Sucursal no encontrada: " + request.getBranchId()));
+        AccountSubtype subtype = accountSubtypeRepository.findById(request.getAccountSubtypeId())
+                .orElseThrow(() -> new RuntimeException("Subtipo no encontrado: " + request.getAccountSubtypeId()));
+
+        Account account = new Account();
+        account.setAccountNumber(request.getAccountNumber());
+        account.setCustomer(customer);
+        account.setBranch(branch);
+        account.setAccountSubtype(subtype);
+        account.setStatus(AccountStatusEnum.ACTIVO);
+        BigDecimal initial = request.getInitialBalance() != null ? request.getInitialBalance() : BigDecimal.ZERO;
+        account.setAccountingBalance(initial);
+        account.setAvailableBalance(initial);
+        account.setIsFavorite(request.getIsFavorite() != null ? request.getIsFavorite() : false);
+        account.setOpeningDate(LocalDateTime.now());
+
         log.info("Creando cuenta: {}", account.getAccountNumber());
-        return accountRepository.save(account);
+        return toResponse(accountRepository.save(account));
     }
 
     @Transactional
-    public void debitar(String accountNumber, BigDecimal amount) {
-        Account account = findByAccountNumber(accountNumber);
+    @Override
+    public TransactionResponseDTO debitar(String accountNumber, BigDecimal amount) {
+        Account account = accountRepository.findByAccountNumber(accountNumber)
+                .orElseThrow(() -> new CuentaNoEncontradaException(accountNumber));
 
-        if (!"ACTIVO".equals(account.getStatus())) {
+        if (account.getStatus() != AccountStatusEnum.ACTIVO) {
             throw new CuentaInactivaException(accountNumber);
         }
         if (account.getAvailableBalance().compareTo(amount) < 0) {
@@ -56,15 +93,19 @@ public class AccountService {
         account.setLastUpdate(LocalDateTime.now());
         accountRepository.save(account);
 
-        registrarTransaccion(account, amount, MovementTypeEnum.DEBITO, account.getAvailableBalance(), UUID.randomUUID().toString());
+        String uuid = UUID.randomUUID().toString();
+        AccountTransaction tx = registrarTransaccion(account, amount, MovementTypeEnum.DEBITO, account.getAvailableBalance(), uuid);
         log.info("Débito de {} en cuenta {}", amount, accountNumber);
+        return toTransactionResponse(tx, accountNumber, "Débito realizado exitosamente");
     }
 
     @Transactional
-    public void acreditar(String accountNumber, BigDecimal amount) {
-        Account account = findByAccountNumber(accountNumber);
+    @Override
+    public TransactionResponseDTO acreditar(String accountNumber, BigDecimal amount) {
+        Account account = accountRepository.findByAccountNumber(accountNumber)
+                .orElseThrow(() -> new CuentaNoEncontradaException(accountNumber));
 
-        if (!"ACTIVO".equals(account.getStatus())) {
+        if (account.getStatus() != AccountStatusEnum.ACTIVO) {
             throw new CuentaInactivaException(accountNumber);
         }
 
@@ -73,12 +114,15 @@ public class AccountService {
         account.setLastUpdate(LocalDateTime.now());
         accountRepository.save(account);
 
-        registrarTransaccion(account, amount, MovementTypeEnum.CREDITO, account.getAvailableBalance(), UUID.randomUUID().toString());
+        String uuid = UUID.randomUUID().toString();
+        AccountTransaction tx = registrarTransaccion(account, amount, MovementTypeEnum.CREDITO, account.getAvailableBalance(), uuid);
         log.info("Crédito de {} en cuenta {}", amount, accountNumber);
+        return toTransactionResponse(tx, accountNumber, "Crédito realizado exitosamente");
     }
 
     @Transactional
-    public void transferir(String origin, String destination, BigDecimal amount, String uuid) {
+    @Override
+    public TransactionResponseDTO transferir(String origin, String destination, BigDecimal amount, String uuid) {
         LocalDateTime startOfDay = LocalDateTime.now().toLocalDate().atStartOfDay();
         LocalDateTime endOfDay = startOfDay.plusDays(1);
 
@@ -86,13 +130,15 @@ public class AccountService {
             throw new TransaccionDuplicadaException(uuid);
         }
 
-        Account accountOrigin = findByAccountNumber(origin);
-        Account accountDestination = findByAccountNumber(destination);
+        Account accountOrigin = accountRepository.findByAccountNumber(origin)
+                .orElseThrow(() -> new CuentaNoEncontradaException(origin));
+        Account accountDestination = accountRepository.findByAccountNumber(destination)
+                .orElseThrow(() -> new CuentaNoEncontradaException(destination));
 
-        if (!"ACTIVO".equals(accountOrigin.getStatus())) {
+        if (accountOrigin.getStatus() != AccountStatusEnum.ACTIVO) {
             throw new CuentaInactivaException(origin);
         }
-        if (!"ACTIVO".equals(accountDestination.getStatus())) {
+        if (accountDestination.getStatus() != AccountStatusEnum.ACTIVO) {
             throw new CuentaInactivaException(destination);
         }
         if (accountOrigin.getAvailableBalance().compareTo(amount) < 0) {
@@ -109,14 +155,15 @@ public class AccountService {
         accountDestination.setLastUpdate(LocalDateTime.now());
         accountRepository.save(accountDestination);
 
-        registrarTransaccion(accountOrigin, amount, MovementTypeEnum.DEBITO, accountOrigin.getAvailableBalance(), uuid);
+        AccountTransaction txOrigen = registrarTransaccion(accountOrigin, amount, MovementTypeEnum.DEBITO, accountOrigin.getAvailableBalance(), uuid);
         registrarTransaccion(accountDestination, amount, MovementTypeEnum.CREDITO, accountDestination.getAvailableBalance(), uuid + "-DEST");
 
         log.info("Transferencia de {} de {} a {}", amount, origin, destination);
+        return toTransactionResponse(txOrigen, origin, "Transferencia realizada exitosamente");
     }
 
-    private void registrarTransaccion(Account account, BigDecimal amount, MovementTypeEnum type,
-                                      BigDecimal resultingBalance, String uuid) {
+    private AccountTransaction registrarTransaccion(Account account, BigDecimal amount, MovementTypeEnum type,
+                                                     BigDecimal resultingBalance, String uuid) {
         AccountTransaction transaction = new AccountTransaction();
         transaction.setAccount(account);
         transaction.setMovementType(type);
@@ -126,6 +173,36 @@ public class AccountService {
         transaction.setStatus("COMPLETADA");
         transaction.setTransactionSubtype(transactionSubtypeRepository.findAll().stream().findFirst()
                 .orElseThrow(() -> new RuntimeException("No hay subtipos de transacción configurados")));
-        transactionRepository.save(transaction);
+        return transactionRepository.save(transaction);
+    }
+
+    private AccountResponseDTO toResponse(Account account) {
+        String customerName = account.getCustomer().getFirstName() + " " + account.getCustomer().getLastName();
+        return new AccountResponseDTO(
+                account.getId(),
+                account.getAccountNumber(),
+                customerName,
+                account.getBranch().getName(),
+                account.getAccountSubtype().getDescription(),
+                account.getStatus(),
+                account.getAccountingBalance(),
+                account.getAvailableBalance(),
+                account.getIsFavorite(),
+                account.getOpeningDate()
+        );
+    }
+
+    private TransactionResponseDTO toTransactionResponse(AccountTransaction tx, String accountNumber, String message) {
+        return new TransactionResponseDTO(
+                tx.getId(),
+                accountNumber,
+                tx.getMovementType(),
+                tx.getAmount(),
+                tx.getResultingBalance(),
+                tx.getTransactionDate(),
+                tx.getTransactionUuid(),
+                tx.getStatus(),
+                message
+        );
     }
 }

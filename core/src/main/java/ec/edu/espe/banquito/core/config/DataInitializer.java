@@ -1,6 +1,8 @@
--
-    package ec.edu.espe.banquito.core.config;
+package ec.edu.espe.banquito.core.config;
 
+import ec.edu.espe.banquito.core.enums.AccountStatusEnum;
+import ec.edu.espe.banquito.core.enums.CustomerStatusEnum;
+import ec.edu.espe.banquito.core.enums.CustomerSubtypeStatusEnum;
 import ec.edu.espe.banquito.core.enums.CustomerTypeEnum;
 import ec.edu.espe.banquito.core.model.*;
 import ec.edu.espe.banquito.core.repository.*;
@@ -40,13 +42,13 @@ public class DataInitializer implements CommandLineRunner {
         CustomerSubtype personal = new CustomerSubtype();
         personal.setName("PERSONAL");
         personal.setDescription("Clientes personas naturales");
-        personal.setStatus("ACTIVO");
+        personal.setStatus(CustomerSubtypeStatusEnum.ACTIVO);
         customerSubtypeRepository.save(personal);
 
         CustomerSubtype empresarial = new CustomerSubtype();
         empresarial.setName("EMPRESARIAL");
         empresarial.setDescription("Clientes personas juridicas");
-        empresarial.setStatus("ACTIVO");
+        empresarial.setStatus(CustomerSubtypeStatusEnum.ACTIVO);
         customerSubtypeRepository.save(empresarial);
         log.info("CustomerSubtypes creados");
     }
@@ -101,7 +103,7 @@ public class DataInitializer implements CommandLineRunner {
         bryan.setEmail("bryan@banquito.com");
         bryan.setMobilePhone("0991234567");
         bryan.setAddress("Quito, Ecuador");
-        bryan.setStatus("ACTIVO");
+        bryan.setStatus(CustomerStatusEnum.ACTIVO);
         customerRepository.save(bryan);
 
         Customer ana = new Customer();
@@ -115,7 +117,7 @@ public class DataInitializer implements CommandLineRunner {
         ana.setEmail("ana@banquito.com");
         ana.setMobilePhone("0987654321");
         ana.setAddress("Guayaquil, Ecuador");
-        ana.setStatus("ACTIVO");
+        ana.setStatus(CustomerStatusEnum.ACTIVO);
         customerRepository.save(ana);
         log.info("Customers creados");
     }
@@ -131,7 +133,7 @@ public class DataInitializer implements CommandLineRunner {
         cuenta1.setCustomer(bryan);
         cuenta1.setBranch(sucursal);
         cuenta1.setAccountSubtype(ahorros);
-        cuenta1.setStatus("ACTIVO");
+        cuenta1.setStatus(AccountStatusEnum.ACTIVO);
         cuenta1.setAccountingBalance(new BigDecimal("5000.00"));
         cuenta1.setAvailableBalance(new BigDecimal("5000.00"));
         cuenta1.setIsFavorite(false);
@@ -143,7 +145,7 @@ public class DataInitializer implements CommandLineRunner {
         cuenta2.setCustomer(ana);
         cuenta2.setBranch(sucursal);
         cuenta2.setAccountSubtype(ahorros);
-        cuenta2.setStatus("ACTIVO");
+        cuenta2.setStatus(AccountStatusEnum.ACTIVO);
         cuenta2.setAccountingBalance(new BigDecimal("2500.00"));
         cuenta2.setAvailableBalance(new BigDecimal("2500.00"));
         cuenta2.setIsFavorite(false);

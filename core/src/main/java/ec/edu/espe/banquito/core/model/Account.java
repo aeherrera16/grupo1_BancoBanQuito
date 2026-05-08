@@ -1,5 +1,6 @@
 package ec.edu.espe.banquito.core.model;
 
+import ec.edu.espe.banquito.core.enums.AccountStatusEnum;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -33,8 +34,9 @@ public class Account {
     @JoinColumn(name = "account_subtype_id", nullable = false)
     private AccountSubtype accountSubtype;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, length = 15)
-    private String status;
+    private AccountStatusEnum status;
 
     @Column(name = "accounting_balance", nullable = false, precision = 15, scale = 2)
     private BigDecimal accountingBalance;
@@ -79,7 +81,7 @@ public class Account {
         return "Account{" +
                 "id=" + id +
                 ", accountNumber='" + accountNumber + '\'' +
-                ", status='" + status + '\'' +
+                ", status=" + status +
                 ", availableBalance=" + availableBalance +
                 '}';
     }

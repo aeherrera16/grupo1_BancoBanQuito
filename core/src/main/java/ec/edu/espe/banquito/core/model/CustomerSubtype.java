@@ -1,9 +1,15 @@
 package ec.edu.espe.banquito.core.model;
 
+import ec.edu.espe.banquito.core.enums.CustomerSubtypeStatusEnum;
 import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
+
 import java.time.LocalDateTime;
 import java.util.Objects;
 
+@Getter
+@Setter
 @Entity
 @Table(name = "CUSTOMER_SUBTYPE")
 public class CustomerSubtype {
@@ -19,8 +25,9 @@ public class CustomerSubtype {
     @Column(name = "description", length = 255)
     private String description;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, length = 15)
-    private String status;
+    private CustomerSubtypeStatusEnum status;
 
     @Column(name = "observations", length = 255)
     private String observations;
@@ -33,25 +40,6 @@ public class CustomerSubtype {
     public CustomerSubtype(Integer id) {
         this.id = id;
     }
-
-    // Getters y Setters
-    public Integer getId() { return id; }
-    public void setId(Integer id) { this.id = id; }
-
-    public String getName() { return name; }
-    public void setName(String name) { this.name = name; }
-
-    public String getDescription() { return description; }
-    public void setDescription(String description) { this.description = description; }
-
-    public String getStatus() { return status; }
-    public void setStatus(String status) { this.status = status; }
-
-    public String getObservations() { return observations; }
-    public void setObservations(String observations) { this.observations = observations; }
-
-    public LocalDateTime getCreationDate() { return creationDate; }
-    public void setCreationDate(LocalDateTime creationDate) { this.creationDate = creationDate; }
 
     @Override
     public boolean equals(Object o) {
@@ -71,7 +59,7 @@ public class CustomerSubtype {
         return "CustomerSubtype{" +
                 "id=" + id +
                 ", name='" + name + '\'' +
-                ", status='" + status + '\'' +
+                ", status=" + status +
                 '}';
     }
 }
