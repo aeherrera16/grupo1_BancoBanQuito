@@ -4,15 +4,17 @@ import ec.edu.espe.banquito.core.model.AccountTransaction;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
 @Repository
 public interface AccountTransactionRepository extends JpaRepository<AccountTransaction, Long> {
 
-    // Soporte para la Idempotencia: Buscar si el Switch ya mandó este UUID
     Optional<AccountTransaction> findByTransactionUuid(String transactionUuid);
 
-    // Para buscar los últimos N movimientos de una cuenta (El índice de BD ayudará aquí)
+    boolean existsByTransactionUuidAndTransactionDateBetween(
+            String transactionUuid, LocalDateTime start, LocalDateTime end);
+
     List<AccountTransaction> findTop10ByAccount_IdOrderByTransactionDateDesc(Integer accountId);
 }
