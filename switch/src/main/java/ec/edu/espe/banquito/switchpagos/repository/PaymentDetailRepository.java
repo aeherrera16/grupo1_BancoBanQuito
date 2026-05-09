@@ -12,4 +12,7 @@ public interface PaymentDetailRepository extends JpaRepository<PaymentDetail, In
 
     // Para procesar el lote iterando "línea por línea" ordenado por el número de línea
     List<PaymentDetail> findByPaymentBatchIdOrderByLineNumberAsc(Integer paymentBatchId);
+
+    // Para obtener todos los detalles de un lote
+    List<PaymentDetail> findByPaymentBatchId(Integer paymentBatchId);
 }
