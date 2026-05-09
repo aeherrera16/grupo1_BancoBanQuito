@@ -1,6 +1,7 @@
 package com.banquito.core.model;
 
 import com.banquito.core.enums.MovementTypeEnum;
+import com.banquito.core.enums.TransactionStatusEnum;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -17,41 +18,42 @@ public class AccountTransaction {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id", nullable = false)
+    @Column(name = "ID", nullable = false)
     private Long id;
 
     @ManyToOne
-    @JoinColumn(name = "account_id", nullable = false)
+    @JoinColumn(name = "ACCOUNT_ID", nullable = false)
     private Account account;
 
     @ManyToOne
-    @JoinColumn(name = "transaction_subtype_id", nullable = false)
+    @JoinColumn(name = "TRANSACTION_SUBTYPE_ID", nullable = false)
     private TransactionSubtype transactionSubtype;
 
-    @Column(name = "transaction_uuid", nullable = false, length = 36, unique = true)
+    @Column(name = "TRANSACTION_UUID", nullable = false, length = 36)
     private String transactionUuid;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "movement_type", nullable = false, length = 15)
+    @Column(name = "MOVEMENT_TYPE", nullable = false, length = 15)
     private MovementTypeEnum movementType;
 
-    @Column(name = "amount", nullable = false, precision = 15, scale = 2)
+    @Column(name = "AMOUNT", nullable = false, precision = 15, scale = 2)
     private BigDecimal amount;
 
-    @Column(name = "resulting_balance", nullable = false, precision = 15, scale = 2)
+    @Column(name = "RESULTING_BALANCE", nullable = false, precision = 15, scale = 2)
     private BigDecimal resultingBalance;
 
-    @Column(name = "status", nullable = false, length = 15)
-    private String status;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "STATUS", nullable = false, length = 15)
+    private TransactionStatusEnum status;
 
-    @Column(name = "description", length = 255)
+    @Column(name = "DESCRIPTION", length = 255)
     private String description;
 
     @Version
-    @Column(name = "version", nullable = false)
+    @Column(name = "VERSION", nullable = false)
     private Integer version;
 
-    @Column(name = "transaction_date", nullable = false)
+    @Column(name = "TRANSACTION_DATE", nullable = false)
     private LocalDateTime transactionDate;
 
     public AccountTransaction() {}
@@ -80,7 +82,7 @@ public class AccountTransaction {
                 ", transactionUuid='" + transactionUuid + '\'' +
                 ", movementType=" + movementType +
                 ", amount=" + amount +
-                ", status='" + status + '\'' +
+                ", status=" + status +
                 '}';
     }
 }

@@ -16,45 +16,45 @@ public class Account {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id", nullable = false)
+    @Column(name = "ID", nullable = false)
     private Integer id;
 
-    @Column(name = "account_number", nullable = false, unique = true, length = 20)
+    @Column(name = "ACCOUNT_NUMBER", nullable = false, unique = true, length = 20)
     private String accountNumber;
 
     @ManyToOne
-    @JoinColumn(name = "customer_id", nullable = false)
+    @JoinColumn(name = "CUSTOMER_ID", nullable = false)
     private Customer customer;
 
     @ManyToOne
-    @JoinColumn(name = "branch_id", nullable = false)
+    @JoinColumn(name = "BRANCH_ID", nullable = false)
     private Branch branch;
 
     @ManyToOne
-    @JoinColumn(name = "account_subtype_id", nullable = false)
+    @JoinColumn(name = "ACCOUNT_SUBTYPE_ID", nullable = false)
     private AccountSubtype accountSubtype;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "status", nullable = false, length = 15)
+    @Column(name = "STATUS", nullable = false, length = 15)
     private AccountStatusEnum status;
 
-    @Column(name = "accounting_balance", nullable = false, precision = 15, scale = 2)
+    @Column(name = "ACCOUNTING_BALANCE", nullable = false, precision = 15, scale = 2)
     private BigDecimal accountingBalance;
 
-    @Column(name = "available_balance", nullable = false, precision = 15, scale = 2)
+    @Column(name = "AVAILABLE_BALANCE", nullable = false, precision = 15, scale = 2)
     private BigDecimal availableBalance;
 
-    @Column(name = "is_favorite", nullable = false)
+    @Column(name = "IS_FAVORITE", nullable = false)
     private Boolean isFavorite;
 
-    @Column(name = "opening_date", nullable = false)
+    @Column(name = "OPENING_DATE", nullable = false)
     private LocalDateTime openingDate;
 
-    @Column(name = "last_update")
+    @Column(name = "LAST_UPDATE")
     private LocalDateTime lastUpdate;
 
     @Version
-    @Column(name = "version", nullable = false)
+    @Column(name = "VERSION", nullable = false)
     private Integer version;
 
     public Account() {}

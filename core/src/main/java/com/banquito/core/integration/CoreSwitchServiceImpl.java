@@ -1,30 +1,33 @@
 package com.banquito.core.integration;
 
-import com.banquito.core.dto.AccountResponseDTO;
 import com.banquito.core.dto.BalanceDTO;
 import com.banquito.core.dto.TransferResultDTO;
 import com.banquito.core.enums.AccountStatusEnum;
-import com.banquito.core.service.IAccountService;
+import com.banquito.core.model.Account;
+import com.banquito.core.repository.AccountRepository;
 import com.banquito.core.service.ITransactionService;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 
 @Service
 public class CoreSwitchServiceImpl implements CoreSwitchService {
 
-    private final IAccountService accountService;
+    private final AccountRepository accountRepository;
     private final ITransactionService transactionService;
 
-    public CoreSwitchServiceImpl(IAccountService accountService,
+    public CoreSwitchServiceImpl(AccountRepository accountRepository,
                                  ITransactionService transactionService) {
-        this.accountService = accountService;
+        this.accountRepository = accountRepository;
         this.transactionService = transactionService;
     }
 
     @Override
+    @Transactional(readOnly = true)
     public BalanceDTO consultarSaldo(String accountNumber) {
-        AccountResponseDTO account = accountService.findByAccountNumber(accountNumber);
+        Account account = accountRepository.findByAccountNumber(accountNumber)
+                .orElseThrow(() -> new IllegalArgumentException("Cuenta no encontrada: " + accountNumber));
 
         return new BalanceDTO(
                 account.getAccountNumber(),
@@ -35,13 +38,11 @@ public class CoreSwitchServiceImpl implements CoreSwitchService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public boolean validarCuenta(String accountNumber) {
-        try {
-            AccountResponseDTO account = accountService.findByAccountNumber(accountNumber);
-            return AccountStatusEnum.ACTIVO.equals(account.getStatus());
-        } catch (Exception e) {
-            return false;
-        }
+        return accountRepository.findByAccountNumber(accountNumber)
+                .map(account -> AccountStatusEnum.ACTIVO == account.getStatus())
+                .orElse(false);
     }
 
     @Override
@@ -52,7 +53,14 @@ public class CoreSwitchServiceImpl implements CoreSwitchService {
             String uuid
     ) {
         try {
-            accountService.transferir(originAccount, destinationAccount, amount, uuid);
+            transactionService.transferir(
+                    originAccount,
+                    destinationAccount,
+                    amount,
+                    uuid,
+                    "TRANSFER",
+                    "Transferencia entre cuentas"
+            );
 
             return TransferResultDTO.ok(
                     "Transferencia procesada correctamente",
@@ -78,11 +86,12 @@ public class CoreSwitchServiceImpl implements CoreSwitchService {
                     companyAccountNumber,
                     totalAmount,
                     uuid,
-                    "TRN-GEN"
+                    "TRN-GEN",
+                    "Cobro de comision"
             );
 
             return TransferResultDTO.ok(
-                    "Comisión cobrada correctamente",
+                    "Comision cobrada correctamente",
                     uuid
             );
         } catch (Exception e) {

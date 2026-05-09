@@ -13,6 +13,8 @@ public interface AccountTransactionRepository extends JpaRepository<AccountTrans
 
     Optional<AccountTransaction> findByTransactionUuid(String transactionUuid);
 
+    boolean existsByTransactionUuid(String transactionUuid);
+
     boolean existsByTransactionUuidAndTransactionDateBetween(
             String transactionUuid, LocalDateTime start, LocalDateTime end);
 

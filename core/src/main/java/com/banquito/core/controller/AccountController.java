@@ -2,15 +2,19 @@ package com.banquito.core.controller;
 
 import com.banquito.core.dto.AccountRequestDTO;
 import com.banquito.core.dto.AccountResponseDTO;
-import com.banquito.core.dto.TransactionResponseDTO;
 import com.banquito.core.service.IAccountService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-
-import java.math.BigDecimal;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 @Slf4j
 @RestController
@@ -18,36 +22,35 @@ import java.math.BigDecimal;
 @RequiredArgsConstructor
 public class AccountController {
 
+    private static final String CORE_USER_HEADER = "X-Core-User-Id";
+
     private final IAccountService accountService;
 
     @GetMapping("/{accountNumber}")
-    public ResponseEntity<AccountResponseDTO> findByAccountNumber(@PathVariable String accountNumber) {
-        return ResponseEntity.ok(accountService.findByAccountNumber(accountNumber));
+    public ResponseEntity<AccountResponseDTO> findByAccountNumber(
+            @PathVariable String accountNumber,
+            @RequestHeader(CORE_USER_HEADER) Integer coreUserId) {
+        return ResponseEntity.ok(accountService.findByAccountNumber(accountNumber, coreUserId));
     }
 
     @PostMapping
-    public ResponseEntity<AccountResponseDTO> create(@RequestBody AccountRequestDTO request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(accountService.create(request));
+    public ResponseEntity<AccountResponseDTO> create(
+            @RequestBody AccountRequestDTO request,
+            @RequestHeader(CORE_USER_HEADER) Integer coreUserId) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(accountService.create(request, coreUserId));
     }
 
-    @PostMapping("/{accountNumber}/debit")
-    public ResponseEntity<TransactionResponseDTO> debit(@PathVariable String accountNumber,
-                                                        @RequestBody AmountRequest request) {
-        return ResponseEntity.ok(accountService.debitar(accountNumber, request.amount()));
+    @PatchMapping("/{accountNumber}/inactivate")
+    public ResponseEntity<AccountResponseDTO> inactivate(
+            @PathVariable String accountNumber,
+            @RequestHeader(CORE_USER_HEADER) Integer coreUserId) {
+        return ResponseEntity.ok(accountService.inactivate(accountNumber, coreUserId));
     }
 
-    @PostMapping("/{accountNumber}/credit")
-    public ResponseEntity<TransactionResponseDTO> credit(@PathVariable String accountNumber,
-                                                         @RequestBody AmountRequest request) {
-        return ResponseEntity.ok(accountService.acreditar(accountNumber, request.amount()));
+    @PatchMapping("/{accountNumber}/block")
+    public ResponseEntity<AccountResponseDTO> block(
+            @PathVariable String accountNumber,
+            @RequestHeader(CORE_USER_HEADER) Integer coreUserId) {
+        return ResponseEntity.ok(accountService.block(accountNumber, coreUserId));
     }
-
-    @PostMapping("/transfer")
-    public ResponseEntity<TransactionResponseDTO> transfer(@RequestBody TransferRequest request) {
-        return ResponseEntity.ok(accountService.transferir(request.origin(), request.destination(), request.amount(), request.uuid()));
-    }
-
-    record AmountRequest(BigDecimal amount) {}
-
-    record TransferRequest(String origin, String destination, BigDecimal amount, String uuid) {}
 }

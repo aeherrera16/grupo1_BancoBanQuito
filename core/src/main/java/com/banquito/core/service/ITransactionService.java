@@ -1,13 +1,14 @@
 package com.banquito.core.service;
 
-import com.banquito.core.model.AccountTransaction;
+import com.banquito.core.dto.TransactionResponseDTO;
 import java.math.BigDecimal;
 
 public interface ITransactionService {
 
-    void debitar(String accountNumber, BigDecimal amount, String uuid, String subtypeCode);
+    TransactionResponseDTO debitar(String accountNumber, BigDecimal amount, String uuid, String subtypeCode, String description);
 
-    void acreditar(String accountNumber, BigDecimal amount, String uuid, String subtypeCode);
+    TransactionResponseDTO acreditar(String accountNumber, BigDecimal amount, String uuid, String subtypeCode, String description);
 
-    void transferir(String originAccount, String destinationAccount, BigDecimal amount, String uuid);
+    TransactionResponseDTO transferir(String originAccount, String destinationAccount, BigDecimal amount,
+                                      String uuid, String subtypeCode, String description);
 }

@@ -2,14 +2,13 @@ package com.banquito.core.dto;
 
 import com.banquito.core.enums.CustomerStatusEnum;
 import com.banquito.core.enums.CustomerTypeEnum;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.Setter;
 
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
+@Getter
+@Setter
 public class CustomerResponseDTO {
+
     private Integer id;
     private CustomerTypeEnum customerType;
     private String identificationType;
@@ -20,4 +19,22 @@ public class CustomerResponseDTO {
     private String mobilePhone;
     private String address;
     private CustomerStatusEnum status;
+
+    public CustomerResponseDTO() {
+    }
+
+    public CustomerResponseDTO(Integer id, CustomerTypeEnum customerType, String identificationType,
+                               String identification, String firstName, String lastName, String email,
+                               String mobilePhone, String address, CustomerStatusEnum status) {
+        this.id = id;
+        this.customerType = customerType;
+        this.identificationType = identificationType;
+        this.identification = identification;
+        this.firstName = firstName;
+        this.lastName = lastName;
+        this.email = email;
+        this.mobilePhone = mobilePhone;
+        this.address = address;
+        this.status = status;
+    }
 }

@@ -16,30 +16,27 @@ public class CustomerSubtype {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id", nullable = false)
+    @Column(name = "ID", nullable = false)
     private Integer id;
 
-    @Column(name = "customer_type", nullable = false, length = 15)
+    @Column(name = "CUSTOMER_TYPE", nullable = false, length = 15)
     private String customerType;
 
-    @Column(name = "name", nullable = false, length = 50, unique = true)
+    @Column(name = "NAME", nullable = false, length = 50, unique = true)
     private String name;
 
-    @Column(name = "description", length = 255)
+    @Column(name = "DESCRIPTION", length = 255)
     private String description;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "status", nullable = false, length = 15)
+    @Column(name = "STATUS", nullable = false, length = 15)
     private CustomerSubtypeStatusEnum status;
 
-    @Column(name = "observations", length = 255)
-    private String observations;
-
-    @Column(name = "creation_date", insertable = false, updatable = false)
+    @Column(name = "CREATION_DATE")
     private LocalDateTime creationDate;
 
     @Version
-    @Column(name = "version", nullable = false)
+    @Column(name = "VERSION", nullable = false)
     private Integer version;
 
     public CustomerSubtype() {}

@@ -15,32 +15,33 @@ public class AccountSubtype {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id", nullable = false)
+    @Column(name = "ID", nullable = false)
     private Integer id;
 
-    @Column(name = "super_type", nullable = false, length = 15)
+    @Column(name = "SUPER_TYPE", nullable = false, length = 15)
     private String superType;
 
-    @Column(name = "code", nullable = false, length = 20, unique = true)
+    @Column(name = "CODE", nullable = false, length = 20, unique = true)
     private String code;
 
-    @Column(name = "name", nullable = false, length = 50)
+    @Column(name = "NAME", nullable = false, length = 50)
     private String name;
 
-    @Column(name = "description", length = 255)
+    @Column(name = "DESCRIPTION", length = 255)
     private String description;
 
-    @Column(name = "status", nullable = false, length = 15)
-    private String status;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "STATUS", nullable = false, length = 15)
+    private com.banquito.core.enums.CommonStatusEnum status;
 
-    @Column(name = "observations", length = 255)
+    @Column(name = "OBSERVATIONS", length = 255)
     private String observations;
 
-    @Column(name = "creation_date", insertable = false, updatable = false)
+    @Column(name = "CREATION_DATE")
     private LocalDateTime creationDate;
 
     @Version
-    @Column(name = "version", nullable = false)
+    @Column(name = "VERSION", nullable = false)
     private Integer version;
 
     public AccountSubtype() {}

@@ -1,5 +1,10 @@
 package com.banquito.core.dto;
 
+import lombok.Getter;
+import lombok.Setter;
+
+@Getter
+@Setter
 public class TransferResultDTO {
 
     private boolean success;
@@ -25,19 +30,4 @@ public class TransferResultDTO {
         return new TransferResultDTO(false, code, message, uuid);
     }
 
-    public boolean isSuccess() {
-        return success;
-    }
-
-    public String getCode() {
-        return code;
-    }
-
-    public String getMessage() {
-        return message;
-    }
-
-    public String getUuid() {
-        return uuid;
-    }
 }

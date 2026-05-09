@@ -2,19 +2,13 @@ package com.banquito.core.service;
 
 import com.banquito.core.dto.AccountRequestDTO;
 import com.banquito.core.dto.AccountResponseDTO;
-import com.banquito.core.dto.TransactionResponseDTO;
-
-import java.math.BigDecimal;
-
 public interface IAccountService {
 
-    AccountResponseDTO findByAccountNumber(String accountNumber);
+    AccountResponseDTO findByAccountNumber(String accountNumber, Integer coreUserId);
 
-    AccountResponseDTO create(AccountRequestDTO request);
+    AccountResponseDTO create(AccountRequestDTO request, Integer coreUserId);
 
-    TransactionResponseDTO debitar(String accountNumber, BigDecimal amount);
+    AccountResponseDTO inactivate(String accountNumber, Integer coreUserId);
 
-    TransactionResponseDTO acreditar(String accountNumber, BigDecimal amount);
-
-    TransactionResponseDTO transferir(String origin, String destination, BigDecimal amount, String uuid);
+    AccountResponseDTO block(String accountNumber, Integer coreUserId);
 }

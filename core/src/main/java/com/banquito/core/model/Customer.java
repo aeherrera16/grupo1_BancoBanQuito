@@ -17,73 +17,73 @@ import java.util.Objects;
 @Table(
         name = "CUSTOMER",
         uniqueConstraints = {
-                @UniqueConstraint(columnNames = {"identification_type", "identification"})
+                @UniqueConstraint(columnNames = {"IDENTIFICATION_TYPE", "IDENTIFICATION"})
         }
 )
 public class Customer {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id", nullable = false)
+    @Column(name = "ID", nullable = false)
     private Integer id;
 
     @ManyToOne
-    @JoinColumn(name = "customer_subtype_id", nullable = false)
+    @JoinColumn(name = "CUSTOMER_SUBTYPE_ID", nullable = false)
     private CustomerSubtype customerSubtype;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "customer_type", nullable = false, length = 15)
+    @Column(name = "CUSTOMER_TYPE", nullable = false, length = 15)
     private CustomerTypeEnum customerType;
 
-    @Column(name = "identification_type", nullable = false, length = 15)
+    @Column(name = "IDENTIFICATION_TYPE", nullable = false, length = 15)
     private String identificationType;
 
-    @Column(name = "identification", nullable = false, length = 20)
+    @Column(name = "IDENTIFICATION", nullable = false, length = 20)
     private String identification;
 
-    @Column(name = "first_name", length = 100)
+    @Column(name = "FIRST_NAME", length = 100)
     private String firstName;
 
-    @Column(name = "last_name", length = 100)
+    @Column(name = "LAST_NAME", length = 100)
     private String lastName;
 
-    @Column(name = "birth_date")
+    @Column(name = "BIRTH_DATE")
     private LocalDate birthDate;
 
-    @Column(name = "legal_name", length = 150)
+    @Column(name = "LEGAL_NAME", length = 150)
     private String legalName;
 
-    @Column(name = "constitution_date")
+    @Column(name = "CONSTITUTION_DATE")
     private LocalDate constitutionDate;
 
     @ManyToOne
-    @JoinColumn(name = "legal_representative_id")
+    @JoinColumn(name = "LEGAL_REPRESENTATIVE_ID")
     private Customer legalRepresentative;
 
-    @Column(name = "email", nullable = false, length = 100)
+    @Column(name = "EMAIL", nullable = false, length = 100)
     private String email;
 
-    @Column(name = "mobile_phone", nullable = false, length = 20)
+    @Column(name = "MOBILE_PHONE", nullable = false, length = 20)
     private String mobilePhone;
 
-    @Column(name = "address", nullable = false, length = 255)
+    @Column(name = "ADDRESS", nullable = false, length = 255)
     private String address;
 
-    @Column(name = "latitude", precision = 10, scale = 8)
+    @Column(name = "LATITUDE", precision = 10, scale = 8)
     private BigDecimal latitude;
 
-    @Column(name = "longitude", precision = 11, scale = 8)
+    @Column(name = "LONGITUDE", precision = 11, scale = 8)
     private BigDecimal longitude;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "status", nullable = false, length = 15)
+    @Column(name = "STATUS", nullable = false, length = 15)
     private CustomerStatusEnum status;
 
-    @Column(name = "registration_date", insertable = false, updatable = false)
+    @Column(name = "REGISTRATION_DATE")
     private LocalDateTime registrationDate;
 
     @Version
-    @Column(name = "version", nullable = false)
+    @Column(name = "VERSION", nullable = false)
     private Integer version;
 
     public Customer() {}

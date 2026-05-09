@@ -1,10 +1,14 @@
 package com.banquito.core.model;
 
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Objects;
 
 @Getter
@@ -14,41 +18,35 @@ import java.util.Objects;
 public class Holiday {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id", nullable = false)
-    private Integer id;
-
-    @Column(name = "holiday_date", nullable = false, unique = true)
+    @Column(name = "HOLIDAY_DATE", nullable = false)
     private LocalDate holidayDate;
 
-    @Column(name = "description", nullable = false, length = 100)
-    private String description;
+    @Column(name = "NAME", nullable = false, length = 100)
+    private String name;
 
-    public Holiday() {}
+    @Column(name = "IS_WEEKEND", nullable = false)
+    private Boolean isWeekend;
 
-    public Holiday(Integer id) {
-        this.id = id;
+    @Column(name = "CREATION_DATE")
+    private LocalDateTime creationDate;
+
+    public Holiday() {
+    }
+
+    public Holiday(LocalDate holidayDate) {
+        this.holidayDate = holidayDate;
     }
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        Holiday that = (Holiday) o;
-        return Objects.equals(id, that.id);
+        Holiday holiday = (Holiday) o;
+        return Objects.equals(holidayDate, holiday.holidayDate);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(id);
-    }
-
-    @Override
-    public String toString() {
-        return "Holiday{" +
-                "id=" + id +
-                ", holidayDate=" + holidayDate +
-                ", description='" + description + '\'' +
-                '}';
+        return Objects.hashCode(holidayDate);
     }
 }

@@ -15,23 +15,23 @@ public class Branch {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id", nullable = false)
+    @Column(name = "ID", nullable = false)
     private Integer id;
 
-    @Column(name = "branch_code", nullable = false, length = 10, unique = true)
+    @Column(name = "BRANCH_CODE", nullable = false, length = 10, unique = true)
     private String branchCode;
 
-    @Column(name = "name", nullable = false, length = 100)
+    @Column(name = "NAME", nullable = false, length = 100)
     private String name;
 
-    @Column(name = "city", nullable = false, length = 50)
+    @Column(name = "CITY", nullable = false, length = 50)
     private String city;
 
-    @Column(name = "creation_date", insertable = false, updatable = false)
+    @Column(name = "CREATION_DATE")
     private LocalDateTime creationDate;
 
     @Version
-    @Column(name = "version", nullable = false)
+    @Column(name = "VERSION", nullable = false)
     private Integer version;
 
     public Branch() {}

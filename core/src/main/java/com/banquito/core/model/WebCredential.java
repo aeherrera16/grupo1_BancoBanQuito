@@ -1,69 +1,69 @@
 package com.banquito.core.model;
 
-import jakarta.persistence.*;
+import com.banquito.core.enums.CommonStatusEnum;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
+import jakarta.persistence.Version;
+import lombok.Getter;
+import lombok.Setter;
+
 import java.time.LocalDateTime;
 import java.util.Objects;
 
+@Getter
+@Setter
 @Entity
 @Table(name = "WEB_CREDENTIAL")
 public class WebCredential {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id", nullable = false)
+    @Column(name = "ID", nullable = false)
     private Integer id;
 
     @ManyToOne
-    @JoinColumn(name = "customer_id", nullable = false)
+    @JoinColumn(name = "CUSTOMER_ID", nullable = false)
     private Customer customer;
 
-    @Column(name = "username", nullable = false, length = 50, unique = true)
+    @Column(name = "USERNAME", nullable = false, length = 50, unique = true)
     private String username;
 
-    @Column(name = "password_hash", nullable = false, length = 255)
+    @Column(name = "PASSWORD_HASH", nullable = false, length = 255)
     private String passwordHash;
 
-    @Column(name = "last_login")
+    @Column(name = "LAST_LOGIN")
     private LocalDateTime lastLogin;
 
-    @Column(name = "status", nullable = false, length = 15)
-    private String status;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "STATUS", nullable = false, length = 15)
+    private CommonStatusEnum status;
 
-    @Column(name = "creation_date", insertable = false, updatable = false)
+    @Column(name = "CREATION_DATE")
     private LocalDateTime creationDate;
 
-    public WebCredential() {}
+    @Version
+    @Column(name = "VERSION", nullable = false)
+    private Integer version;
+
+    public WebCredential() {
+    }
 
     public WebCredential(Integer id) {
         this.id = id;
     }
 
-    // Getters y Setters
-    public Integer getId() { return id; }
-    public void setId(Integer id) { this.id = id; }
-
-    public Customer getCustomer() { return customer; }
-    public void setCustomer(Customer customer) { this.customer = customer; }
-
-    public String getUsername() { return username; }
-    public void setUsername(String username) { this.username = username; }
-
-    public String getPasswordHash() { return passwordHash; }
-    public void setPasswordHash(String passwordHash) { this.passwordHash = passwordHash; }
-
-    public LocalDateTime getLastLogin() { return lastLogin; }
-    public void setLastLogin(LocalDateTime lastLogin) { this.lastLogin = lastLogin; }
-
-    public String getStatus() { return status; }
-    public void setStatus(String status) { this.status = status; }
-
-    public LocalDateTime getCreationDate() { return creationDate; }
-    public void setCreationDate(LocalDateTime creationDate) { this.creationDate = creationDate; }
-
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof WebCredential)) return false;
+        if (o == null || getClass() != o.getClass()) return false;
         WebCredential that = (WebCredential) o;
         return Objects.equals(id, that.id);
     }
@@ -78,7 +78,7 @@ public class WebCredential {
         return "WebCredential{" +
                 "id=" + id +
                 ", username='" + username + '\'' +
-                ", status='" + status + '\'' +
+                ", status=" + status +
                 '}';
     }
 }

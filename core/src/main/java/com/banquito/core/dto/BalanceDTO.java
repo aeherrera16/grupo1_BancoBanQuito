@@ -1,9 +1,13 @@
 package com.banquito.core.dto;
 
 import com.banquito.core.enums.AccountStatusEnum;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.math.BigDecimal;
 
+@Getter
+@Setter
 public class BalanceDTO {
 
     private String accountNumber;
@@ -24,19 +28,4 @@ public class BalanceDTO {
         this.status = status;
     }
 
-    public String getAccountNumber() {
-        return accountNumber;
-    }
-
-    public BigDecimal getAccountingBalance() {
-        return accountingBalance;
-    }
-
-    public BigDecimal getAvailableBalance() {
-        return availableBalance;
-    }
-
-    public AccountStatusEnum getStatus() {
-        return status;
-    }
 }

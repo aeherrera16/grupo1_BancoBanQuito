@@ -1,6 +1,7 @@
 package com.banquito.core.config;
 
 import com.banquito.core.enums.AccountStatusEnum;
+import com.banquito.core.enums.CommonStatusEnum;
 import com.banquito.core.enums.CustomerStatusEnum;
 import com.banquito.core.enums.CustomerSubtypeStatusEnum;
 import com.banquito.core.enums.CustomerTypeEnum;
@@ -26,6 +27,7 @@ public class DataInitializer implements CommandLineRunner {
     private final TransactionSubtypeRepository transactionSubtypeRepository;
     private final CustomerRepository customerRepository;
     private final AccountRepository accountRepository;
+    private final CoreUserRepository coreUserRepository;
 
     @Override
     public void run(String... args) {
@@ -33,6 +35,7 @@ public class DataInitializer implements CommandLineRunner {
         if (branchRepository.count() == 0) initBranches();
         if (accountSubtypeRepository.count() == 0) initAccountSubtypes();
         if (transactionSubtypeRepository.count() == 0) initTransactionSubtypes();
+        if (coreUserRepository.count() == 0) initCoreUsers();
         if (customerRepository.count() == 0) initCustomers();
         if (accountRepository.count() == 0) initAccounts();
         log.info("Datos de prueba cargados correctamente");
@@ -76,7 +79,7 @@ public class DataInitializer implements CommandLineRunner {
         ahorros.setCode("AHO");
         ahorros.setName("Ahorros");
         ahorros.setDescription("Cuenta de Ahorros");
-        ahorros.setStatus("ACTIVO");
+        ahorros.setStatus(CommonStatusEnum.ACTIVO);
         accountSubtypeRepository.save(ahorros);
 
         AccountSubtype corriente = new AccountSubtype();
@@ -84,7 +87,7 @@ public class DataInitializer implements CommandLineRunner {
         corriente.setCode("CTE");
         corriente.setName("Corriente");
         corriente.setDescription("Cuenta Corriente");
-        corriente.setStatus("ACTIVO");
+        corriente.setStatus(CommonStatusEnum.ACTIVO);
         accountSubtypeRepository.save(corriente);
         log.info("AccountSubtypes creados");
     }
@@ -92,14 +95,28 @@ public class DataInitializer implements CommandLineRunner {
     private void initTransactionSubtypes() {
         TransactionSubtype general = new TransactionSubtype();
         general.setCode("TRN-GEN");
-        general.setDescription("Transaccion General");
+        general.setName("Transaccion General");
+        general.setStatus(CommonStatusEnum.ACTIVO);
         transactionSubtypeRepository.save(general);
 
         TransactionSubtype transfer = new TransactionSubtype();
         transfer.setCode("TRANSFER");
-        transfer.setDescription("Transferencia entre cuentas");
+        transfer.setName("Transferencia entre cuentas");
+        transfer.setStatus(CommonStatusEnum.ACTIVO);
         transactionSubtypeRepository.save(transfer);
         log.info("TransactionSubtypes creados");
+    }
+
+    private void initCoreUsers() {
+        CoreUser admin = new CoreUser();
+        admin.setUsername("admin.core");
+        admin.setPasswordHash("{noop}admin");
+        admin.setFullName("Administrador Core");
+        admin.setRole("ADMIN");
+        admin.setStatus(CommonStatusEnum.ACTIVO);
+        admin.setCreationDate(LocalDateTime.now());
+        coreUserRepository.save(admin);
+        log.info("CoreUsers creados");
     }
 
     private void initCustomers() {
