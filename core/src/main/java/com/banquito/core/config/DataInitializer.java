@@ -10,6 +10,7 @@ import com.banquito.core.repository.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
@@ -28,6 +29,7 @@ public class DataInitializer implements CommandLineRunner {
     private final CustomerRepository customerRepository;
     private final AccountRepository accountRepository;
     private final CoreUserRepository coreUserRepository;
+    private final PasswordEncoder passwordEncoder;
 
     @Override
     public void run(String... args) {
@@ -110,7 +112,7 @@ public class DataInitializer implements CommandLineRunner {
     private void initCoreUsers() {
         CoreUser admin = new CoreUser();
         admin.setUsername("admin.core");
-        admin.setPasswordHash("{noop}admin");
+        admin.setPasswordHash(passwordEncoder.encode("admin"));
         admin.setFullName("Administrador Core");
         admin.setRole("ADMIN");
         admin.setStatus(CommonStatusEnum.ACTIVO);

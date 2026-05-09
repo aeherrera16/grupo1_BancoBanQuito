@@ -4,7 +4,6 @@ import lombok.Getter;
 
 @Getter
 public enum CommonStatusEnum {
-
     ACTIVO("ACTIVO"),
     INACTIVO("INACTIVO"),
     BLOQUEADO("BLOQUEADO");

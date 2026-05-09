@@ -3,19 +3,17 @@ package com.banquito.core.service.impl;
 import com.banquito.core.dto.AccountRequestDTO;
 import com.banquito.core.dto.AccountResponseDTO;
 import com.banquito.core.enums.AccountStatusEnum;
-import com.banquito.core.enums.CommonStatusEnum;
 import com.banquito.core.exception.CuentaNoEncontradaException;
 import com.banquito.core.model.Account;
 import com.banquito.core.model.AccountSubtype;
 import com.banquito.core.model.Branch;
-import com.banquito.core.model.CoreUser;
 import com.banquito.core.model.Customer;
 import com.banquito.core.repository.AccountRepository;
 import com.banquito.core.repository.AccountSubtypeRepository;
 import com.banquito.core.repository.BranchRepository;
-import com.banquito.core.repository.CoreUserRepository;
 import com.banquito.core.repository.CustomerRepository;
 import com.banquito.core.service.IAccountService;
+import com.banquito.core.service.IAuthenticationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -33,12 +31,12 @@ public class AccountService implements IAccountService {
     private final CustomerRepository customerRepository;
     private final BranchRepository branchRepository;
     private final AccountSubtypeRepository accountSubtypeRepository;
-    private final CoreUserRepository coreUserRepository;
+    private final IAuthenticationService authenticationService;
 
     @Transactional(readOnly = true)
     @Override
     public AccountResponseDTO findByAccountNumber(String accountNumber, Integer coreUserId) {
-        validateActiveCoreUser(coreUserId);
+        authenticationService.validateActiveCoreUser(coreUserId);
         Account account = accountRepository.findByAccountNumber(accountNumber)
                 .orElseThrow(() -> new CuentaNoEncontradaException(accountNumber));
         return toResponse(account);
@@ -47,7 +45,7 @@ public class AccountService implements IAccountService {
     @Transactional
     @Override
     public AccountResponseDTO create(AccountRequestDTO request, Integer coreUserId) {
-        validateActiveCoreUser(coreUserId);
+        authenticationService.validateActiveCoreUser(coreUserId);
 
         Customer customer = customerRepository.findById(request.getCustomerId())
                 .orElseThrow(() -> new RuntimeException("Cliente no encontrado: " + request.getCustomerId()));
@@ -91,21 +89,13 @@ public class AccountService implements IAccountService {
     }
 
     private AccountResponseDTO changeStatus(String accountNumber, AccountStatusEnum status, Integer coreUserId) {
-        validateActiveCoreUser(coreUserId);
+        authenticationService.validateActiveCoreUser(coreUserId);
         Account account = accountRepository.findByAccountNumber(accountNumber)
                 .orElseThrow(() -> new CuentaNoEncontradaException(accountNumber));
         account.setStatus(status);
         account.setLastUpdate(LocalDateTime.now());
         log.info("CoreUser {} cambia cuenta {} a {}", coreUserId, accountNumber, status);
         return toResponse(accountRepository.save(account));
-    }
-
-    private void validateActiveCoreUser(Integer coreUserId) {
-        CoreUser coreUser = coreUserRepository.findById(coreUserId)
-                .orElseThrow(() -> new SecurityException("CoreUser no autorizado: " + coreUserId));
-        if (coreUser.getStatus() != CommonStatusEnum.ACTIVO) {
-            throw new SecurityException("CoreUser inactivo o bloqueado: " + coreUserId);
-        }
     }
 
     private AccountResponseDTO toResponse(Account account) {
