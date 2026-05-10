@@ -110,4 +110,68 @@ public class PaymentBatchController {
         }
     }
 
+    /**
+     * Endpoint específico para recibir archivos desde el servicio SFTP-buzón
+     */
+    @PostMapping("/upload-from-sftp-buzon")
+    public ResponseEntity<?> uploadFromSftpBuzon(@RequestParam("file") MultipartFile file) {
+        logger.info("📥 CONEXIÓN RECIBIDA - Archivo desde Buzón SFTP");
+        logger.info("🔗 Buzón SFTP conectado exitosamente al Switch principal");
+        logger.info("📄 Archivo recibido: {}, Tamaño: {} bytes", file.getOriginalFilename(), file.getSize());
+        
+        try {
+            // Para archivos SFTP, no se verifica horario de corte (procesamiento automático)
+            logger.info("🔄 Procesando archivo desde SFTP-buzón...");
+
+            // Parsear archivo CSV
+            CsvParseResult parseResult = CsvBatchParser.parseCsvFile(file.getInputStream(), file.getOriginalFilename(), file.getSize());
+            if (!parseResult.success) {
+                logger.error("❌ ERROR PARSEANDO CSV: {}", parseResult.errorMessage);
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", parseResult.errorMessage));
+            }
+            logger.info("✅ CSV parseado exitosamente - {} detalles", parseResult.details.size());
+
+            // Crear PaymentBatch y detalles
+            PaymentBatch batch = parseResult.batch;
+            batch.setChannel(ChannelEnum.SFTP);
+            batch.setReceivedAt(LocalDateTime.now());
+            batch.setStatus(BatchStatusEnum.RECEIVED);
+            
+            logger.info("Lote SFTP creado - RUC: {}, Hash: {}, Total: {}", 
+                       batch.getRuc(), batch.getFileHash(), batch.getHeaderTotalAmount());
+
+            // RF-02: Validación temprana antes de guardar en base de datos
+            logger.info("🔍 Iniciando validación temprana RF-02...");
+            try {
+                fileValidationService.validateEarlyRejection(batch, parseResult.details);
+                logger.info("✅ Validación temprana exitosa");
+            } catch (IllegalArgumentException e) {
+                logger.error("❌ RECHAZO TEMPRANO RF-02: {}", e.getMessage());
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of(
+                    "error", "RF-02 Validación rechazada: " + e.getMessage(),
+                    "rejectedEarly", true
+                ));
+            }
+
+            // Validar y guardar
+            logger.info("💾 Iniciando validación completa y guardado...");
+            FileValidation validation = fileValidationService.validateBatch(batch, parseResult.details);
+            
+            logger.info("✅ PROCESO SFTP COMPLETADO - Resultado: {}, Status: {}", 
+                       validation.getValidationResult(), batch.getStatus());
+            logger.info("🔗 Conexión con Buzón SFTP finalizada exitosamente");
+            
+            return ResponseEntity.ok(Map.of(
+                    "message", "Archivo SFTP procesado exitosamente",
+                    "validationResult", validation.getValidationResult(),
+                    "isSuccess", EnumUtils.isValidationSuccess(validation.getValidationResult()),
+                    "batchStatus", batch.getStatus().getDisplayName(),
+                    "fileValidation", validation
+            ));
+        } catch (Exception e) {
+            logger.error("❌ ERROR PROCESANDO ARCHIVO SFTP: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("error", e.getMessage()));
+        }
+    }
+
 }

@@ -1,5 +1,6 @@
 package ec.edu.espe.banquito.switchpagos;
 
+import java.util.Arrays;
 import ec.edu.espe.banquito.switchpagos.config.LocalPostgresDatabaseInitializer;
 import ec.edu.espe.banquito.switchpagos.config.ValidationRulesProperties;
 import org.springframework.boot.SpringApplication;

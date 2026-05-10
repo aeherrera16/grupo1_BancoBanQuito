@@ -1,4 +1,4 @@
-package ec.edu.espe.banquito.switchpagos.service;
+package ec.edu.espe.banquito.switchpagos.service.Imp;
 
 import java.io.InputStream;
 import java.time.LocalDateTime;
@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import ec.edu.espe.banquito.switchpagos.enums.BatchStatusEnum;
 import ec.edu.espe.banquito.switchpagos.enums.ChannelEnum;
 import ec.edu.espe.banquito.switchpagos.model.FileValidation;
+import ec.edu.espe.banquito.switchpagos.service.FileValidationService;
 import ec.edu.espe.banquito.switchpagos.util.CsvBatchParser;
 import ec.edu.espe.banquito.switchpagos.util.CsvBatchParser.CsvParseResult;
 
