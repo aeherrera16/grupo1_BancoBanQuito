@@ -59,4 +59,13 @@ public class CoreParameter {
     public int hashCode() {
         return Objects.hashCode(code);
     }
+
+    @Override
+    public String toString() {
+        return "CoreParameter{" +
+                "code='" + code + '\'' +
+                ", name='" + name + '\'' +
+                ", valueString='" + valueString + '\'' +
+                '}';
+    }
 }

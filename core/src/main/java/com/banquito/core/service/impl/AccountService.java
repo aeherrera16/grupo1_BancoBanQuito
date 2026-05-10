@@ -88,6 +88,12 @@ public class AccountService implements IAccountService {
         return changeStatus(accountNumber, AccountStatusEnum.BLOQUEADO, coreUserId);
     }
 
+    @Transactional
+    @Override
+    public AccountResponseDTO suspend(String accountNumber, Integer coreUserId) {
+        return changeStatus(accountNumber, AccountStatusEnum.SUSPENDIDO, coreUserId);
+    }
+
     private AccountResponseDTO changeStatus(String accountNumber, AccountStatusEnum status, Integer coreUserId) {
         authenticationService.validateActiveCoreUser(coreUserId);
         Account account = accountRepository.findByAccountNumber(accountNumber)

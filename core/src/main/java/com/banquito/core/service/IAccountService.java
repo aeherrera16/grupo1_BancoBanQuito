@@ -11,4 +11,6 @@ public interface IAccountService {
     AccountResponseDTO inactivate(String accountNumber, Integer coreUserId);
 
     AccountResponseDTO block(String accountNumber, Integer coreUserId);
+
+    AccountResponseDTO suspend(String accountNumber, Integer coreUserId);
 }

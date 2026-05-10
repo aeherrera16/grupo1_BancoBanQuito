@@ -32,6 +32,9 @@ public class CustomerSubtype {
     @Column(name = "STATUS", nullable = false, length = 15)
     private CustomerSubtypeStatusEnum status;
 
+    @Column(name = "OBSERVATIONS", length = 255)
+    private String observations;
+
     @Column(name = "CREATION_DATE")
     private LocalDateTime creationDate;
 

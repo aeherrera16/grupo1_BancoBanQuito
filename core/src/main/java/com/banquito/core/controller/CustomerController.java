@@ -29,6 +29,13 @@ public class CustomerController {
         return ResponseEntity.ok(customerService.findById(id));
     }
 
+    @GetMapping("/identification/{type}/{number}")
+    public ResponseEntity<CustomerResponseDTO> findByIdentification(
+            @PathVariable String type,
+            @PathVariable String number) {
+        return ResponseEntity.ok(customerService.findByIdentification(type, number));
+    }
+
     @PostMapping
     public ResponseEntity<CustomerResponseDTO> create(@RequestBody CustomerRequestDTO request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(customerService.create(request));

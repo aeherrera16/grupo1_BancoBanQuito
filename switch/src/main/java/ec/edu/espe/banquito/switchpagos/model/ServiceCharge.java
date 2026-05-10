@@ -1,10 +1,21 @@
 package ec.edu.espe.banquito.switchpagos.model;
 
-import jakarta.persistence.*;
-
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Objects;
+
+import ec.edu.espe.banquito.switchpagos.enums.ChargeStatusEnum;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 
 @Entity
 @Table(name = "SERVICE_CHARGE")
@@ -14,6 +25,10 @@ public class ServiceCharge {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", nullable = false)
     private Integer id;
+
+    @Version
+    @Column(name = "version")
+    private Integer version;
 
     // Relación hacia el Lote (Cabecera)
     @ManyToOne
@@ -41,10 +56,10 @@ public class ServiceCharge {
     @Column(name = "total_charge", nullable = false, precision = 18, scale = 2)
     private BigDecimal totalCharge;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "charge_status", nullable = false, length = 30)
-    private String chargeStatus;
+    private ChargeStatusEnum chargeStatus;
 
-    @Temporal(TemporalType.TIMESTAMP)
     @Column(name = "charged_at")
     private LocalDateTime chargedAt;
 
@@ -63,6 +78,14 @@ public class ServiceCharge {
 
     public void setId(Integer id) {
         this.id = id;
+    }
+
+    public Integer getVersion() {
+        return version;
+    }
+
+    public void setVersion(Integer version) {
+        this.version = version;
     }
 
     public PaymentBatch getPaymentBatch() {
@@ -121,11 +144,11 @@ public class ServiceCharge {
         this.totalCharge = totalCharge;
     }
 
-    public String getChargeStatus() {
+    public ChargeStatusEnum getChargeStatus() {
         return chargeStatus;
     }
 
-    public void setChargeStatus(String chargeStatus) {
+    public void setChargeStatus(ChargeStatusEnum chargeStatus) {
         this.chargeStatus = chargeStatus;
     }
 

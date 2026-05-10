@@ -14,6 +14,10 @@ public class ServiceFeeRule {
     @Column(name = "id", nullable = false)
     private Integer id;
 
+    @Version
+    @Column(name = "version")
+    private Integer version;
+
     @Column(name = "min_successful_transactions", nullable = false)
     private Integer minSuccessfulTransactions;
 
@@ -41,6 +45,14 @@ public class ServiceFeeRule {
 
     public void setId(Integer id) {
         this.id = id;
+    }
+
+    public Integer getVersion() {
+        return version;
+    }
+
+    public void setVersion(Integer version) {
+        this.version = version;
     }
 
     public Integer getMinSuccessfulTransactions() {

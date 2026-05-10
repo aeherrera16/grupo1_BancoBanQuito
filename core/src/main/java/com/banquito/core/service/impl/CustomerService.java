@@ -14,6 +14,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Slf4j
@@ -60,10 +61,18 @@ public class CustomerService implements ICustomerService {
         customer.setFirstName(request.getFirstName());
         customer.setLastName(request.getLastName());
         customer.setBirthDate(request.getBirthDate());
+        customer.setLegalName(request.getLegalName());
+        customer.setConstitutionDate(request.getConstitutionDate());
+        if (request.getLegalRepresentativeId() != null) {
+            customer.setLegalRepresentative(customerRepository.findById(request.getLegalRepresentativeId())
+                    .orElseThrow(() -> new ClienteNoEncontradoException(
+                            String.valueOf(request.getLegalRepresentativeId()))));
+        }
         customer.setEmail(request.getEmail());
         customer.setMobilePhone(request.getMobilePhone());
         customer.setAddress(request.getAddress());
         customer.setStatus(CustomerStatusEnum.ACTIVO);
+        customer.setRegistrationDate(LocalDateTime.now());
 
         log.info("Creando cliente con identificación: {}", customer.getIdentification());
         return toResponse(customerRepository.save(customer));

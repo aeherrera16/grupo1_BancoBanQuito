@@ -17,26 +17,13 @@ public class CustomerRequestDTO {
     private String firstName;
     private String lastName;
     private LocalDate birthDate;
+    private String legalName;
+    private LocalDate constitutionDate;
+    private Integer legalRepresentativeId;
     private String email;
     private String mobilePhone;
     private String address;
 
     public CustomerRequestDTO() {
-    }
-
-    public CustomerRequestDTO(Integer customerSubtypeId, CustomerTypeEnum customerType,
-                              String identificationType, String identification, String firstName,
-                              String lastName, LocalDate birthDate, String email,
-                              String mobilePhone, String address) {
-        this.customerSubtypeId = customerSubtypeId;
-        this.customerType = customerType;
-        this.identificationType = identificationType;
-        this.identification = identification;
-        this.firstName = firstName;
-        this.lastName = lastName;
-        this.birthDate = birthDate;
-        this.email = email;
-        this.mobilePhone = mobilePhone;
-        this.address = address;
     }
 }

@@ -1,10 +1,19 @@
 package ec.edu.espe.banquito.switchpagos.model;
 
-import jakarta.persistence.*;
-
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Objects;
+
+import ec.edu.espe.banquito.switchpagos.enums.BatchStatusEnum;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 
 @Entity
 @Table(name = "PAYMENT_BATCH")
@@ -15,10 +24,14 @@ public class PaymentBatch {
     @Column(name = "id", nullable = false)
     private Integer id;
 
+    @Version
+    @Column(name = "version", nullable = false)
+    private Integer version;
+
     @Column(name = "file_name", length = 255)
     private String fileName;
 
-    @Column(name = "file_hash", length = 255)
+    @Column(name = "file_hash", length = 255, unique = true)
     private String fileHash;
 
     @Column(name = "ruc", length = 20)
@@ -27,22 +40,23 @@ public class PaymentBatch {
     @Column(name = "source_account_number", length = 30)
     private String sourceAccountNumber;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "channel", length = 50)
-    private String channel;
+    private ec.edu.espe.banquito.switchpagos.enums.ChannelEnum channel;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "service_type", length = 50)
-    private String serviceType;
+    private ec.edu.espe.banquito.switchpagos.enums.ServiceTypeEnum serviceType;
 
-    @Temporal(TemporalType.TIMESTAMP)
     @Column(name = "generated_at")
     private LocalDateTime generatedAt;
 
-    @Temporal(TemporalType.TIMESTAMP)
     @Column(name = "received_at")
     private LocalDateTime receivedAt;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "status", length = 30)
-    private String status;
+    private BatchStatusEnum status;
 
     @Column(name = "header_total_records")
     private Integer headerTotalRecords;
@@ -74,6 +88,14 @@ public class PaymentBatch {
 
     public void setId(Integer id) {
         this.id = id;
+    }
+
+    public Integer getVersion() {
+        return version;
+    }
+
+    public void setVersion(Integer version) {
+        this.version = version;
     }
 
     public String getFileName() {
@@ -108,19 +130,19 @@ public class PaymentBatch {
         this.sourceAccountNumber = sourceAccountNumber;
     }
 
-    public String getChannel() {
+    public ec.edu.espe.banquito.switchpagos.enums.ChannelEnum getChannel() {
         return channel;
     }
 
-    public void setChannel(String channel) {
+    public void setChannel(ec.edu.espe.banquito.switchpagos.enums.ChannelEnum channel) {
         this.channel = channel;
     }
 
-    public String getServiceType() {
+    public ec.edu.espe.banquito.switchpagos.enums.ServiceTypeEnum getServiceType() {
         return serviceType;
     }
 
-    public void setServiceType(String serviceType) {
+    public void setServiceType(ec.edu.espe.banquito.switchpagos.enums.ServiceTypeEnum serviceType) {
         this.serviceType = serviceType;
     }
 
@@ -140,11 +162,11 @@ public class PaymentBatch {
         this.receivedAt = receivedAt;
     }
 
-    public String getStatus() {
+    public BatchStatusEnum getStatus() {
         return status;
     }
 
-    public void setStatus(String status) {
+    public void setStatus(BatchStatusEnum status) {
         this.status = status;
     }
 

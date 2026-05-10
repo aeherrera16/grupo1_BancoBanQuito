@@ -53,4 +53,11 @@ public class AccountController {
             @RequestHeader(CORE_USER_HEADER) Integer coreUserId) {
         return ResponseEntity.ok(accountService.block(accountNumber, coreUserId));
     }
+
+    @PatchMapping("/{accountNumber}/suspend")
+    public ResponseEntity<AccountResponseDTO> suspend(
+            @PathVariable String accountNumber,
+            @RequestHeader(CORE_USER_HEADER) Integer coreUserId) {
+        return ResponseEntity.ok(accountService.suspend(accountNumber, coreUserId));
+    }
 }
