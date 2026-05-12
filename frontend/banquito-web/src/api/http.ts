@@ -15,8 +15,8 @@ function createHttpClient(baseURL: string, timeout: number): HttpClient {
     try {
       const response = await fetch(`${baseURL}${path}`, {
         method,
-        headers: method === 'POST' ? { 'Content-Type': 'application/json' } : undefined,
-        body: method === 'POST' ? JSON.stringify(payload) : undefined,
+        headers: method === 'POST' && !(payload instanceof FormData) ? { 'Content-Type': 'application/json' } : undefined,
+        body: method === 'POST' ? (payload instanceof FormData ? payload : JSON.stringify(payload)) : undefined,
         signal: controller.signal,
       });
 
