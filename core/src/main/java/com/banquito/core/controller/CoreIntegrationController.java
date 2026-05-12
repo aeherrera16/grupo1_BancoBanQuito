@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/core/integration")
+@RequestMapping("/core/v1/integration")
 @RequiredArgsConstructor
 public class CoreIntegrationController {
 
@@ -24,17 +24,17 @@ public class CoreIntegrationController {
 
     @GetMapping("/balance/{accountNumber}")
     public ResponseEntity<BalanceDTO> getBalance(@PathVariable String accountNumber) {
-        return ResponseEntity.ok(coreSwitchService.consultarSaldo(accountNumber));
+        return ResponseEntity.ok(coreSwitchService.getBalance(accountNumber));
     }
 
     @GetMapping("/account/{accountNumber}/valid")
     public ResponseEntity<Boolean> isAccountValid(@PathVariable String accountNumber) {
-        return ResponseEntity.ok(coreSwitchService.validarCuenta(accountNumber));
+        return ResponseEntity.ok(coreSwitchService.validateAccount(accountNumber));
     }
 
     @PostMapping("/transfer")
     public ResponseEntity<TransferResultDTO> transfer(@RequestBody TransferRequestDTO request) {
-        return ResponseEntity.ok(coreSwitchService.transferir(
+        return ResponseEntity.ok(coreSwitchService.transfer(
                 request.getOriginAccountNumber(),
                 request.getDestinationAccountNumber(),
                 request.getAmount(),
@@ -44,7 +44,7 @@ public class CoreIntegrationController {
 
     @PostMapping("/commission")
     public ResponseEntity<TransferResultDTO> chargeCommission(@RequestBody TransactionRequestDTO request) {
-        return ResponseEntity.ok(coreSwitchService.cobrarComision(
+        return ResponseEntity.ok(coreSwitchService.chargeCommission(
                 request.getAccountNumber(),
                 request.getAmount(),
                 request.getTransactionUuid()

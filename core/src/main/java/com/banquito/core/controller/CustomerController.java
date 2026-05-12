@@ -13,7 +13,7 @@ import java.util.List;
 
 @Slf4j
 @RestController
-@RequestMapping("/core/customers")
+@RequestMapping("/core/v1/customers")
 @RequiredArgsConstructor
 public class CustomerController {
 

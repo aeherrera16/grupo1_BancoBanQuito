@@ -7,18 +7,18 @@ import java.math.BigDecimal;
 
 public interface CoreSwitchService {
 
-    BalanceDTO consultarSaldo(String accountNumber);
+    BalanceDTO getBalance(String accountNumber);
 
-    boolean validarCuenta(String accountNumber);
+    boolean validateAccount(String accountNumber);
 
-    TransferResultDTO transferir(
+    TransferResultDTO transfer(
             String originAccount,
             String destinationAccount,
             BigDecimal amount,
             String uuid
     );
 
-    TransferResultDTO cobrarComision(
+    TransferResultDTO chargeCommission(
             String companyAccountNumber,
             BigDecimal totalAmount,
             String uuid

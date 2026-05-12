@@ -10,32 +10,32 @@ import java.util.Map;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    @ExceptionHandler(CuentaNoEncontradaException.class)
-    public ResponseEntity<Map<String, String>> handleCuentaNoEncontrada(CuentaNoEncontradaException ex) {
+    @ExceptionHandler(AccountNotFoundException.class)
+    public ResponseEntity<Map<String, String>> handleAccountNotFound(AccountNotFoundException ex) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
                 .body(Map.of("error", ex.getMessage()));
     }
 
-    @ExceptionHandler(ClienteNoEncontradoException.class)
-    public ResponseEntity<Map<String, String>> handleClienteNoEncontrado(ClienteNoEncontradoException ex) {
+    @ExceptionHandler(CustomerNotFoundException.class)
+    public ResponseEntity<Map<String, String>> handleCustomerNotFound(CustomerNotFoundException ex) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
                 .body(Map.of("error", ex.getMessage()));
     }
 
-    @ExceptionHandler(SaldoInsuficienteException.class)
-    public ResponseEntity<Map<String, String>> handleSaldoInsuficiente(SaldoInsuficienteException ex) {
+    @ExceptionHandler(InsufficientBalanceException.class)
+    public ResponseEntity<Map<String, String>> handleInsufficientBalance(InsufficientBalanceException ex) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(Map.of("error", ex.getMessage()));
     }
 
-    @ExceptionHandler(CuentaInactivaException.class)
-    public ResponseEntity<Map<String, String>> handleCuentaInactiva(CuentaInactivaException ex) {
+    @ExceptionHandler(InactiveAccountException.class)
+    public ResponseEntity<Map<String, String>> handleInactiveAccount(InactiveAccountException ex) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(Map.of("error", ex.getMessage()));
     }
 
-    @ExceptionHandler(TransaccionDuplicadaException.class)
-    public ResponseEntity<Map<String, String>> handleTransaccionDuplicada(TransaccionDuplicadaException ex) {
+    @ExceptionHandler(DuplicateTransactionException.class)
+    public ResponseEntity<Map<String, String>> handleDuplicateTransaction(DuplicateTransactionException ex) {
         return ResponseEntity.status(HttpStatus.CONFLICT)
                 .body(Map.of("error", ex.getMessage()));
     }

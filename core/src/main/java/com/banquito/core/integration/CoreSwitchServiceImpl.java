@@ -25,7 +25,7 @@ public class CoreSwitchServiceImpl implements CoreSwitchService {
 
     @Override
     @Transactional(readOnly = true)
-    public BalanceDTO consultarSaldo(String accountNumber) {
+    public BalanceDTO getBalance(String accountNumber) {
         Account account = accountRepository.findByAccountNumber(accountNumber)
                 .orElseThrow(() -> new IllegalArgumentException("Cuenta no encontrada: " + accountNumber));
 
@@ -39,21 +39,21 @@ public class CoreSwitchServiceImpl implements CoreSwitchService {
 
     @Override
     @Transactional(readOnly = true)
-    public boolean validarCuenta(String accountNumber) {
+    public boolean validateAccount(String accountNumber) {
         return accountRepository.findByAccountNumber(accountNumber)
                 .map(account -> AccountStatusEnum.ACTIVO == account.getStatus())
                 .orElse(false);
     }
 
     @Override
-    public TransferResultDTO transferir(
+    public TransferResultDTO transfer(
             String originAccount,
             String destinationAccount,
             BigDecimal amount,
             String uuid
     ) {
         try {
-            transactionService.transferir(
+            transactionService.transfer(
                     originAccount,
                     destinationAccount,
                     amount,
@@ -76,13 +76,13 @@ public class CoreSwitchServiceImpl implements CoreSwitchService {
     }
 
     @Override
-    public TransferResultDTO cobrarComision(
+    public TransferResultDTO chargeCommission(
             String companyAccountNumber,
             BigDecimal totalAmount,
             String uuid
     ) {
         try {
-            transactionService.debitar(
+            transactionService.debit(
                     companyAccountNumber,
                     totalAmount,
                     uuid,

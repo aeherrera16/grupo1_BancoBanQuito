@@ -13,7 +13,7 @@ import java.util.List;
 
 @Slf4j
 @RestController
-@RequestMapping("/core/branches")
+@RequestMapping("/core/v1/branches")
 @RequiredArgsConstructor
 public class BranchController {
 

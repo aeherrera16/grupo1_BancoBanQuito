@@ -3,7 +3,7 @@ package com.banquito.core.service.impl;
 import com.banquito.core.dto.AccountRequestDTO;
 import com.banquito.core.dto.AccountResponseDTO;
 import com.banquito.core.enums.AccountStatusEnum;
-import com.banquito.core.exception.CuentaNoEncontradaException;
+import com.banquito.core.exception.AccountNotFoundException;
 import com.banquito.core.model.Account;
 import com.banquito.core.model.AccountSubtype;
 import com.banquito.core.model.Branch;
@@ -38,7 +38,7 @@ public class AccountService implements IAccountService {
     public AccountResponseDTO findByAccountNumber(String accountNumber, Integer coreUserId) {
         authenticationService.validateActiveCoreUser(coreUserId);
         Account account = accountRepository.findByAccountNumber(accountNumber)
-                .orElseThrow(() -> new CuentaNoEncontradaException(accountNumber));
+                .orElseThrow(() -> new AccountNotFoundException(accountNumber));
         return toResponse(account);
     }
 
@@ -97,7 +97,7 @@ public class AccountService implements IAccountService {
     private AccountResponseDTO changeStatus(String accountNumber, AccountStatusEnum status, Integer coreUserId) {
         authenticationService.validateActiveCoreUser(coreUserId);
         Account account = accountRepository.findByAccountNumber(accountNumber)
-                .orElseThrow(() -> new CuentaNoEncontradaException(accountNumber));
+                .orElseThrow(() -> new AccountNotFoundException(accountNumber));
         account.setStatus(status);
         account.setLastUpdate(LocalDateTime.now());
         log.info("CoreUser {} cambia cuenta {} a {}", coreUserId, accountNumber, status);

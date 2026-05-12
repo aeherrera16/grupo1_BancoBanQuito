@@ -5,10 +5,10 @@ import com.banquito.core.enums.AccountStatusEnum;
 import com.banquito.core.enums.CommonStatusEnum;
 import com.banquito.core.enums.MovementTypeEnum;
 import com.banquito.core.enums.TransactionStatusEnum;
-import com.banquito.core.exception.CuentaInactivaException;
-import com.banquito.core.exception.CuentaNoEncontradaException;
-import com.banquito.core.exception.SaldoInsuficienteException;
-import com.banquito.core.exception.TransaccionDuplicadaException;
+import com.banquito.core.exception.InactiveAccountException;
+import com.banquito.core.exception.AccountNotFoundException;
+import com.banquito.core.exception.InsufficientBalanceException;
+import com.banquito.core.exception.DuplicateTransactionException;
 import com.banquito.core.model.Account;
 import com.banquito.core.model.AccountTransaction;
 import com.banquito.core.model.TransactionSubtype;
@@ -37,14 +37,14 @@ public class TransactionService implements ITransactionService {
 
     @Override
     @Transactional
-    public TransactionResponseDTO debitar(String accountNumber, BigDecimal amount, String uuid,
+    public TransactionResponseDTO debit(String accountNumber, BigDecimal amount, String uuid,
                                           String subtypeCode, String description) {
         validateIdempotency(uuid);
         validatePositiveAmount(amount);
 
         Account account = getActiveAccountWithLock(accountNumber);
         if (account.getAvailableBalance().compareTo(amount) < 0) {
-            throw new SaldoInsuficienteException(accountNumber);
+            throw new InsufficientBalanceException(accountNumber);
         }
 
         subtract(account, amount);
@@ -56,7 +56,7 @@ public class TransactionService implements ITransactionService {
 
     @Override
     @Transactional
-    public TransactionResponseDTO acreditar(String accountNumber, BigDecimal amount, String uuid,
+    public TransactionResponseDTO credit(String accountNumber, BigDecimal amount, String uuid,
                                             String subtypeCode, String description) {
         validateIdempotency(uuid);
         validatePositiveAmount(amount);
@@ -71,7 +71,7 @@ public class TransactionService implements ITransactionService {
 
     @Override
     @Transactional
-    public TransactionResponseDTO transferir(String originAccountNumber, String destinationAccountNumber,
+    public TransactionResponseDTO transfer(String originAccountNumber, String destinationAccountNumber,
                                              BigDecimal amount, String uuid, String subtypeCode, String description) {
         validateIdempotency(uuid);
         validatePositiveAmount(amount);
@@ -87,7 +87,7 @@ public class TransactionService implements ITransactionService {
         validateActive(origin, originAccountNumber);
         validateActive(destination, destinationAccountNumber);
         if (origin.getAvailableBalance().compareTo(amount) < 0) {
-            throw new SaldoInsuficienteException(originAccountNumber);
+            throw new InsufficientBalanceException(originAccountNumber);
         }
 
         subtract(origin, amount);
@@ -108,7 +108,7 @@ public class TransactionService implements ITransactionService {
             throw new IllegalArgumentException("TRANSACTION_UUID es obligatorio");
         }
         if (transactionRepository.existsByTransactionUuid(uuid)) {
-            throw new TransaccionDuplicadaException(uuid);
+            throw new DuplicateTransactionException(uuid);
         }
     }
 
@@ -120,14 +120,14 @@ public class TransactionService implements ITransactionService {
 
     private Account getActiveAccountWithLock(String accountNumber) {
         Account account = accountRepository.findWithLockByAccountNumber(accountNumber)
-                .orElseThrow(() -> new CuentaNoEncontradaException(accountNumber));
+                .orElseThrow(() -> new AccountNotFoundException(accountNumber));
         validateActive(account, accountNumber);
         return account;
     }
 
     private void validateActive(Account account, String accountNumber) {
         if (account.getStatus() != AccountStatusEnum.ACTIVO) {
-            throw new CuentaInactivaException(accountNumber);
+            throw new InactiveAccountException(accountNumber);
         }
     }
 
@@ -136,7 +136,7 @@ public class TransactionService implements ITransactionService {
                 ? originAccountNumber
                 : destinationAccountNumber;
         return accountRepository.findWithLockByAccountNumber(first)
-                .orElseThrow(() -> new CuentaNoEncontradaException(first));
+                .orElseThrow(() -> new AccountNotFoundException(first));
     }
 
     private Account lockSecond(String originAccountNumber, String destinationAccountNumber) {
@@ -144,7 +144,7 @@ public class TransactionService implements ITransactionService {
                 ? destinationAccountNumber
                 : originAccountNumber;
         return accountRepository.findWithLockByAccountNumber(second)
-                .orElseThrow(() -> new CuentaNoEncontradaException(second));
+                .orElseThrow(() -> new AccountNotFoundException(second));
     }
 
     private void subtract(Account account, BigDecimal amount) {

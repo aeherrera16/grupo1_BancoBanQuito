@@ -5,10 +5,10 @@ import java.math.BigDecimal;
 
 public interface ITransactionService {
 
-    TransactionResponseDTO debitar(String accountNumber, BigDecimal amount, String uuid, String subtypeCode, String description);
+    TransactionResponseDTO debit(String accountNumber, BigDecimal amount, String uuid, String subtypeCode, String description);
 
-    TransactionResponseDTO acreditar(String accountNumber, BigDecimal amount, String uuid, String subtypeCode, String description);
+    TransactionResponseDTO credit(String accountNumber, BigDecimal amount, String uuid, String subtypeCode, String description);
 
-    TransactionResponseDTO transferir(String originAccount, String destinationAccount, BigDecimal amount,
+    TransactionResponseDTO transfer(String originAccount, String destinationAccount, BigDecimal amount,
                                       String uuid, String subtypeCode, String description);
 }

@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @Slf4j
 @RestController
-@RequestMapping("/core/accounts")
+@RequestMapping("/core/v1/accounts")
 @RequiredArgsConstructor
 public class AccountController {
 

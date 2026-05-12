@@ -3,7 +3,7 @@ package com.banquito.core.service.impl;
 import com.banquito.core.dto.CustomerRequestDTO;
 import com.banquito.core.dto.CustomerResponseDTO;
 import com.banquito.core.enums.CustomerStatusEnum;
-import com.banquito.core.exception.ClienteNoEncontradoException;
+import com.banquito.core.exception.CustomerNotFoundException;
 import com.banquito.core.model.Customer;
 import com.banquito.core.model.CustomerSubtype;
 import com.banquito.core.repository.CustomerRepository;
@@ -35,7 +35,7 @@ public class CustomerService implements ICustomerService {
     @Override
     public CustomerResponseDTO findById(Integer id) {
         Customer customer = customerRepository.findById(id)
-                .orElseThrow(() -> new ClienteNoEncontradoException(String.valueOf(id)));
+                .orElseThrow(() -> new CustomerNotFoundException(String.valueOf(id)));
         return toResponse(customer);
     }
 
@@ -43,7 +43,7 @@ public class CustomerService implements ICustomerService {
     @Override
     public CustomerResponseDTO findByIdentification(String identificationType, String identification) {
         Customer customer = customerRepository.findByIdentificationTypeAndIdentification(identificationType, identification)
-                .orElseThrow(() -> new ClienteNoEncontradoException(identification));
+                .orElseThrow(() -> new CustomerNotFoundException(identification));
         return toResponse(customer);
     }
 
@@ -65,7 +65,7 @@ public class CustomerService implements ICustomerService {
         customer.setConstitutionDate(request.getConstitutionDate());
         if (request.getLegalRepresentativeId() != null) {
             customer.setLegalRepresentative(customerRepository.findById(request.getLegalRepresentativeId())
-                    .orElseThrow(() -> new ClienteNoEncontradoException(
+                    .orElseThrow(() -> new CustomerNotFoundException(
                             String.valueOf(request.getLegalRepresentativeId()))));
         }
         customer.setEmail(request.getEmail());
