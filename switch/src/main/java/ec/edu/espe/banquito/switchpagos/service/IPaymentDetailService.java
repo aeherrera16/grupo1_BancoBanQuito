@@ -1,4 +1,5 @@
 package ec.edu.espe.banquito.switchpagos.service;
 
-public interface IPaymentDerailService {
+public interface IPaymentDetailService {
+    void processBatch(Integer paymentBatchId);
 }

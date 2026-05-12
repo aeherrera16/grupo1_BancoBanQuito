@@ -1,6 +1,6 @@
 package ec.edu.espe.banquito.switchpagos.controller;
 
-import ec.edu.espe.banquito.switchpagos.service.PaymentDetailService;
+import ec.edu.espe.banquito.switchpagos.service.IPaymentDetailService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -9,9 +9,9 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/payment-processor")
-public class PaymentDetaillController {
-    private final PaymentDetailService paymentProcessorService;
-    public PaymentDetaillController(PaymentDetailService paymentDetailService) {
+public class PaymentDetailController {
+    private final IPaymentDetailService paymentProcessorService;
+    public PaymentDetailController(IPaymentDetailService paymentDetailService) {
         this.paymentProcessorService = paymentDetailService;
     }
     @PostMapping("/process/{batchId}")

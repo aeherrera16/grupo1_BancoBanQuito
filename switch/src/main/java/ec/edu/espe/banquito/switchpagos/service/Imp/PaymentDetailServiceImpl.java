@@ -1,7 +1,9 @@
 package ec.edu.espe.banquito.switchpagos.service.Imp;
 
+import ec.edu.espe.banquito.switchpagos.enums.PaymentDetailStatusEnum;
 import ec.edu.espe.banquito.switchpagos.model.PaymentDetail;
 import ec.edu.espe.banquito.switchpagos.repository.PaymentDetailRepository;
+import ec.edu.espe.banquito.switchpagos.service.IPaymentDetailService;
 import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 
@@ -10,11 +12,12 @@ import java.util.List;
 import java.util.UUID;
 
 @Service
-public class PaymentDetailService {
+public class PaymentDetailServiceImpl implements IPaymentDetailService {
     private final PaymentDetailRepository paymentDetailRepository;
-    public PaymentDetailService(PaymentDetailRepository paymentDetailRepository) {
+    public PaymentDetailServiceImpl(PaymentDetailRepository paymentDetailRepository) {
         this.paymentDetailRepository = paymentDetailRepository;
     }
+    @Override
     @Transactional
     public void processBatch(Integer paymentBatchId) {
         System.out.println(
@@ -23,7 +26,7 @@ public class PaymentDetailService {
         );
         List<PaymentDetail> details =
                 paymentDetailRepository
-                        .findByPaymentBatch_IdOrderByLineNumberAsc(paymentBatchId);
+                        .findByPaymentBatchIdOrderByLineNumberAsc(paymentBatchId);
 
         for (PaymentDetail detail : details) {
 
@@ -42,7 +45,7 @@ public class PaymentDetailService {
                 // SUCCESS
                 // =========================
 
-                detail.setStatus("SUCCESS");
+                detail.setStatus(PaymentDetailStatusEnum.SUCCESS);
                 detail.setRejectionReason(null);
                 detail.setExecutedAt(LocalDateTime.now());
 
@@ -52,7 +55,7 @@ public class PaymentDetailService {
                 // ERROR POR LÍNEA
                 // =========================
 
-                detail.setStatus("REJECTED");
+                detail.setStatus(PaymentDetailStatusEnum.REJECTED);
                 detail.setRejectionReason(e.getMessage());
 
             }
