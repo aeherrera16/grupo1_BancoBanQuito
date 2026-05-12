@@ -1,50 +1,52 @@
 package com.banquito.core.model;
 
 import jakarta.persistence.Column;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
+import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Objects;
 
+@Getter
+@Setter
+@Entity
+@Table(name = "HOLIDAY")
 public class Holiday {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer id;
 
-    @Column(name = "holiday_date", nullable = false, unique = true)
+    @Id
+    @Column(name = "HOLIDAY_DATE", nullable = false)
     private LocalDate holidayDate;
 
-    @Column(name = "description", nullable = false)
-    private String description;
+    @Column(name = "NAME", nullable = false, length = 100)
+    private String name;
 
-    public Holiday() {}
+    @Column(name = "IS_WEEKEND", nullable = false)
+    private Boolean isWeekend;
 
-    public Holiday(Integer id) {
-        this.id = id;
+    @Column(name = "CREATION_DATE")
+    private LocalDateTime creationDate;
+
+    public Holiday() {
     }
 
-    // GETTERS & SETTERS
-    public Integer getId() { return id; }
-    public void setId(Integer id) { this.id = id; }
-
-    public LocalDate getHolidayDate() { return holidayDate; }
-    public void setHolidayDate(LocalDate holidayDate) { this.holidayDate = holidayDate; }
-
-    public String getDescription() { return description; }
-    public void setDescription(String description) { this.description = description; }
+    public Holiday(LocalDate holidayDate) {
+        this.holidayDate = holidayDate;
+    }
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof Holiday)) return false;
-        Holiday that = (Holiday) o;
-        return Objects.equals(id, that.id);
+        if (o == null || getClass() != o.getClass()) return false;
+        Holiday holiday = (Holiday) o;
+        return Objects.equals(holidayDate, holiday.holidayDate);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(id);
+        return Objects.hashCode(holidayDate);
     }
 }
