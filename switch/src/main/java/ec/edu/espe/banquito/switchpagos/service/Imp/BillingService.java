@@ -1,4 +1,4 @@
-package ec.edu.espe.banquito.switchpagos.service;
+package ec.edu.espe.banquito.switchpagos.service.Imp;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
