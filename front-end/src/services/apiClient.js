@@ -40,9 +40,14 @@ export async function authCoreUser(username, password) {
   });
 }
 
-export async function fetchBalance(accountNumber) {
-  return coreRequest(`/core/v1/integration/balance/${accountNumber}`);
-}
+export const fetchBalance = async (accountNumber) => {
+  // Se usa el endpoint de accounts con un coreUserId simulado porque el integration controller no tiene CORS habilitado
+  return await coreRequest(`/core/v1/accounts/${accountNumber}`, { coreUserId: 1 });
+};
+
+export const fetchAccountHistory = async (accountNumber) => {
+  return await coreRequest(`/core/v1/accounts/${accountNumber}/transactions`);
+};
 
 export async function uploadPaymentBatch(file, channel = 'PORTAL') {
   const body = new FormData();

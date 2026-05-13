@@ -270,6 +270,28 @@ public class AccountService implements IAccountService {
         );
     }
 
+    @Transactional(readOnly = true)
+    @Override
+    public List<TransactionResponseDTO> getTransactions(String accountNumber, Integer limit) {
+        Account account = accountRepository.findByAccountNumber(accountNumber)
+                .orElseThrow(() -> new AccountNotFoundException(accountNumber));
+        
+        return transactionRepository.findTop10ByAccount_IdOrderByTransactionDateDesc(account.getId())
+                .stream()
+                .map(t -> new TransactionResponseDTO(
+                        t.getId(),
+                        accountNumber,
+                        t.getMovementType(),
+                        t.getAmount(),
+                        t.getResultingBalance(),
+                        t.getTransactionDate(),
+                        t.getTransactionUuid(),
+                        t.getStatus(),
+                        t.getTransactionSubtype() != null ? t.getTransactionSubtype().getName() : t.getDescription()
+                ))
+                .collect(Collectors.toList());
+    }
+
     private void validateAccountRequest(AccountRequestDTO request) {
         if (request == null) {
             throw new IllegalArgumentException("La solicitud de cuenta es obligatoria");

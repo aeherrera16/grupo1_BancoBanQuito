@@ -61,7 +61,7 @@ export const menuByPortal = {
   ],
   personaNatural: [
     { path: '/persona-natural', label: 'Saldo y cuentas' },
-    { path: '/persona-natural/transferencias', label: 'Transferencias' },
+    { path: '/persona-natural/transferencias', label: 'Transacciones' },
   ],
   cajero: [
     { path: '/cajero', label: 'Ventanilla' },

@@ -24,6 +24,8 @@ public interface IAccountService {
 
     BalanceDTO getBalance(String accountNumber);
 
+    List<TransactionResponseDTO> getTransactions(String accountNumber, Integer limit);
+
     TransactionResponseDTO debit(String accountNumber, BigDecimal amount);
 
     TransactionResponseDTO credit(String accountNumber, BigDecimal amount);

@@ -48,6 +48,11 @@ public class AccountController {
         return ResponseEntity.ok(accountService.findByAccountNumber(accountNumber, coreUserId));
     }
 
+    @GetMapping("/{accountNumber}/transactions")
+    public ResponseEntity<List<TransactionResponseDTO>> getTransactions(@PathVariable String accountNumber) {
+        return ResponseEntity.ok(accountService.getTransactions(accountNumber, 10));
+    }
+
     @PostMapping
     public ResponseEntity<AccountResponseDTO> create(
             @RequestBody AccountRequestDTO request,

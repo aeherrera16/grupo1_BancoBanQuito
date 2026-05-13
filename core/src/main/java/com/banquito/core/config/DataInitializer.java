@@ -5,6 +5,8 @@ import com.banquito.core.enums.CommonStatusEnum;
 import com.banquito.core.enums.CustomerStatusEnum;
 import com.banquito.core.enums.CustomerSubtypeStatusEnum;
 import com.banquito.core.enums.CustomerTypeEnum;
+import com.banquito.core.enums.MovementTypeEnum;
+import com.banquito.core.enums.TransactionStatusEnum;
 import com.banquito.core.model.*;
 import com.banquito.core.repository.*;
 import lombok.RequiredArgsConstructor;
@@ -32,6 +34,7 @@ public class DataInitializer implements CommandLineRunner {
     private final CoreUserRepository coreUserRepository;
     private final PasswordEncoder passwordEncoder;
     private final WebCredentialRepository webCredentialRepository;
+    private final AccountTransactionRepository accountTransactionRepository;
 
     public void run(String... args) {
         initCustomerSubtypes();
@@ -42,7 +45,9 @@ public class DataInitializer implements CommandLineRunner {
         if (coreUserRepository.count() == 0) initCoreUsers();
         initCustomers();
         initAccounts();
+        initInitialTransactions();
         initCredentials();
+        initMassUsers();
         log.info("Datos de prueba cargados correctamente");
     }
 
@@ -153,15 +158,40 @@ public class DataInitializer implements CommandLineRunner {
     }
 
     private void initCoreUsers() {
-        CoreUser admin = new CoreUser();
-        admin.setUsername("admin.core");
-        admin.setPasswordHash(passwordEncoder.encode("admin"));
-        admin.setFullName("Administrador Core");
-        admin.setRole("ADMIN");
-        admin.setStatus(CommonStatusEnum.ACTIVO);
-        admin.setCreationDate(LocalDateTime.now());
-        CoreUser saved = coreUserRepository.save(admin);
-        log.info("CoreUsers creados con ID: {}", saved.getId());
+        if (coreUserRepository.findByUsername("admin.core").isEmpty()) {
+            CoreUser admin = new CoreUser();
+            admin.setUsername("admin.core");
+            admin.setPasswordHash(passwordEncoder.encode("admin"));
+            admin.setFullName("Administrador Core");
+            admin.setRole("ADMIN");
+            admin.setStatus(CommonStatusEnum.ACTIVO);
+            admin.setCreationDate(LocalDateTime.now());
+            coreUserRepository.save(admin);
+        }
+
+        if (coreUserRepository.findByUsername("operador").isEmpty()) {
+            CoreUser op = new CoreUser();
+            op.setUsername("operador");
+            op.setPasswordHash(passwordEncoder.encode("1234"));
+            op.setFullName("Operador Principal");
+            op.setRole("OPERADOR");
+            op.setStatus(CommonStatusEnum.ACTIVO);
+            op.setCreationDate(LocalDateTime.now());
+            coreUserRepository.save(op);
+        }
+
+        if (coreUserRepository.findByUsername("cajero").isEmpty()) {
+            CoreUser ca = new CoreUser();
+            ca.setUsername("cajero");
+            ca.setPasswordHash(passwordEncoder.encode("1234"));
+            ca.setFullName("Asesor Ventanilla");
+            ca.setRole("CAJERO");
+            ca.setStatus(CommonStatusEnum.ACTIVO);
+            ca.setCreationDate(LocalDateTime.now());
+            coreUserRepository.save(ca);
+        }
+        
+        log.info("CoreUsers inicializados en la base de datos");
     }
 
     private void initCustomers() {
@@ -306,5 +336,89 @@ public class DataInitializer implements CommandLineRunner {
             webCredentialRepository.save(credEmp);
         }
         log.info("Credenciales web creadas para 'user123' (Natural) y 'empresa123' (Juridica)");
+    }
+
+    private void initInitialTransactions() {
+        TransactionSubtype general = transactionSubtypeRepository.findByCode("TRN-GEN")
+                .orElseThrow(() -> new IllegalStateException("TRN-GEN no existe"));
+
+        accountRepository.findAll().forEach(account -> {
+            if (accountTransactionRepository.findTop10ByAccount_IdOrderByTransactionDateDesc(account.getId()).isEmpty()) {
+                AccountTransaction tx = new AccountTransaction();
+                tx.setAccount(account);
+                tx.setTransactionSubtype(general);
+                tx.setTransactionUuid(java.util.UUID.randomUUID().toString());
+                tx.setMovementType(MovementTypeEnum.CREDITO);
+                tx.setAmount(account.getAccountingBalance());
+                tx.setResultingBalance(account.getAccountingBalance());
+                tx.setTransactionDate(LocalDateTime.now());
+                tx.setStatus(TransactionStatusEnum.COMPLETADA);
+                tx.setDescription("Depósito Inicial (Apertura)");
+                accountTransactionRepository.save(tx);
+            }
+        });
+        log.info("Transacciones iniciales (Apertura) creadas para las cuentas base");
+    }
+
+    private void initMassUsers() {
+        CustomerSubtype personal = customerSubtypeRepository.findAll().stream()
+                .filter(s -> "PERSONAL".equals(s.getName()))
+                .findFirst()
+                .orElseThrow(() -> new IllegalStateException("Subtype PERSONAL no encontrado"));
+
+        Branch sucursal = branchRepository.findAll().get(0);
+        AccountSubtype ahorros = accountSubtypeRepository.findAll().get(0);
+        TransactionSubtype general = transactionSubtypeRepository.findByCode("TRN-GEN").get();
+
+        long currentMassUsers = customerRepository.findAll().stream()
+                .filter(c -> c.getIdentification().startsWith("10000"))
+                .count();
+
+        if (currentMassUsers < 100) {
+            for (int i = 1; i <= 100; i++) {
+                String cedula = String.format("10000%05d", i);
+                if (customerRepository.findByIdentificationTypeAndIdentification("CEDULA", cedula).isEmpty()) {
+                    Customer c = new Customer();
+                    c.setCustomerSubtype(personal);
+                    c.setCustomerType(CustomerTypeEnum.NATURAL);
+                    c.setIdentificationType("CEDULA");
+                    c.setIdentification(cedula);
+                    c.setFirstName("Usuario");
+                    c.setLastName("Masivo " + i);
+                    c.setBirthDate(LocalDate.of(1990, 1, 1));
+                    c.setEmail("usuario" + i + "@demo.com");
+                    c.setMobilePhone("0990000000");
+                    c.setAddress("Ecuador");
+                    c.setStatus(CustomerStatusEnum.ACTIVO);
+                    Customer savedC = customerRepository.save(c);
+
+                    String accountNum = String.format("100-000%05d", i);
+                    Account a = new Account();
+                    a.setAccountNumber(accountNum);
+                    a.setCustomer(savedC);
+                    a.setBranch(sucursal);
+                    a.setAccountSubtype(ahorros);
+                    a.setStatus(AccountStatusEnum.ACTIVO);
+                    a.setAccountingBalance(new BigDecimal("1000.00"));
+                    a.setAvailableBalance(new BigDecimal("1000.00"));
+                    a.setIsFavorite(false);
+                    a.setOpeningDate(LocalDateTime.now());
+                    Account savedA = accountRepository.save(a);
+
+                    AccountTransaction tx = new AccountTransaction();
+                    tx.setAccount(savedA);
+                    tx.setTransactionSubtype(general);
+                    tx.setTransactionUuid(java.util.UUID.randomUUID().toString());
+                    tx.setMovementType(MovementTypeEnum.CREDITO);
+                    tx.setAmount(new BigDecimal("1000.00"));
+                    tx.setResultingBalance(new BigDecimal("1000.00"));
+                    tx.setTransactionDate(LocalDateTime.now());
+                    tx.setStatus(TransactionStatusEnum.COMPLETADA);
+                    tx.setDescription("Apertura cuenta masiva");
+                    accountTransactionRepository.save(tx);
+                }
+            }
+            log.info("100 Usuarios y cuentas masivas creadas con éxito, cada uno con 1 transacción inicial.");
+        }
     }
 }
