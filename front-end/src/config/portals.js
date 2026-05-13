@@ -1,37 +1,37 @@
 export const portals = {
-  asesor: {
-    label: 'Asesor de sucursal',
-    description: 'Alta y consulta operativa de clientes, cuentas y credenciales web.',
-    startPath: '/asesor',
+  operador: {
+    label: 'Operador',
+    description: 'Gestión de clientes, cuentas y credenciales, sin movimientos de caja.',
+    startPath: '/operador',
     accent: 'bg-banker-blue',
     permissions: [
-      'Consultar cliente por identificación',
+      'Consultar clientes por identificación',
       'Crear persona natural o jurídica',
-      'Abrir cuenta con usuario Core',
-      'Crear credencial web para clientes',
-      'Consultar catálogo de sucursales',
+      'Abrir cuentas con usuario Core',
+      'Crear credenciales web',
+      'Administrar estados de cuenta',
     ],
   },
-  bancaPersonas: {
-    label: 'Banca de personas',
-    description: 'Administración limitada de cuentas de personas naturales y seguimiento del Switch.',
-    startPath: '/banca-personas',
+  empresa: {
+    label: 'Banca empresas',
+    description: 'Pagos masivos, buzón SFTP y reportes del Switch.',
+    startPath: '/empresa/pagos-masivos',
     accent: 'bg-banker-navy',
     permissions: [
-      'Consultar clientes y cuentas',
-      'Bloquear, suspender o inactivar cuentas',
-      'Revisar lotes de pagos masivos',
-      'Supervisar buzón SFTP de empresas',
+      'Carga manual de lotes CSV',
+      'Procesamiento y validación de lotes',
+      'Consulta de estados y comisiones',
+      'Gestión de buzón SFTP',
     ],
   },
   personaNatural: {
     label: 'Persona natural',
-    description: 'Portal del cliente para revisar sus cuentas y enviar transferencias.',
+    description: 'Consulta de saldo y transferencias propias.',
     startPath: '/persona-natural',
     accent: 'bg-banker-gold',
     permissions: [
-      'Ingreso por credencial web de cliente',
-      'Consulta de cuenta propia',
+      'Ingreso por credencial web',
+      'Consulta de saldo disponible',
       'Transferencias desde cuenta propia',
     ],
   },
@@ -50,17 +50,17 @@ export const portals = {
 };
 
 export const menuByPortal = {
-  asesor: [
-    { path: '/asesor', label: 'Clientes y cuentas' },
-    { path: '/asesor/credenciales', label: 'Credenciales web' },
+  operador: [
+    { path: '/operador', label: 'Clientes y cuentas' },
+    { path: '/operador/credenciales', label: 'Credenciales web' },
+    { path: '/operador/cuentas', label: 'Estados de cuenta' },
   ],
-  bancaPersonas: [
-    { path: '/banca-personas', label: 'Cuentas' },
-    { path: '/banca-personas/pagos-masivos', label: 'Pagos masivos' },
-    { path: '/banca-personas/sftp', label: 'Buzón SFTP' },
+  empresa: [
+    { path: '/empresa/pagos-masivos', label: 'Pagos masivos' },
+    { path: '/empresa/sftp', label: 'Buzón SFTP' },
   ],
   personaNatural: [
-    { path: '/persona-natural', label: 'Mis cuentas' },
+    { path: '/persona-natural', label: 'Saldo y cuentas' },
     { path: '/persona-natural/transferencias', label: 'Transferencias' },
   ],
   cajero: [

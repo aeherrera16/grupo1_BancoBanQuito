@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Field, inputClass, PageShell, Panel, primaryButtonClass, ResultBox } from '../components/PageShell';
 import { useAuth } from '../hooks/useAuth';
-import { coreRequest } from '../services/apiClient';
+import { coreRequest, fetchBalance } from '../services/apiClient';
 
 export function CustomerAccountsPage({ cashierMode = false }) {
   const { user, portal } = useAuth();
@@ -16,9 +16,13 @@ export function CustomerAccountsPage({ cashierMode = false }) {
     setError('');
     setResult(null);
     try {
-      setResult(await coreRequest(`/core/v1/accounts/${accountNumber}`, {
-        coreUserId: needsCoreUser ? user.coreUserId : undefined,
-      }));
+      if (needsCoreUser) {
+        setResult(await coreRequest(`/core/v1/accounts/${accountNumber}`, {
+          coreUserId: user.coreUserId,
+        }));
+      } else {
+        setResult(await fetchBalance(accountNumber));
+      }
     } catch (err) {
       setError(err.message);
     } finally {
@@ -28,10 +32,10 @@ export function CustomerAccountsPage({ cashierMode = false }) {
 
   return (
     <PageShell
-      title={cashierMode ? 'Consulta de cuenta' : 'Mis cuentas'}
-      description={cashierMode ? 'Consulta mínima para atención en ventanilla.' : 'Portal de persona natural con alcance limitado a consulta y transferencias.'}
+      title={cashierMode ? 'Consulta de cuenta' : 'Saldo y cuentas'}
+      description={cashierMode ? 'Consulta mínima para atención en ventanilla.' : 'Persona natural consulta saldo disponible en tiempo real y usa transferencias propias.'}
     >
-      <Panel title="Consultar cuenta">
+      <Panel title={needsCoreUser ? 'Consultar cuenta' : 'Consulta de saldo disponible'}>
         <div className="grid gap-4 md:grid-cols-[1fr_auto]">
           <Field label="Número de cuenta">
             <input className={inputClass} value={accountNumber} onChange={(event) => setAccountNumber(event.target.value)} />

@@ -70,7 +70,7 @@ export function CustomerOnboardingPage() {
   return (
     <PageShell
       title="Clientes y cuentas"
-      description="El asesor opera altas y consultas, sin acceso a transacciones de caja ni administración del Switch."
+      description="El operador gestiona altas y consultas, sin acceso a transacciones de caja ni módulos del Switch."
     >
       <div className="grid gap-6 xl:grid-cols-2">
         <Panel title="Consultar cliente">

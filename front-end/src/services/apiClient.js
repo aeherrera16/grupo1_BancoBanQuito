@@ -26,6 +26,24 @@ export async function coreRequest(path, options = {}) {
   return parseResponse(await fetch(`${coreBaseUrl}${path}`, { ...options, headers }));
 }
 
+export async function authCustomer(username, password) {
+  return coreRequest('/core/v1/auth/customers/login', {
+    method: 'POST',
+    body: JSON.stringify({ username, password }),
+  });
+}
+
+export async function authCoreUser(username, password) {
+  return coreRequest('/core/v1/auth/core-users/login', {
+    method: 'POST',
+    body: JSON.stringify({ username, password }),
+  });
+}
+
+export async function fetchBalance(accountNumber) {
+  return coreRequest(`/core/v1/integration/balance/${accountNumber}`);
+}
+
 export async function uploadPaymentBatch(file, channel = 'PORTAL') {
   const body = new FormData();
   body.append('file', file);

@@ -28,7 +28,7 @@ export function AccountOperationsPage() {
   return (
     <PageShell
       title="Cuentas de personas"
-      description="Banca de Personas puede consultar y administrar estado de cuentas; no registra movimientos de caja."
+      description="El operador administra estados de cuenta; no registra movimientos de caja."
     >
       <Panel title="Consulta y estado de cuenta">
         <div className="grid gap-4 md:grid-cols-[1fr_auto]">

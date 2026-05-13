@@ -9,6 +9,7 @@ import { CustomerOnboardingPage } from './pages/CustomerOnboardingPage';
 import { CustomerTransferPage } from './pages/CustomerTransferPage';
 import { PagosMasivosPage } from './pages/PagosMasivosPage';
 import { SftpMailboxPage } from './pages/SftpMailboxPage';
+import { LoginPage } from './pages/LoginPage';
 import { LayoutEmpresas } from './components/LayoutEmpresas';
 import './index.css';
 
@@ -22,43 +23,44 @@ export default function App() {
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Home />} />
+          <Route path="/login/:portal" element={<LoginPage />} />
 
           <Route
-            path="/asesor"
+            path="/operador"
             element={
-              <Protected portal="asesor">
+              <Protected portal="operador">
                 <CustomerOnboardingPage />
               </Protected>
             }
           />
           <Route
-            path="/asesor/credenciales"
+            path="/operador/credenciales"
             element={
-              <Protected portal="asesor">
+              <Protected portal="operador">
                 <CredentialsPage />
               </Protected>
             }
           />
           <Route
-            path="/banca-personas"
+            path="/operador/cuentas"
             element={
-              <Protected portal="bancaPersonas">
+              <Protected portal="operador">
                 <AccountOperationsPage />
               </Protected>
             }
           />
           <Route
-            path="/banca-personas/pagos-masivos"
+            path="/empresa/pagos-masivos"
             element={
-              <Protected portal="bancaPersonas">
+              <Protected portal="empresa">
                 <PagosMasivosPage />
               </Protected>
             }
           />
           <Route
-            path="/banca-personas/sftp"
+            path="/empresa/sftp"
             element={
-              <Protected portal="bancaPersonas">
+              <Protected portal="empresa">
                 <SftpMailboxPage />
               </Protected>
             }

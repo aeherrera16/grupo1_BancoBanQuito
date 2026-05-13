@@ -1,35 +1,8 @@
 import { useState } from 'react';
+import { authCoreUser, authCustomer } from '../services/apiClient';
 import { AuthContext } from './authContextObject';
 
-const portalUsers = {
-  asesor: {
-    id: '2001',
-    name: 'Asesor de Sucursal',
-    email: 'asesor.sucursal@banquito.ec',
-    role: 'ASESOR_SUCURSAL',
-    coreUserId: 2001,
-  },
-  bancaPersonas: {
-    id: '2101',
-    name: 'Banca de Personas',
-    email: 'banca.personas@banquito.ec',
-    role: 'BANCA_PERSONAS',
-    coreUserId: 2101,
-  },
-  personaNatural: {
-    id: '1001',
-    name: 'Cliente Persona Natural',
-    email: 'cliente.natural@correo.ec',
-    role: 'PERSONA_NATURAL',
-  },
-  cajero: {
-    id: '2201',
-    name: 'Cajero de Ventanilla',
-    email: 'cajero@banquito.ec',
-    role: 'CAJERO',
-    coreUserId: 2201,
-  },
-};
+const staffPortals = new Set(['operador', 'cajero']);
 
 export function AuthProvider({ children }) {
   const [auth, setAuth] = useState({
@@ -38,12 +11,37 @@ export function AuthProvider({ children }) {
     user: null,
   });
 
-  const login = (portal) => {
+  const login = async (portal, username, password) => {
+    const isStaff = staffPortals.has(portal);
+    const response = isStaff
+      ? await authCoreUser(username, password)
+      : await authCustomer(username, password);
+
+    const user = isStaff
+      ? {
+          id: String(response.coreUserId),
+          name: response.fullName,
+          email: response.username,
+          role: response.role,
+          coreUserId: response.coreUserId,
+          lastLogin: response.lastLogin,
+        }
+      : {
+          id: String(response.customerId),
+          name: response.customerName,
+          email: response.username,
+          role: 'CUSTOMER',
+          customerId: response.customerId,
+          lastLogin: response.lastLogin,
+        };
+
     setAuth({
       isAuthenticated: true,
       portal,
-      user: portalUsers[portal],
+      user,
     });
+
+    return user;
   };
 
   const logout = () => {
