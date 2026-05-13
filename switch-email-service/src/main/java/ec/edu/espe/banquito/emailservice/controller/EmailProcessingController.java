@@ -1,8 +1,6 @@
 package ec.edu.espe.banquito.emailservice.controller;
 
-import java.io.File;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import org.slf4j.Logger;
@@ -12,9 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.multipart.MultipartFile;
 
 import ec.edu.espe.banquito.emailservice.service.ISftpIntegrationService;
 import ec.edu.espe.banquito.emailservice.service.SftpSchedulerService;
@@ -112,7 +108,7 @@ public class EmailProcessingController {
     @PostMapping("/sftp/process")
     public ResponseEntity<Map<String, Object>> processSftpFiles() {
         try {
-            LOG.info("🔄 Iniciando procesamiento manual de archivos SFTP");
+            LOG.info("Iniciando procesamiento manual de archivos SFTP");
             sftpSchedulerService.processSftpFiles();
             
             Map<String, Object> response = new HashMap<>();

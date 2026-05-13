@@ -32,11 +32,20 @@ public class CoreIntegrationController {
         return ResponseEntity.ok(coreSwitchService.validateAccount(accountNumber));
     }
 
+    /**
+     * RF-02 Switch: alta de clientes empresa con pagos masivos modelada mediante subtipo {@code EMPRESA_PAGOS_MASIVOS}.
+     */
+    @GetMapping("/customer/mass-payments/{ruc}/active")
+    public ResponseEntity<Boolean> isMassPaymentsActive(@PathVariable String ruc) {
+        return ResponseEntity.ok(coreSwitchService.isMassPaymentsActiveForRuc(ruc));
+    }
+
     @PostMapping("/transfer")
     public ResponseEntity<TransferResultDTO> transfer(@RequestBody TransferRequestDTO request) {
         return ResponseEntity.ok(coreSwitchService.transfer(
                 request.getOriginAccountNumber(),
                 request.getDestinationAccountNumber(),
+                request.getBeneficiaryIdentification(),
                 request.getAmount(),
                 request.getTransactionUuid()
         ));
@@ -46,6 +55,8 @@ public class CoreIntegrationController {
     public ResponseEntity<TransferResultDTO> chargeCommission(@RequestBody TransactionRequestDTO request) {
         return ResponseEntity.ok(coreSwitchService.chargeCommission(
                 request.getAccountNumber(),
+                request.getCommissionSubtotal(),
+                request.getVatAmount(),
                 request.getAmount(),
                 request.getTransactionUuid()
         ));

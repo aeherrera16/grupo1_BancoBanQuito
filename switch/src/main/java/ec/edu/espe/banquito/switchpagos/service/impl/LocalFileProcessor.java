@@ -93,7 +93,7 @@ public class LocalFileProcessor implements ILocalFileProcessor {
             batch.setStatus(BatchStatusEnum.RECEIVED);
             
             // Validate and process
-            fileValidationService.validateEarlyRejection(batch, parseResult.getDetails());
+            fileValidationService.validateEarlyRejection(parseResult);
             FileValidation validation = fileValidationService.validateBatch(batch, parseResult.getDetails());
             
             // Move file to processed directory

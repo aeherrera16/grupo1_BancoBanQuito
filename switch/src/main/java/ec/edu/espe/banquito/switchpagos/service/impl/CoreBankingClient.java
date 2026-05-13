@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
+import ec.edu.espe.banquito.switchpagos.dto.TransferResponseDTO;
 import ec.edu.espe.banquito.switchpagos.service.ICoreBankingClient;
 
 @Service("coreBankingClientImpl")
@@ -14,22 +15,24 @@ public class CoreBankingClient implements ICoreBankingClient {
 
     private final RestClient restClient;
 
-    public CoreBankingClient(@Value("${app.core.base-url:http://localhost:8080}") String coreBaseUrl) {
+    public CoreBankingClient(@Value("${app.core.base-url}") String coreBaseUrl) {
         this.restClient = RestClient.builder()
                 .baseUrl(coreBaseUrl)
                 .build();
     }
 
-    public void transfer(String origin, String destination, BigDecimal amount, String uuid) {
-        restClient.post()
-                .uri("/core/accounts/transfer")
+    @Override
+    public TransferResponseDTO transfer(String origin, String destination, String beneficiaryIdentification,
+                                        BigDecimal amount, String uuid) {
+        return restClient.post()
+                .uri("/core/v1/integration/transfer")
                 .body(Map.of(
-                        "origin", origin,
-                        "destination", destination,
+                        "originAccountNumber", origin,
+                        "destinationAccountNumber", destination,
+                        "beneficiaryIdentification", beneficiaryIdentification,
                         "amount", amount,
-                        "uuid", uuid
-                ))
+                        "transactionUuid", uuid))
                 .retrieve()
-                .toBodilessEntity();
+                .body(TransferResponseDTO.class);
     }
 }

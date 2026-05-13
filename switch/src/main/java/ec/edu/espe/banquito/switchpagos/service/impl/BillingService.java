@@ -3,7 +3,9 @@ package ec.edu.espe.banquito.switchpagos.service.impl;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -17,13 +19,17 @@ import ec.edu.espe.banquito.switchpagos.dto.BatchSummaryDTO;
 import ec.edu.espe.banquito.switchpagos.enums.ChargeStatusEnum;
 import ec.edu.espe.banquito.switchpagos.enums.PaymentDetailStatusEnum;
 import ec.edu.espe.banquito.switchpagos.exception.ResourceNotFoundException;
+import ec.edu.espe.banquito.switchpagos.model.BatchStatusLog;
 import ec.edu.espe.banquito.switchpagos.model.PaymentBatch;
 import ec.edu.espe.banquito.switchpagos.model.PaymentDetail;
+import ec.edu.espe.banquito.switchpagos.model.DetailStatusLog;
 import ec.edu.espe.banquito.switchpagos.model.ServiceCharge;
 import ec.edu.espe.banquito.switchpagos.model.ServiceFeeRule;
 import ec.edu.espe.banquito.switchpagos.model.SwitchParameter;
+import ec.edu.espe.banquito.switchpagos.repository.BatchStatusLogRepository;
 import ec.edu.espe.banquito.switchpagos.repository.PaymentBatchRepository;
 import ec.edu.espe.banquito.switchpagos.repository.PaymentDetailRepository;
+import ec.edu.espe.banquito.switchpagos.repository.DetailStatusLogRepository;
 import ec.edu.espe.banquito.switchpagos.repository.ServiceChargeRepository;
 import ec.edu.espe.banquito.switchpagos.repository.ServiceFeeRuleRepository;
 import ec.edu.espe.banquito.switchpagos.repository.SwitchParameterRepository;
@@ -46,6 +52,8 @@ public class BillingService {
     private final ServiceChargeRepository serviceChargeRepository;
     private final PaymentBatchRepository paymentBatchRepository;
     private final PaymentDetailRepository paymentDetailRepository;
+    private final BatchStatusLogRepository batchStatusLogRepository;
+    private final DetailStatusLogRepository detailStatusLogRepository;
     private final SwitchParameterRepository switchParameterRepository;
     private final CoreFacadeService coreFacadeService;
 
@@ -54,12 +62,16 @@ public class BillingService {
                           ServiceChargeRepository serviceChargeRepository,
                           PaymentBatchRepository paymentBatchRepository,
                           PaymentDetailRepository paymentDetailRepository,
+                          BatchStatusLogRepository batchStatusLogRepository,
+                          DetailStatusLogRepository detailStatusLogRepository,
                           SwitchParameterRepository switchParameterRepository,
                           CoreFacadeService coreFacadeService) {
         this.serviceFeeRuleRepository = serviceFeeRuleRepository;
         this.serviceChargeRepository = serviceChargeRepository;
         this.paymentBatchRepository = paymentBatchRepository;
         this.paymentDetailRepository = paymentDetailRepository;
+        this.batchStatusLogRepository = batchStatusLogRepository;
+        this.detailStatusLogRepository = detailStatusLogRepository;
         this.switchParameterRepository = switchParameterRepository;
         this.coreFacadeService = coreFacadeService;
     }
@@ -97,7 +109,7 @@ public class BillingService {
     public BigDecimal obtenerTarifa(Integer exitosos) {
         logger.info("Buscando tarifa para {} transacciones exitosas", exitosos);
 
-        Optional<ServiceFeeRule> reglaOpt = serviceFeeRuleRepository.findRuleByTransactionCount(exitosos);
+        Optional<ServiceFeeRule> reglaOpt = serviceFeeRuleRepository.findRuleByTransactionCount(BigDecimal.valueOf(exitosos));
 
         if (reglaOpt.isEmpty()) {
             logger.error("No se encontró regla tarifaria para {} transacciones", exitosos);
@@ -108,8 +120,8 @@ public class BillingService {
         ServiceFeeRule regla = reglaOpt.get();
         logger.info("Regla tarifaria encontrada: {} (rango: {}-{}, tarifa: {})",
                 regla.getId(),
-                regla.getMinSuccessfulTransactions(),
-                regla.getMaxSuccessfulTransactions(),
+                regla.getMinAmount(),
+                regla.getMaxAmount(),
                 regla.getUnitFee());
 
         return regla.getUnitFee();
@@ -124,7 +136,7 @@ public class BillingService {
      * 2. Obtener tarifa aplicable
      * 3. Calcular: subtotal = tarifa * exitosos, iva = subtotal * 0.15, total = subtotal + iva
      * 4. Crear y guardar ServiceCharge
-     * 5. Llamar a coreFacade.cobrarComision(...)
+     * 5. Llamar a coreFacade.cobrarComision(...) usando la cuenta matriz del lote
      * 6. Actualizar successful_records y rejected_records del batch
      *
      * @param batch    El lote de pagos procesado
@@ -142,7 +154,7 @@ public class BillingService {
         logger.info("Resultado del lote - Exitosos: {}, Rechazados: {}", exitosos, rechazados);
 
         // 2. Obtener la regla tarifaria aplicable
-        Optional<ServiceFeeRule> reglaOpt = serviceFeeRuleRepository.findRuleByTransactionCount(exitosos);
+        Optional<ServiceFeeRule> reglaOpt = serviceFeeRuleRepository.findRuleByTransactionCount(BigDecimal.valueOf(exitosos));
         
         if (reglaOpt.isEmpty()) {
             logger.error("No se encontró regla tarifaria para {} transacciones", exitosos);
@@ -183,12 +195,15 @@ public class BillingService {
 
         // 5. Llamar al Core para cobrar la comisión
         String uuid = UUID.randomUUID().toString();
-        String cuentaEmpresa = obtenerCuentaEmpresaDefault();
+        String cuentaEmpresa = batch.getSourceAccountNumber();
+        if (cuentaEmpresa == null || cuentaEmpresa.isBlank()) {
+            throw new IllegalStateException("El lote no tiene cuenta matriz de cargo");
+        }
 
         logger.info("Enviando cobro al Core - Cuenta: {}, Total: {}, UUID: {}",
                    cuentaEmpresa, total, uuid);
 
-        boolean cobroExitoso = coreFacadeService.cobrarComision(cuentaEmpresa, total, uuid);
+        boolean cobroExitoso = coreFacadeService.cobrarComision(cuentaEmpresa, subtotal, iva, total, uuid);
 
         if (cobroExitoso) {
             cargoGuardado.setChargeStatus(ChargeStatusEnum.CHARGED);
@@ -287,6 +302,84 @@ public class BillingService {
                 .orElseThrow(() -> new ResourceNotFoundException("Lote no encontrado: " + batchId));
 
         return serviceChargeRepository.findByPaymentBatchId(batchId);
+    }
+
+    public Map<String, Object> generarComprobanteLiquidacion(Integer batchId) {
+        PaymentBatch batch = paymentBatchRepository.findById(batchId)
+                .orElseThrow(() -> new ResourceNotFoundException("Lote no encontrado: " + batchId));
+        ServiceCharge charge = serviceChargeRepository.findByPaymentBatchId(batchId)
+                .orElseThrow(() -> new ResourceNotFoundException("No hay cargo de servicio para el lote: " + batchId));
+        List<PaymentDetail> details = paymentDetailRepository.findByPaymentBatchId(batchId);
+
+        BigDecimal dispersedAmount = details.stream()
+                .filter(detail -> detail.getStatus() == PaymentDetailStatusEnum.SUCCESS)
+                .map(PaymentDetail::getAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add)
+                .setScale(2, RoundingMode.HALF_UP);
+
+        Map<String, Object> receipt = new LinkedHashMap<>();
+        receipt.put("batchId", batch.getId());
+        receipt.put("fileName", batch.getFileName());
+        receipt.put("ruc", batch.getRuc());
+        receipt.put("sourceAccountNumber", batch.getSourceAccountNumber());
+        receipt.put("batchStatus", batch.getStatus() != null ? batch.getStatus().name() : null);
+        receipt.put("receivedAt", batch.getReceivedAt());
+        receipt.put("successfulTransactions", charge.getSuccessfulTransactions());
+        receipt.put("rejectedTransactions", batch.getRejectedRecords());
+        receipt.put("successfulDispersedAmount", dispersedAmount);
+        receipt.put("unitFee", charge.getUnitFee());
+        receipt.put("commissionSubtotal", charge.getCommissionSubtotal());
+        receipt.put("vatAmount", charge.getVatAmount());
+        receipt.put("totalDebitedForServices", charge.getTotalCharge());
+        receipt.put("chargeStatus", charge.getChargeStatus() != null ? charge.getChargeStatus().name() : null);
+        receipt.put("chargedAt", charge.getChargedAt());
+        return receipt;
+    }
+
+    public String generarReporteNovedadesCsv(Integer batchId) {
+        PaymentBatch batch = paymentBatchRepository.findById(batchId)
+                .orElseThrow(() -> new ResourceNotFoundException("Lote no encontrado: " + batchId));
+        List<PaymentDetail> details = paymentDetailRepository.findByPaymentBatchId(batchId);
+
+        StringBuilder csv = new StringBuilder();
+        csv.append("batch_id,file_name,line_number,beneficiary_identification,beneficiary_name,destination_account,amount,status,rejection_reason,executed_at\n");
+        for (PaymentDetail detail : details) {
+            csv.append(batch.getId()).append(',')
+                    .append(escapeCsv(batch.getFileName())).append(',')
+                    .append(detail.getLineNumber()).append(',')
+                    .append(escapeCsv(detail.getBeneficiaryIdentification())).append(',')
+                    .append(escapeCsv(detail.getBeneficiaryName())).append(',')
+                    .append(escapeCsv(detail.getDestinationAccountNumber())).append(',')
+                    .append(detail.getAmount()).append(',')
+                    .append(detail.getStatus() != null ? detail.getStatus().name() : "").append(',')
+                    .append(escapeCsv(detail.getRejectionReason())).append(',')
+                    .append(detail.getExecutedAt() != null ? detail.getExecutedAt() : "")
+                    .append('\n');
+        }
+        return csv.toString();
+    }
+
+    public List<BatchStatusLog> obtenerHistorialEstadosBatch(Integer batchId) {
+        paymentBatchRepository.findById(batchId)
+                .orElseThrow(() -> new ResourceNotFoundException("Lote no encontrado: " + batchId));
+        return batchStatusLogRepository.findByPaymentBatchIdOrderByChangedAtAsc(batchId);
+    }
+
+    public List<DetailStatusLog> obtenerHistorialEstadosDetalle(Integer detailId) {
+        paymentDetailRepository.findById(detailId)
+                .orElseThrow(() -> new ResourceNotFoundException("Detalle no encontrado: " + detailId));
+        return detailStatusLogRepository.findByPaymentDetailIdOrderByChangedAtAsc(detailId);
+    }
+
+    private String escapeCsv(String value) {
+        if (value == null) {
+            return "";
+        }
+        String escaped = value.replace("\"", "\"\"");
+        if (escaped.contains(",") || escaped.contains("\"") || escaped.contains("\n") || escaped.contains("\r")) {
+            return "\"" + escaped + "\"";
+        }
+        return escaped;
     }
 
     /**

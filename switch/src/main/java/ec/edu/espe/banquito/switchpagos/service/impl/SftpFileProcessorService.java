@@ -43,6 +43,8 @@ public class SftpFileProcessorService implements ISftpFileProcessorService {
             logger.info("Lote creado - RUC: {}, Hash: {}, Total: {}", 
                        batch.getRuc(), batch.getFileHash(), batch.getHeaderTotalAmount());
 
+            fileValidationService.validateEarlyRejection(parseResult);
+
             return fileValidationService.validateBatch(batch, parseResult.getDetails());
         } catch (Exception e) {
             throw new RuntimeException("Error procesando archivo SFTP: " + e.getMessage(), e);
