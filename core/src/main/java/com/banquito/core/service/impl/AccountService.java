@@ -21,6 +21,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -40,6 +42,16 @@ public class AccountService implements IAccountService {
         Account account = accountRepository.findByAccountNumber(accountNumber)
                 .orElseThrow(() -> new AccountNotFoundException(accountNumber));
         return toResponse(account);
+    }
+
+    @Transactional(readOnly = true)
+    @Override
+    public List<AccountResponseDTO> findByCustomerId(Integer customerId, Integer coreUserId) {
+        authenticationService.validateActiveCoreUser(coreUserId);
+        return accountRepository.findByCustomer_Id(customerId)
+                .stream()
+                .map(this::toResponse)
+                .collect(Collectors.toList());
     }
 
     @Transactional

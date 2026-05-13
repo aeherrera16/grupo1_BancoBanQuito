@@ -16,6 +16,8 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
+
 @Slf4j
 @RestController
 @RequestMapping("/core/v1/accounts")
@@ -25,6 +27,13 @@ public class AccountController {
     private static final String CORE_USER_HEADER = "X-Core-User-Id";
 
     private final IAccountService accountService;
+
+    @GetMapping("/customer/{customerId}")
+    public ResponseEntity<List<AccountResponseDTO>> findByCustomerId(
+            @PathVariable Integer customerId,
+            @RequestHeader(CORE_USER_HEADER) Integer coreUserId) {
+        return ResponseEntity.ok(accountService.findByCustomerId(customerId, coreUserId));
+    }
 
     @GetMapping("/{accountNumber}")
     public ResponseEntity<AccountResponseDTO> findByAccountNumber(

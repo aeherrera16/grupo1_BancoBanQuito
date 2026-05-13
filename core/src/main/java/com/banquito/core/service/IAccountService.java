@@ -2,9 +2,14 @@ package com.banquito.core.service;
 
 import com.banquito.core.dto.AccountRequestDTO;
 import com.banquito.core.dto.AccountResponseDTO;
+
+import java.util.List;
+
 public interface IAccountService {
 
     AccountResponseDTO findByAccountNumber(String accountNumber, Integer coreUserId);
+
+    List<AccountResponseDTO> findByCustomerId(Integer customerId, Integer coreUserId);
 
     AccountResponseDTO create(AccountRequestDTO request, Integer coreUserId);
 

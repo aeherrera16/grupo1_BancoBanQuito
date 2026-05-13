@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface AccountRepository extends JpaRepository<Account, Integer> {
@@ -15,4 +16,6 @@ public interface AccountRepository extends JpaRepository<Account, Integer> {
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT a FROM Account a WHERE a.accountNumber = :accountNumber")
     Optional<Account> findWithLockByAccountNumber(@Param("accountNumber") String accountNumber);
+
+    List<Account> findByCustomer_Id(Integer customerId);
 }
