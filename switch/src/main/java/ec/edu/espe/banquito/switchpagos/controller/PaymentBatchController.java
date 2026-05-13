@@ -28,7 +28,7 @@ import ec.edu.espe.banquito.switchpagos.service.impl.FileValidationService;
 import ec.edu.espe.banquito.switchpagos.service.impl.PaymentBatchProcessingService;
 
 @RestController
-@CrossOrigin(origins = {"http://localhost:5173", "http://127.0.0.1:5173"})
+@CrossOrigin(origins = {"http://localhost:5173", "http://localhost:5174", "http://127.0.0.1:5173", "http://127.0.0.1:5174"})
 @RequestMapping("/api/payment-batch")
 public class PaymentBatchController {
 
