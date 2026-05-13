@@ -335,7 +335,21 @@ public class DataInitializer implements CommandLineRunner {
             credEmp.setCreationDate(LocalDateTime.now());
             webCredentialRepository.save(credEmp);
         }
-        log.info("Credenciales web creadas para 'user123' (Natural) y 'empresa123' (Juridica)");
+
+        Customer ana = customerRepository.findByIdentificationTypeAndIdentification("CEDULA", "0987654321")
+                .orElseThrow(() -> new IllegalStateException("Cliente Ana no existe en seed"));
+
+        if (webCredentialRepository.findByUsername("ana123").isEmpty()) {
+            WebCredential credAna = new WebCredential();
+            credAna.setCustomer(ana);
+            credAna.setUsername("ana123");
+            credAna.setPasswordHash(passwordEncoder.encode("1234"));
+            credAna.setStatus(CommonStatusEnum.ACTIVO);
+            credAna.setCreationDate(LocalDateTime.now());
+            webCredentialRepository.save(credAna);
+        }
+        
+        log.info("Credenciales web creadas para 'user123' (Bryan), 'ana123' (Ana) y 'empresa123' (Juridica)");
     }
 
     private void initInitialTransactions() {

@@ -56,15 +56,6 @@ export default function Sidebar({ logout, portal, user }) {
           ))}
         </div>
       </nav>
-
-      <div className="border-t border-slate-200 p-5">
-        <button
-          onClick={handleLogout}
-          className="flex w-full items-center justify-center rounded-sm border border-slate-300 bg-white px-4 py-3 text-sm font-black text-banker-navy transition-colors hover:bg-slate-50"
-        >
-          Salir
-        </button>
-      </div>
     </aside>
   );
 }

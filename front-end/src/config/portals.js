@@ -15,7 +15,7 @@ export const portals = {
   empresa: {
     label: 'Banca empresas',
     description: 'Pagos masivos, buzón SFTP y reportes del Switch.',
-    startPath: '/empresa/pagos-masivos',
+    startPath: '/empresa/cuentas',
     accent: 'bg-banker-navy',
     permissions: [
       'Carga manual de lotes CSV',
@@ -56,6 +56,7 @@ export const menuByPortal = {
     { path: '/operador/cuentas', label: 'Estados de cuenta' },
   ],
   empresa: [
+    { path: '/empresa/cuentas', label: 'Resumen de cuenta' },
     { path: '/empresa/pagos-masivos', label: 'Pagos masivos' },
     { path: '/empresa/sftp', label: 'Buzón SFTP' },
   ],

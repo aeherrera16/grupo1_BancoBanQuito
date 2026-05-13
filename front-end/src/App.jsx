@@ -50,6 +50,14 @@ export default function App() {
             }
           />
           <Route
+            path="/empresa/cuentas"
+            element={
+              <Protected portal="empresa">
+                <CustomerAccountsPage />
+              </Protected>
+            }
+          />
+          <Route
             path="/empresa/pagos-masivos"
             element={
               <Protected portal="empresa">

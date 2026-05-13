@@ -5,12 +5,12 @@ import { coreRequest, fetchBalance, fetchAccountHistory } from '../services/apiC
 
 export function CustomerAccountsPage({ cashierMode = false }) {
   const { user, portal } = useAuth();
-  const [accountNumber, setAccountNumber] = useState(portal === 'personaNatural' ? '001-00001234' : '');
+  const [accountNumber, setAccountNumber] = useState(portal === 'personaNatural' ? (user?.username === 'ana123' ? '001-00005678' : '001-00001234') : (portal === 'empresa' ? '0050000202' : ''));
   const [result, setResult] = useState(null);
   const [history, setHistory] = useState(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const needsCoreUser = portal !== 'personaNatural';
+  const needsCoreUser = portal === 'operador' || portal === 'cajero';
 
   // Autocargar para Persona Natural para simular el "Resumen" directo
   useEffect(() => {
@@ -46,6 +46,19 @@ export function CustomerAccountsPage({ cashierMode = false }) {
     }
   };
 
+  const handleShare = () => {
+    if (result?.accountNumber) {
+      navigator.clipboard.writeText(result.accountNumber);
+      alert(`¡Número de cuenta ${result.accountNumber} copiado al portapapeles!`);
+    }
+  };
+
+  const handleDetails = () => {
+    if (result) {
+      alert(`Detalles de la Cuenta:\n\nTitular: ${user?.name}\nNúmero de Cuenta: ${result.accountNumber}\nTipo: ${result.accountSubtype || 'Cuenta Digital'}\nEstado: ${result.status || 'ACTIVA'}\n\nSaldo Contable: $${result.accountingBalance?.toFixed(2)}\nSaldo Disponible: $${result.availableBalance?.toFixed(2)}`);
+    }
+  };
+
   if (needsCoreUser) {
     return (
       <PageShell title="Consulta de cuenta" description="Consulta mínima para atención en ventanilla.">
@@ -70,7 +83,7 @@ export function CustomerAccountsPage({ cashierMode = false }) {
   // Interfaz Produbanco-style para Persona Natural
   return (
     <div className="max-w-6xl p-8 mx-auto mt-6 bg-white">
-      <h1 className="text-3xl font-bold text-[#006644] mb-8">Resumen</h1>
+      <h1 className="text-3xl font-bold text-[#006644] mb-8">Resumen de {user?.name}</h1>
       
       <div className="mb-4">
         <h2 className="text-lg font-semibold text-gray-800">Cuentas</h2>
@@ -106,11 +119,11 @@ export function CustomerAccountsPage({ cashierMode = false }) {
           </div>
 
           <div className="flex justify-end p-4 border-t border-gray-100 bg-gray-50 space-x-4">
-             <button className="flex items-center text-sm font-medium text-[#006644] hover:text-[#004d33]">
+             <button onClick={handleShare} className="flex items-center text-sm font-medium text-[#006644] hover:text-[#004d33]">
                 <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"></path></svg>
                 Compartir
              </button>
-             <button className="flex items-center text-sm font-medium text-[#006644] hover:text-[#004d33]">
+             <button onClick={handleDetails} className="flex items-center text-sm font-medium text-[#006644] hover:text-[#004d33]">
                 <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
                 Ver Detalle
              </button>
