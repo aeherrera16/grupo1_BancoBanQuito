@@ -27,8 +27,6 @@ import ec.edu.espe.banquito.switchpagos.repository.PaymentDetailRepository;
 import ec.edu.espe.banquito.switchpagos.repository.ServiceChargeRepository;
 import ec.edu.espe.banquito.switchpagos.repository.ServiceFeeRuleRepository;
 import ec.edu.espe.banquito.switchpagos.repository.SwitchParameterRepository;
-import ec.edu.espe.banquito.switchpagos.service.IBillingService;
-import ec.edu.espe.banquito.switchpagos.service.ICoreBankingFacade;
 
 /**
  * RF-06: Servicio de Facturación y Comisiones.
@@ -37,7 +35,7 @@ import ec.edu.espe.banquito.switchpagos.service.ICoreBankingFacade;
  * Kevin - Comisiones y Reportes
  */
 @Service
-public class BillingService implements IBillingService {
+public class BillingService {
 
     private static final Logger logger = LoggerFactory.getLogger(BillingService.class);
 
@@ -49,7 +47,7 @@ public class BillingService implements IBillingService {
     private final PaymentBatchRepository paymentBatchRepository;
     private final PaymentDetailRepository paymentDetailRepository;
     private final SwitchParameterRepository switchParameterRepository;
-    private final ICoreBankingFacade coreFacadeService;
+    private final CoreFacadeService coreFacadeService;
 
     @Autowired
     public BillingService(ServiceFeeRuleRepository serviceFeeRuleRepository,
@@ -57,7 +55,7 @@ public class BillingService implements IBillingService {
                           PaymentBatchRepository paymentBatchRepository,
                           PaymentDetailRepository paymentDetailRepository,
                           SwitchParameterRepository switchParameterRepository,
-                          ICoreBankingFacade coreFacadeService) {
+                          CoreFacadeService coreFacadeService) {
         this.serviceFeeRuleRepository = serviceFeeRuleRepository;
         this.serviceChargeRepository = serviceChargeRepository;
         this.paymentBatchRepository = paymentBatchRepository;
@@ -89,245 +87,245 @@ public class BillingService implements IBillingService {
     }
 
     /**
-     * Gets the unit fee based on the number of successful transactions.
-     * Queries the SERVICE_FEE_RULE table to find the applicable range.
+     * Obtiene la tarifa unitaria según el número de transacciones exitosas.
+     * Consulta la tabla SERVICE_FEE_RULE para encontrar el rango aplicable.
      *
-     * @param successful Number of successful transactions
-     * @return Unit fee per transaction (BigDecimal)
-     * @throws IllegalStateException if no applicable fee rule is found
+     * @param exitosos Número de transacciones exitosas
+     * @return Tarifa unitaria por transacción (BigDecimal)
+     * @throws IllegalStateException si no se encuentra una regla tarifaria aplicable
      */
-    public BigDecimal getFee(Integer successful) {
-        logger.info("Looking for fee for {} successful transactions", successful);
+    public BigDecimal obtenerTarifa(Integer exitosos) {
+        logger.info("Buscando tarifa para {} transacciones exitosas", exitosos);
 
-        Optional<ServiceFeeRule> ruleOpt = serviceFeeRuleRepository.findRuleByTransactionCount(successful);
+        Optional<ServiceFeeRule> reglaOpt = serviceFeeRuleRepository.findRuleByTransactionCount(exitosos);
 
-        if (ruleOpt.isEmpty()) {
-            logger.error("No fee rule found for {} transactions", successful);
+        if (reglaOpt.isEmpty()) {
+            logger.error("No se encontró regla tarifaria para {} transacciones", exitosos);
             throw new IllegalStateException(
-                    "No applicable fee rule found for " + successful + " successful transactions");
+                    "No se encontró regla tarifaria aplicable para " + exitosos + " transacciones exitosas");
         }
 
-        ServiceFeeRule rule = ruleOpt.get();
-        logger.info("Fee rule found: {} (range: {}-{}, fee: {})",
-                rule.getId(),
-                rule.getMinSuccessfulTransactions(),
-                rule.getMaxSuccessfulTransactions(),
-                rule.getUnitFee());
+        ServiceFeeRule regla = reglaOpt.get();
+        logger.info("Regla tarifaria encontrada: {} (rango: {}-{}, tarifa: {})",
+                regla.getId(),
+                regla.getMinSuccessfulTransactions(),
+                regla.getMaxSuccessfulTransactions(),
+                regla.getUnitFee());
 
-        return rule.getUnitFee();
+        return regla.getUnitFee();
     }
 
     /**
-     * RF-06: Generates commission charge for a processed batch.
-     * This method is called by Johan (PaymentProcessor) after processing completion.
+     * RF-06: Genera el cobro de comisión para un lote procesado.
+     * Este método es llamado por Johan (PaymentProcessor) al finalizar el procesamiento.
      *
-     * Steps:
-     * 1. Count successful transactions
-     * 2. Get applicable fee
-     * 3. Calculate: subtotal = fee * successful, vat = subtotal * 0.15, total = subtotal + vat
-     * 4. Create and save ServiceCharge
-     * 5. Call coreFacade.chargeCommission(...)
-     * 6. Update successful_records and rejected_records of batch
+     * Pasos:
+     * 1. Contar transacciones exitosas
+     * 2. Obtener tarifa aplicable
+     * 3. Calcular: subtotal = tarifa * exitosos, iva = subtotal * 0.15, total = subtotal + iva
+     * 4. Crear y guardar ServiceCharge
+     * 5. Llamar a coreFacade.cobrarComision(...)
+     * 6. Actualizar successful_records y rejected_records del batch
      *
-     * @param batch    The processed payment batch
-     * @param details  List of batch details with their final states
+     * @param batch    El lote de pagos procesado
+     * @param detalles Lista de detalles del lote con sus estados finales
      */
     @Transactional
-    public void generateCharge(PaymentBatch batch, List<PaymentDetail> details) {
-        logger.info("=== START CHARGE GENERATION RF-06 ===");
-        logger.info("Batch ID: {}, File: {}", batch.getId(), batch.getFileName());
+    public void generarCobro(PaymentBatch batch, List<PaymentDetail> detalles) {
+        logger.info("=== INICIO GENERACIÓN DE COBRO RF-06 ===");
+        logger.info("Lote ID: {}, Archivo: {}", batch.getId(), batch.getFileName());
 
-        // 1. Count successful and rejected transactions
-        Integer successful = countSuccess(details);
-        Integer rejected = details != null ? details.size() - successful : 0;
+        // 1. Contar transacciones exitosas y rechazadas
+        Integer exitosos = countSuccess(detalles);
+        Integer rechazados = detalles != null ? detalles.size() - exitosos : 0;
         
-        logger.info("Batch result - Successful: {}, Rejected: {}", successful, rejected);
+        logger.info("Resultado del lote - Exitosos: {}, Rechazados: {}", exitosos, rechazados);
 
-        // 2. Get the applicable fee rule
-        Optional<ServiceFeeRule> ruleOpt = serviceFeeRuleRepository.findRuleByTransactionCount(successful);
+        // 2. Obtener la regla tarifaria aplicable
+        Optional<ServiceFeeRule> reglaOpt = serviceFeeRuleRepository.findRuleByTransactionCount(exitosos);
         
-        if (ruleOpt.isEmpty()) {
-            logger.error("No fee rule found for {} transactions", successful);
+        if (reglaOpt.isEmpty()) {
+            logger.error("No se encontró regla tarifaria para {} transacciones", exitosos);
             throw new IllegalStateException(
-                    "No applicable fee rule found for " + successful + " successful transactions");
+                    "No se encontró regla tarifaria aplicable para " + exitosos + " transacciones exitosas");
         }
         
-        ServiceFeeRule rule = ruleOpt.get();
-        BigDecimal fee = rule.getUnitFee();
-        logger.info("Applied fee: {} per transaction (Rule ID: {})", fee, rule.getId());
+        ServiceFeeRule regla = reglaOpt.get();
+        BigDecimal tarifa = regla.getUnitFee();
+        logger.info("Tarifa aplicada: {} por transacción (Regla ID: {})", tarifa, regla.getId());
 
-        // 3. Calculate commission amounts
-        BigDecimal subtotal = fee.multiply(BigDecimal.valueOf(successful))
+        // 3. Calcular montos de comisión
+        BigDecimal subtotal = tarifa.multiply(BigDecimal.valueOf(exitosos))
                 .setScale(2, RoundingMode.HALF_UP);
-        BigDecimal vat = subtotal.multiply(IVA_RATE)
+        BigDecimal iva = subtotal.multiply(IVA_RATE)
                 .setScale(2, RoundingMode.HALF_UP);
-        BigDecimal total = subtotal.add(vat)
+        BigDecimal total = subtotal.add(iva)
                 .setScale(2, RoundingMode.HALF_UP);
 
-        logger.info("Commission calculation:");
-        logger.info("  Subtotal (fee x successful): {} x {} = {}", fee, successful, subtotal);
-        logger.info("  VAT (15%): {}", vat);
+        logger.info("Cálculo de comisión:");
+        logger.info("  Subtotal (tarifa x exitosos): {} x {} = {}", tarifa, exitosos, subtotal);
+        logger.info("  IVA (15%): {}", iva);
         logger.info("  Total: {}", total);
 
-        // 4. Create and save charge record (ServiceCharge)
-        ServiceCharge charge = new ServiceCharge();
-        charge.setPaymentBatch(batch);
-        charge.setServiceFeeRule(rule);
-        charge.setSuccessfulTransactions(successful);
-        charge.setUnitFee(fee);
-        charge.setCommissionSubtotal(subtotal);
-        charge.setVatAmount(vat);
-        charge.setTotalCharge(total);
-        charge.setChargeStatus(ChargeStatusEnum.PENDING);
+        // 4. Crear y guardar el registro de cargo (ServiceCharge)
+        ServiceCharge cargo = new ServiceCharge();
+        cargo.setPaymentBatch(batch);
+        cargo.setServiceFeeRule(regla);
+        cargo.setSuccessfulTransactions(exitosos);
+        cargo.setUnitFee(tarifa);
+        cargo.setCommissionSubtotal(subtotal);
+        cargo.setVatAmount(iva);
+        cargo.setTotalCharge(total);
+        cargo.setChargeStatus(ChargeStatusEnum.PENDING);
 
-        ServiceCharge savedCharge = serviceChargeRepository.save(charge);
-        logger.info("ServiceCharge created with ID: {}", savedCharge.getId());
+        ServiceCharge cargoGuardado = serviceChargeRepository.save(cargo);
+        logger.info("ServiceCharge creado con ID: {}", cargoGuardado.getId());
 
-        // 5. Call Core to charge commission
+        // 5. Llamar al Core para cobrar la comisión
         String uuid = UUID.randomUUID().toString();
-        String companyAccount = getDefaultCompanyAccount();
+        String cuentaEmpresa = obtenerCuentaEmpresaDefault();
 
-        logger.info("Sending charge to Core - Account: {}, Total: {}, UUID: {}",
-                   companyAccount, total, uuid);
+        logger.info("Enviando cobro al Core - Cuenta: {}, Total: {}, UUID: {}",
+                   cuentaEmpresa, total, uuid);
 
-        boolean chargeSuccessful = coreFacadeService.chargeCommission(companyAccount, total, uuid);
+        boolean cobroExitoso = coreFacadeService.cobrarComision(cuentaEmpresa, total, uuid);
 
-        if (chargeSuccessful) {
-            savedCharge.setChargeStatus(ChargeStatusEnum.CHARGED);
-            savedCharge.setChargedAt(LocalDateTime.now());
-            logger.info("Charge successful - Status updated to CHARGED");
+        if (cobroExitoso) {
+            cargoGuardado.setChargeStatus(ChargeStatusEnum.CHARGED);
+            cargoGuardado.setChargedAt(LocalDateTime.now());
+            logger.info("Cobro exitoso - Status actualizado a CHARGED");
         } else {
-            savedCharge.setChargeStatus(ChargeStatusEnum.REJECTED);
-            logger.warn("Charge rejected - Status updated to REJECTED");
+            cargoGuardado.setChargeStatus(ChargeStatusEnum.REJECTED);
+            logger.warn("Cobro rechazado - Status actualizado a REJECTED");
         }
 
-        serviceChargeRepository.save(savedCharge);
+        serviceChargeRepository.save(cargoGuardado);
 
-        // 6. Update batch counters
-        batch.setSuccessfulRecords(successful);
-        batch.setRejectedRecords(rejected);
+        // 6. Actualizar contadores del lote
+        batch.setSuccessfulRecords(exitosos);
+        batch.setRejectedRecords(rechazados);
         paymentBatchRepository.save(batch);
 
-        logger.info("Batch updated - successful_records: {}, rejected_records: {}", 
-                   successful, rejected);
-        logger.info("=== END CHARGE GENERATION RF-06 ===");
+        logger.info("Lote actualizado - successful_records: {}, rejected_records: {}", 
+                   exitosos, rechazados);
+        logger.info("=== FIN GENERACIÓN DE COBRO RF-06 ===");
     }
 
-    // ==================== REPORT METHODS ====================
+    // ==================== MÉTODOS DE REPORTES ====================
 
     /**
-     * Gets the summary of a processed batch as DTO.
+     * Obtiene el resumen de un lote procesado como DTO.
      *
-     * @param batchId Batch ID
-     * @return BatchSummaryDTO with consolidated batch and commission information
-     * @throws ResourceNotFoundException if the batch does not exist
+     * @param batchId ID del lote
+     * @return BatchSummaryDTO con información consolidada del lote y su comisión
+     * @throws ResourceNotFoundException si el lote no existe
      */
-    public BatchSummaryDTO getBatchSummary(Integer batchId) {
-        logger.info("Generating summary for batch ID: {}", batchId);
+    public BatchSummaryDTO obtenerResumenBatch(Integer batchId) {
+        logger.info("Generando resumen para lote ID: {}", batchId);
 
         PaymentBatch batch = paymentBatchRepository.findById(batchId)
-                .orElseThrow(() -> new ResourceNotFoundException("Batch not found: " + batchId));
+                .orElseThrow(() -> new ResourceNotFoundException("Lote no encontrado: " + batchId));
 
         Optional<ServiceCharge> chargeOpt = serviceChargeRepository.findByPaymentBatchId(batchId);
 
-        BatchSummaryDTO summary = new BatchSummaryDTO();
-        summary.setBatchId(batch.getId());
-        summary.setFileName(batch.getFileName());
-        summary.setRuc(batch.getRuc());
-        summary.setStatus(batch.getStatus() != null ? batch.getStatus().name() : null);
-        summary.setTotalRecords(batch.getHeaderTotalRecords());
-        summary.setTotalAmount(batch.getHeaderTotalAmount());
-        summary.setSuccessfulRecords(batch.getSuccessfulRecords());
-        summary.setRejectedRecords(batch.getRejectedRecords());
-        summary.setReceivedAt(batch.getReceivedAt());
+        BatchSummaryDTO resumen = new BatchSummaryDTO();
+        resumen.setBatchId(batch.getId());
+        resumen.setFileName(batch.getFileName());
+        resumen.setRuc(batch.getRuc());
+        resumen.setStatus(batch.getStatus() != null ? batch.getStatus().name() : null);
+        resumen.setTotalRecords(batch.getHeaderTotalRecords());
+        resumen.setTotalAmount(batch.getHeaderTotalAmount());
+        resumen.setSuccessfulRecords(batch.getSuccessfulRecords());
+        resumen.setRejectedRecords(batch.getRejectedRecords());
+        resumen.setReceivedAt(batch.getReceivedAt());
 
         if (chargeOpt.isPresent()) {
             ServiceCharge charge = chargeOpt.get();
-            summary.setCommissionSubtotal(charge.getCommissionSubtotal());
-            summary.setVatAmount(charge.getVatAmount());
-            summary.setTotalCharge(charge.getTotalCharge());
-            summary.setChargeStatus(charge.getChargeStatus() != null ? charge.getChargeStatus().name() : null);
-            summary.setChargedAt(charge.getChargedAt());
+            resumen.setCommissionSubtotal(charge.getCommissionSubtotal());
+            resumen.setVatAmount(charge.getVatAmount());
+            resumen.setTotalCharge(charge.getTotalCharge());
+            resumen.setChargeStatus(charge.getChargeStatus() != null ? charge.getChargeStatus().name() : null);
+            resumen.setChargedAt(charge.getChargedAt());
         }
 
-        logger.info("Summary generated for batch: {}", summary);
-        return summary;
+        logger.info("Resumen generado para lote: {}", resumen);
+        return resumen;
     }
 
     /**
-     * Gets all payment details of a batch.
+     * Obtiene todos los detalles de pago de un lote.
      *
-     * @param batchId Batch ID
-     * @return List of PaymentDetail from the batch
-     * @throws ResourceNotFoundException if the batch does not exist
+     * @param batchId ID del lote
+     * @return Lista de PaymentDetail del lote
+     * @throws ResourceNotFoundException si el lote no existe
      */
-    public List<PaymentDetail> getBatchDetails(Integer batchId) {
-        logger.info("Querying details for batch ID: {}", batchId);
+    public List<PaymentDetail> obtenerDetallesBatch(Integer batchId) {
+        logger.info("Consultando detalles para lote ID: {}", batchId);
 
-        // Verify that the batch exists
+        // Verificar que el lote existe
         PaymentBatch batch = paymentBatchRepository.findById(batchId)
-                .orElseThrow(() -> new ResourceNotFoundException("Batch not found: " + batchId));
+                .orElseThrow(() -> new ResourceNotFoundException("Lote no encontrado: " + batchId));
 
-        List<PaymentDetail> details = paymentDetailRepository.findByPaymentBatchId(batchId);
-        logger.info("Found {} details for the batch", details.size());
+        List<PaymentDetail> detalles = paymentDetailRepository.findByPaymentBatchId(batchId);
+        logger.info("Se encontraron {} detalles para el lote", detalles.size());
 
-        return details;
+        return detalles;
     }
 
     /**
-     * Gets the service charge for a batch.
+     * Obtiene el cargo de servicio para un lote.
      *
-     * @param batchId Batch ID
-     * @return Optional with ServiceCharge if it exists, empty if not
-     * @throws ResourceNotFoundException if the batch does not exist
+     * @param batchId ID del lote
+     * @return Optional con ServiceCharge si existe, vacío si no
+     * @throws ResourceNotFoundException si el lote no existe
      */
-    public Optional<ServiceCharge> getServiceCharge(Integer batchId) {
-        logger.info("Querying service charge for batch ID: {}", batchId);
+    public Optional<ServiceCharge> obtenerCargoServicio(Integer batchId) {
+        logger.info("Consultando cargo de servicio para lote ID: {}", batchId);
 
-        // Verify that the batch exists
+        // Verificar que el lote existe
         paymentBatchRepository.findById(batchId)
-                .orElseThrow(() -> new ResourceNotFoundException("Batch not found: " + batchId));
+                .orElseThrow(() -> new ResourceNotFoundException("Lote no encontrado: " + batchId));
 
         return serviceChargeRepository.findByPaymentBatchId(batchId);
     }
 
     /**
-     * Gets all registered service charges.
+     * Obtiene todos los cargos de servicio registrados.
      *
-     * @return List of all ServiceCharge
+     * @return Lista de todos los ServiceCharge
      */
-    public List<ServiceCharge> getAllCharges() {
-        logger.info("Querying all service charges");
+    public List<ServiceCharge> obtenerTodosCargos() {
+        logger.info("Consultando todos los cargos de servicio");
         return serviceChargeRepository.findAll();
     }
 
     /**
-     * Gets the company account from SwitchParameter.
-     * Looks for the parameter with code "EMPRESA_ACCOUNT" by default.
+     * Obtiene la cuenta empresa desde SwitchParameter.
+     * Busca el parámetro con código "EMPRESA_ACCOUNT" por defecto.
      *
-     * @param paramCode Parameter code (e.g: "EMPRESA_ACCOUNT")
-     * @return Company account number
-     * @throws ResourceNotFoundException if the parameter does not exist
+     * @param paramCode Código del parámetro (ej: "EMPRESA_ACCOUNT")
+     * @return Número de cuenta de la empresa
+     * @throws ResourceNotFoundException si el parámetro no existe
      */
-    public String getCompanyAccount(String paramCode) {
-        logger.info("Getting company account from parameter: {}", paramCode);
+    public String obtenerCuentaEmpresa(String paramCode) {
+        logger.info("Obteniendo cuenta empresa desde parámetro: {}", paramCode);
 
         SwitchParameter param = switchParameterRepository.findById(paramCode)
                 .orElseThrow(() -> new ResourceNotFoundException(
-                        "Parameter not found: " + paramCode));
+                        "Parámetro no encontrado: " + paramCode));
 
-        String companyAccount = param.getValueString();
-        logger.info("Company account obtained: {}", companyAccount);
+        String cuentaEmpresa = param.getValueString();
+        logger.info("Cuenta empresa obtenida: {}", cuentaEmpresa);
 
-        return companyAccount;
+        return cuentaEmpresa;
     }
 
     /**
-     * Gets the company account with default code "EMPRESA_ACCOUNT".
+     * Obtiene la cuenta empresa con código por defecto "EMPRESA_ACCOUNT".
      *
-     * @return Company account number
+     * @return Número de cuenta de la empresa
      */
-    public String getDefaultCompanyAccount() {
-        return getCompanyAccount("EMPRESA_ACCOUNT");
+    public String obtenerCuentaEmpresaDefault() {
+        return obtenerCuentaEmpresa("EMPRESA_ACCOUNT");
     }
 }

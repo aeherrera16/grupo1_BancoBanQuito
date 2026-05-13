@@ -9,10 +9,9 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
-import ec.edu.espe.banquito.switchpagos.service.ICoreBankingFacade;
 
 @Service
-public class CoreFacadeService implements ICoreBankingFacade {
+public class CoreFacadeService {
 
     private static final Logger logger = LoggerFactory.getLogger(CoreFacadeService.class);
 
@@ -25,11 +24,11 @@ public class CoreFacadeService implements ICoreBankingFacade {
         this.restTemplate = restTemplate;
     }
 
-    public Boolean chargeCommission(String companyAccount, BigDecimal total, String uuid) {
-        logger.info("Charging commission to Core - Account: {}, Amount: {}, UUID: {}", companyAccount, total, uuid);
+    public Boolean cobrarComision(String cuentaEmpresa, BigDecimal total, String uuid) {
+        logger.info("Cobro de comision al Core - Cuenta: {}, Monto: {}, UUID: {}", cuentaEmpresa, total, uuid);
         try {
             Map<String, Object> body = Map.of(
-                    "accountNumber", companyAccount,
+                    "accountNumber", cuentaEmpresa,
                     "amount", total,
                     "transactionUuid", uuid,
                     "subtypeCode", "COMISION",
@@ -38,38 +37,38 @@ public class CoreFacadeService implements ICoreBankingFacade {
             ResponseEntity<Map> response = restTemplate.postForEntity(
                     coreBaseUrl + "/core/integration/commission", body, Map.class);
             boolean success = response.getStatusCode().is2xxSuccessful();
-            logger.info("Commission charge {}: {}", success ? "successful" : "failed", uuid);
+            logger.info("Cobro de comision {}: {}", success ? "exitoso" : "fallido", uuid);
             return success;
         } catch (Exception e) {
-            logger.error("Error charging commission in Core: {}", e.getMessage());
+            logger.error("Error al cobrar comision en el Core: {}", e.getMessage());
             return Boolean.FALSE;
         }
     }
 
-    public Boolean validateCompanyAccount(String companyAccount) {
-        logger.info("Validating company account in Core: {}", companyAccount);
+    public Boolean validarCuentaEmpresa(String cuentaEmpresa) {
+        logger.info("Validando cuenta empresa en Core: {}", cuentaEmpresa);
         try {
             ResponseEntity<Boolean> response = restTemplate.getForEntity(
                     coreBaseUrl + "/core/integration/account/{accountNumber}/valid",
-                    Boolean.class, companyAccount);
+                    Boolean.class, cuentaEmpresa);
             Boolean valid = Boolean.TRUE.equals(response.getBody());
-            logger.info("Account {} valid: {}", companyAccount, valid);
+            logger.info("Cuenta {} valida: {}", cuentaEmpresa, valid);
             return valid;
         } catch (Exception e) {
-            logger.error("Error validating account in Core: {}", e.getMessage());
+            logger.error("Error validando cuenta en el Core: {}", e.getMessage());
             return Boolean.FALSE;
         }
     }
 
-    public Map<String, Object> queryBalance(String accountNumber) {
-        logger.info("Querying balance in Core: {}", accountNumber);
+    public Map<String, Object> consultarSaldo(String accountNumber) {
+        logger.info("Consultando saldo en Core: {}", accountNumber);
         try {
             ResponseEntity<Map> response = restTemplate.getForEntity(
                     coreBaseUrl + "/core/integration/balance/{accountNumber}",
                     Map.class, accountNumber);
             return response.getBody();
         } catch (Exception e) {
-            logger.error("Error querying balance in Core: {}", e.getMessage());
+            logger.error("Error consultando saldo en el Core: {}", e.getMessage());
             return Map.of();
         }
     }
