@@ -43,6 +43,8 @@ public class SwitchDataInitializer implements CommandLineRunner {
         rule.setFeeType("UNIT_FEE");
         rule.setMinAmount(BigDecimal.valueOf(min));
         rule.setMaxAmount(max != null ? BigDecimal.valueOf(max) : null);
+        rule.setMinSuccessfulTransactions(min);
+        rule.setMaxSuccessfulTransactions(max);
         rule.setUnitFee(fee);
         rule.setFeeAmount(fee);
         serviceFeeRuleRepository.save(rule);

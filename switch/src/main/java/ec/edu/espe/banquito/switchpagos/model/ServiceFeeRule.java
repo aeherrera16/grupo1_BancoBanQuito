@@ -26,6 +26,12 @@ public class ServiceFeeRule {
     @Column(name = "max_amount", precision = 18, scale = 2)
     private BigDecimal maxAmount; // Puede ser null si es "en adelante"
 
+    @Column(name = "min_successful_transactions", nullable = false)
+    private Integer minSuccessfulTransactions;
+
+    @Column(name = "max_successful_transactions")
+    private Integer maxSuccessfulTransactions;
+
     // Regla 3: Dinero y tarifas en BigDecimal
     @Column(name = "unit_fee", nullable = false, precision = 18, scale = 2)
     private BigDecimal unitFee;
@@ -82,6 +88,22 @@ public class ServiceFeeRule {
 
     public void setMaxAmount(BigDecimal maxAmount) {
         this.maxAmount = maxAmount;
+    }
+
+    public Integer getMinSuccessfulTransactions() {
+        return minSuccessfulTransactions;
+    }
+
+    public void setMinSuccessfulTransactions(Integer minSuccessfulTransactions) {
+        this.minSuccessfulTransactions = minSuccessfulTransactions;
+    }
+
+    public Integer getMaxSuccessfulTransactions() {
+        return maxSuccessfulTransactions;
+    }
+
+    public void setMaxSuccessfulTransactions(Integer maxSuccessfulTransactions) {
+        this.maxSuccessfulTransactions = maxSuccessfulTransactions;
     }
 
     public BigDecimal getUnitFee() {
