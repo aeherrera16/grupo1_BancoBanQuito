@@ -28,6 +28,7 @@ public class DataInitializer implements CommandLineRunner {
     private final TransactionSubtypeRepository transactionSubtypeRepository;
     private final CustomerRepository customerRepository;
     private final AccountRepository accountRepository;
+    private final InstitutionalAccountRepository institutionalAccountRepository;
     private final CoreUserRepository coreUserRepository;
     private final PasswordEncoder passwordEncoder;
 
@@ -36,10 +37,11 @@ public class DataInitializer implements CommandLineRunner {
         if (customerSubtypeRepository.count() == 0) initCustomerSubtypes();
         if (branchRepository.count() == 0) initBranches();
         if (accountSubtypeRepository.count() == 0) initAccountSubtypes();
-        if (transactionSubtypeRepository.count() == 0) initTransactionSubtypes();
+        initTransactionSubtypes();
+        initInstitutionalAccounts();
         if (coreUserRepository.count() == 0) initCoreUsers();
-        if (customerRepository.count() == 0) initCustomers();
-        if (accountRepository.count() == 0) initAccounts();
+        initCustomers();
+        initAccounts();
         log.info("Datos de prueba cargados correctamente");
     }
 
@@ -51,12 +53,12 @@ public class DataInitializer implements CommandLineRunner {
         personal.setStatus(CustomerSubtypeStatusEnum.ACTIVO);
         customerSubtypeRepository.save(personal);
 
-        CustomerSubtype empresarial = new CustomerSubtype();
-        empresarial.setCustomerType("JURIDICO");
-        empresarial.setName("EMPRESARIAL");
-        empresarial.setDescription("Clientes personas juridicas");
-        empresarial.setStatus(CustomerSubtypeStatusEnum.ACTIVO);
-        customerSubtypeRepository.save(empresarial);
+        CustomerSubtype empresaPagosMasivos = new CustomerSubtype();
+        empresaPagosMasivos.setCustomerType("JURIDICO");
+        empresaPagosMasivos.setName("EMPRESA_PAGOS_MASIVOS");
+        empresaPagosMasivos.setDescription("Empresa con servicio Pagos Masivos Switch activo");
+        empresaPagosMasivos.setStatus(CustomerSubtypeStatusEnum.ACTIVO);
+        customerSubtypeRepository.save(empresaPagosMasivos);
         log.info("CustomerSubtypes creados");
     }
 
@@ -95,18 +97,54 @@ public class DataInitializer implements CommandLineRunner {
     }
 
     private void initTransactionSubtypes() {
-        TransactionSubtype general = new TransactionSubtype();
-        general.setCode("TRN-GEN");
-        general.setName("Transaccion General");
-        general.setStatus(CommonStatusEnum.ACTIVO);
-        transactionSubtypeRepository.save(general);
+        if (transactionSubtypeRepository.findByCode("TRN-GEN").isEmpty()) {
+            TransactionSubtype general = new TransactionSubtype();
+            general.setCode("TRN-GEN");
+            general.setName("Transaccion General");
+            general.setStatus(CommonStatusEnum.ACTIVO);
+            transactionSubtypeRepository.save(general);
+        }
 
-        TransactionSubtype transfer = new TransactionSubtype();
-        transfer.setCode("TRANSFER");
-        transfer.setName("Transferencia entre cuentas");
-        transfer.setStatus(CommonStatusEnum.ACTIVO);
-        transactionSubtypeRepository.save(transfer);
+        if (transactionSubtypeRepository.findByCode("TRANSFER").isEmpty()) {
+            TransactionSubtype transfer = new TransactionSubtype();
+            transfer.setCode("TRANSFER");
+            transfer.setName("Transferencia entre cuentas");
+            transfer.setStatus(CommonStatusEnum.ACTIVO);
+            transactionSubtypeRepository.save(transfer);
+        }
+
+        if (transactionSubtypeRepository.findByCode("COMISION").isEmpty()) {
+            TransactionSubtype commission = new TransactionSubtype();
+            commission.setCode("COMISION");
+            commission.setName("Cobro servicio pagos masivos");
+            commission.setStatus(CommonStatusEnum.ACTIVO);
+            transactionSubtypeRepository.save(commission);
+        }
         log.info("TransactionSubtypes creados");
+    }
+
+    private void initInstitutionalAccounts() {
+        if (institutionalAccountRepository.findByAccountNumber("9000000001").isEmpty()) {
+            InstitutionalAccount ingresos = new InstitutionalAccount();
+            ingresos.setAccountNumber("9000000001");
+            ingresos.setName("INGRESOS_SERVICIOS_MASIVOS");
+            ingresos.setAccountingBalance(BigDecimal.ZERO);
+            ingresos.setStatus(CommonStatusEnum.ACTIVO);
+            ingresos.setCreationDate(LocalDateTime.now());
+            institutionalAccountRepository.save(ingresos);
+        }
+
+        if (institutionalAccountRepository.findByAccountNumber("9000000002").isEmpty()) {
+            InstitutionalAccount iva = new InstitutionalAccount();
+            iva.setAccountNumber("9000000002");
+            iva.setName("PASIVOS_IVA_RETENIDO");
+            iva.setAccountingBalance(BigDecimal.ZERO);
+            iva.setStatus(CommonStatusEnum.ACTIVO);
+            iva.setCreationDate(LocalDateTime.now());
+            institutionalAccountRepository.save(iva);
+        }
+
+        log.info("InstitutionalAccounts creadas");
     }
 
     private void initCoreUsers() {
@@ -122,67 +160,117 @@ public class DataInitializer implements CommandLineRunner {
     }
 
     private void initCustomers() {
-        CustomerSubtype personal = customerSubtypeRepository.findAll().get(0);
+        CustomerSubtype personal = customerSubtypeRepository.findAll().stream()
+                .filter(s -> "PERSONAL".equals(s.getName()))
+                .findFirst()
+                .orElseThrow(() -> new IllegalStateException("Subtype PERSONAL no encontrado en seed"));
 
-        Customer bryan = new Customer();
-        bryan.setCustomerSubtype(personal);
-        bryan.setCustomerType(CustomerTypeEnum.NATURAL);
-        bryan.setIdentificationType("CEDULA");
-        bryan.setIdentification("1234567890");
-        bryan.setFirstName("Bryan");
-        bryan.setLastName("Ortiz");
-        bryan.setBirthDate(LocalDate.of(2000, 1, 15));
-        bryan.setEmail("bryan@banquito.com");
-        bryan.setMobilePhone("0991234567");
-        bryan.setAddress("Quito, Ecuador");
-        bryan.setStatus(CustomerStatusEnum.ACTIVO);
-        customerRepository.save(bryan);
+        CustomerSubtype empresaPagosMasivosSubtype = customerSubtypeRepository.findAll().stream()
+                .filter(s -> "EMPRESA_PAGOS_MASIVOS".equals(s.getName()))
+                .findFirst()
+                .orElseThrow(() -> new IllegalStateException("Subtype EMPRESA_PAGOS_MASIVOS no encontrado en seed"));
 
-        Customer ana = new Customer();
-        ana.setCustomerSubtype(personal);
-        ana.setCustomerType(CustomerTypeEnum.NATURAL);
-        ana.setIdentificationType("CEDULA");
-        ana.setIdentification("0987654321");
-        ana.setFirstName("Ana");
-        ana.setLastName("Garcia");
-        ana.setBirthDate(LocalDate.of(1998, 5, 20));
-        ana.setEmail("ana@banquito.com");
-        ana.setMobilePhone("0987654321");
-        ana.setAddress("Guayaquil, Ecuador");
-        ana.setStatus(CustomerStatusEnum.ACTIVO);
-        customerRepository.save(ana);
+        if (customerRepository.findByIdentificationTypeAndIdentification("CEDULA", "1234567890").isEmpty()) {
+            Customer bryan = new Customer();
+            bryan.setCustomerSubtype(personal);
+            bryan.setCustomerType(CustomerTypeEnum.NATURAL);
+            bryan.setIdentificationType("CEDULA");
+            bryan.setIdentification("1234567890");
+            bryan.setFirstName("Bryan");
+            bryan.setLastName("Ortiz");
+            bryan.setBirthDate(LocalDate.of(2000, 1, 15));
+            bryan.setEmail("bryan@banquito.com");
+            bryan.setMobilePhone("0991234567");
+            bryan.setAddress("Quito, Ecuador");
+            bryan.setStatus(CustomerStatusEnum.ACTIVO);
+            customerRepository.save(bryan);
+        }
+
+        if (customerRepository.findByIdentificationTypeAndIdentification("CEDULA", "0987654321").isEmpty()) {
+            Customer ana = new Customer();
+            ana.setCustomerSubtype(personal);
+            ana.setCustomerType(CustomerTypeEnum.NATURAL);
+            ana.setIdentificationType("CEDULA");
+            ana.setIdentification("0987654321");
+            ana.setFirstName("Ana");
+            ana.setLastName("Garcia");
+            ana.setBirthDate(LocalDate.of(1998, 5, 20));
+            ana.setEmail("ana@banquito.com");
+            ana.setMobilePhone("0987654321");
+            ana.setAddress("Guayaquil, Ecuador");
+            ana.setStatus(CustomerStatusEnum.ACTIVO);
+            customerRepository.save(ana);
+        }
+
+        Customer empresaPm = customerRepository.findByIdentificationTypeAndIdentification("RUC", "1790012345001")
+                .orElseGet(Customer::new);
+        empresaPm.setCustomerSubtype(empresaPagosMasivosSubtype);
+        empresaPm.setCustomerType(CustomerTypeEnum.JURIDICO);
+        empresaPm.setIdentificationType("RUC");
+        empresaPm.setIdentification("1790012345001");
+        empresaPm.setLegalName("Pagos Masivos Demo S.A.");
+        empresaPm.setConstitutionDate(LocalDate.of(2015, 3, 21));
+        empresaPm.setEmail("tesoreria@pagosmasivosdemo.ec");
+        empresaPm.setMobilePhone("022345678");
+        empresaPm.setAddress("Av. Amazonas, Quito");
+        empresaPm.setStatus(CustomerStatusEnum.ACTIVO);
+        customerRepository.save(empresaPm);
         log.info("Customers creados");
     }
 
     private void initAccounts() {
-        Customer bryan = customerRepository.findAll().get(0);
-        Customer ana = customerRepository.findAll().get(1);
+        Customer bryan = customerRepository.findByIdentificationTypeAndIdentification("CEDULA", "1234567890")
+                .orElseThrow(() -> new IllegalStateException("Cliente Bryan no existe en seed"));
+        Customer ana = customerRepository.findByIdentificationTypeAndIdentification("CEDULA", "0987654321")
+                .orElseThrow(() -> new IllegalStateException("Cliente Ana no existe en seed"));
+        Customer empresaPm = customerRepository.findByIdentificationTypeAndIdentification("RUC", "1790012345001")
+                .orElseThrow(() -> new IllegalStateException("Cliente empresa PM no existe en seed"));
+
         Branch sucursal = branchRepository.findAll().get(0);
         AccountSubtype ahorros = accountSubtypeRepository.findAll().get(0);
 
-        Account cuenta1 = new Account();
-        cuenta1.setAccountNumber("001-00001234");
-        cuenta1.setCustomer(bryan);
-        cuenta1.setBranch(sucursal);
-        cuenta1.setAccountSubtype(ahorros);
-        cuenta1.setStatus(AccountStatusEnum.ACTIVO);
-        cuenta1.setAccountingBalance(new BigDecimal("5000.00"));
-        cuenta1.setAvailableBalance(new BigDecimal("5000.00"));
-        cuenta1.setIsFavorite(false);
-        cuenta1.setOpeningDate(LocalDateTime.now());
-        accountRepository.save(cuenta1);
+        if (accountRepository.findByAccountNumber("001-00001234").isEmpty()) {
+            Account cuenta1 = new Account();
+            cuenta1.setAccountNumber("001-00001234");
+            cuenta1.setCustomer(bryan);
+            cuenta1.setBranch(sucursal);
+            cuenta1.setAccountSubtype(ahorros);
+            cuenta1.setStatus(AccountStatusEnum.ACTIVO);
+            cuenta1.setAccountingBalance(new BigDecimal("5000.00"));
+            cuenta1.setAvailableBalance(new BigDecimal("5000.00"));
+            cuenta1.setIsFavorite(false);
+            cuenta1.setOpeningDate(LocalDateTime.now());
+            accountRepository.save(cuenta1);
+        }
 
-        Account cuenta2 = new Account();
-        cuenta2.setAccountNumber("001-00005678");
-        cuenta2.setCustomer(ana);
-        cuenta2.setBranch(sucursal);
-        cuenta2.setAccountSubtype(ahorros);
-        cuenta2.setStatus(AccountStatusEnum.ACTIVO);
-        cuenta2.setAccountingBalance(new BigDecimal("2500.00"));
-        cuenta2.setAvailableBalance(new BigDecimal("2500.00"));
-        cuenta2.setIsFavorite(false);
-        cuenta2.setOpeningDate(LocalDateTime.now());
-        accountRepository.save(cuenta2);
+        if (accountRepository.findByAccountNumber("001-00005678").isEmpty()) {
+            Account cuenta2 = new Account();
+            cuenta2.setAccountNumber("001-00005678");
+            cuenta2.setCustomer(ana);
+            cuenta2.setBranch(sucursal);
+            cuenta2.setAccountSubtype(ahorros);
+            cuenta2.setStatus(AccountStatusEnum.ACTIVO);
+            cuenta2.setAccountingBalance(new BigDecimal("2500.00"));
+            cuenta2.setAvailableBalance(new BigDecimal("2500.00"));
+            cuenta2.setIsFavorite(false);
+            cuenta2.setOpeningDate(LocalDateTime.now());
+            accountRepository.save(cuenta2);
+        }
+
+        if (accountRepository.findByAccountNumber("0050000202").isEmpty()) {
+            Account cuentaEmpresaPm = new Account();
+            cuentaEmpresaPm.setAccountNumber("0050000202");
+            cuentaEmpresaPm.setCustomer(empresaPm);
+            cuentaEmpresaPm.setBranch(sucursal);
+            cuentaEmpresaPm.setAccountSubtype(ahorros);
+            cuentaEmpresaPm.setStatus(AccountStatusEnum.ACTIVO);
+            cuentaEmpresaPm.setAccountingBalance(new BigDecimal("100000.00"));
+            cuentaEmpresaPm.setAvailableBalance(new BigDecimal("100000.00"));
+            cuentaEmpresaPm.setIsFavorite(false);
+            cuentaEmpresaPm.setOpeningDate(LocalDateTime.now());
+            accountRepository.save(cuentaEmpresaPm);
+        }
+
         log.info("Accounts creadas");
     }
 }

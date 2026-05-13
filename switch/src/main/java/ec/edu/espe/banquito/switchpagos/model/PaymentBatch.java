@@ -31,7 +31,7 @@ public class PaymentBatch {
     @Column(name = "file_name", length = 255)
     private String fileName;
 
-    @Column(name = "file_hash", length = 255, unique = true)
+    @Column(name = "file_hash", length = 255)
     private String fileHash;
 
     @Column(name = "ruc", length = 20)

@@ -8,6 +8,7 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Stream;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,7 +34,7 @@ public class SftpUploadController {
 
     private final SwitchApiClient switchApiClient;
 
-    @Value("${sftp.local.directory:./sftp-downloads}")
+    @Value("${sftp.local.directory}")
     private String localDirectory;
 
     @Autowired
@@ -46,15 +47,15 @@ public class SftpUploadController {
      */
     @PostMapping("/upload")
     public ResponseEntity<Map<String, Object>> receiveSftpFile(@RequestParam("file") MultipartFile file) {
-        LOG.info("📥 Archivo SFTP recibido: {}", file.getOriginalFilename());
-        LOG.info("📊 Tamaño: {} bytes", file.getSize());
+        LOG.info("Archivo SFTP recibido: {}", file.getOriginalFilename());
+        LOG.info("Tamano: {} bytes", file.getSize());
 
         try {
             // Crear directorio si no existe
             Path uploadPath = Paths.get(localDirectory);
             if (!Files.exists(uploadPath)) {
                 Files.createDirectories(uploadPath);
-                LOG.info("📁 Directorio creado: {}", localDirectory);
+                LOG.info("Directorio creado: {}", localDirectory);
             }
 
             // Guardar archivo localmente
@@ -62,10 +63,10 @@ public class SftpUploadController {
             Path filePath = uploadPath.resolve(fileName);
             Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
             
-            LOG.info("💾 Archivo guardado en: {}", filePath);
+            LOG.info("Archivo guardado en: {}", filePath);
 
             // Enviar archivo al switch principal
-            LOG.info("🔗 Enviando archivo al Switch principal...");
+            LOG.info("Enviando archivo al Switch principal");
             File savedFile = filePath.toFile();
             boolean sentToSwitch = switchApiClient.sendFileToSwitch(savedFile);
 
@@ -77,17 +78,17 @@ public class SftpUploadController {
             response.put("timestamp", java.time.LocalDateTime.now());
 
             if (sentToSwitch) {
-                LOG.info("✅ Archivo procesado y enviado al Switch exitosamente");
+                LOG.info("Archivo procesado y enviado al Switch exitosamente");
                 response.put("status", "SUCCESS");
                 return ResponseEntity.ok(response);
             } else {
-                LOG.error("❌ Error enviando archivo al Switch");
+                LOG.error("Error enviando archivo al Switch");
                 response.put("status", "ERROR_SENDING_TO_SWITCH");
                 return ResponseEntity.internalServerError().body(response);
             }
 
         } catch (IOException e) {
-            LOG.error("❌ Error procesando archivo SFTP: {}", e.getMessage(), e);
+            LOG.error("Error procesando archivo SFTP: {}", e.getMessage(), e);
             return ResponseEntity.internalServerError().body(Map.of(
                 "error", "Error procesando archivo: " + e.getMessage(),
                 "status", "ERROR_PROCESSING_FILE"
@@ -100,21 +101,26 @@ public class SftpUploadController {
      */
     @PostMapping("/status")
     public ResponseEntity<Map<String, Object>> getSftpServerStatus() {
-        LOG.info("🔍 Verificando estado del servidor SFTP");
+        LOG.info("Verificando estado del servidor SFTP");
         
         try {
             Path uploadPath = Paths.get(localDirectory);
             boolean directoryExists = Files.exists(uploadPath);
-            long directorySize = directoryExists ? Files.walk(uploadPath)
-                .filter(Files::isRegularFile)
-                .mapToLong(p -> {
-                    try {
-                        return Files.size(p);
-                    } catch (IOException e) {
-                        return 0;
-                    }
-                })
-                .sum() : 0;
+            long directorySize = 0;
+            if (directoryExists) {
+                try (Stream<Path> paths = Files.walk(uploadPath)) {
+                    directorySize = paths
+                        .filter(Files::isRegularFile)
+                        .mapToLong(p -> {
+                            try {
+                                return Files.size(p);
+                            } catch (IOException e) {
+                                return 0;
+                            }
+                        })
+                        .sum();
+                }
+            }
 
             Map<String, Object> response = new HashMap<>();
             response.put("service", "sftp-server");
@@ -126,8 +132,13 @@ public class SftpUploadController {
 
             return ResponseEntity.ok(response);
 
-        } catch (Exception e) {
-            LOG.error("❌ Error verificando estado SFTP: {}", e.getMessage(), e);
+        } catch (IOException e) {
+            LOG.error("Error verificando estado SFTP: {}", e.getMessage(), e);
+            return ResponseEntity.internalServerError().body(Map.of(
+                "error", "Error verificando estado: " + e.getMessage()
+            ));
+        } catch (RuntimeException e) {
+            LOG.error("Error verificando estado SFTP: {}", e.getMessage(), e);
             return ResponseEntity.internalServerError().body(Map.of(
                 "error", "Error verificando estado: " + e.getMessage()
             ));

@@ -11,15 +11,23 @@ public interface CoreSwitchService {
 
     boolean validateAccount(String accountNumber);
 
+    /**
+     * Indica si el RUC está asociado a un cliente jurídico ACTIVO con subtipo EMPRESA_PAGOS_MASIVOS vigente en Core.
+     */
+    boolean isMassPaymentsActiveForRuc(String ruc);
+
     TransferResultDTO transfer(
             String originAccount,
             String destinationAccount,
+            String beneficiaryIdentification,
             BigDecimal amount,
             String uuid
     );
 
     TransferResultDTO chargeCommission(
             String companyAccountNumber,
+            BigDecimal commissionSubtotal,
+            BigDecimal vatAmount,
             BigDecimal totalAmount,
             String uuid
     );

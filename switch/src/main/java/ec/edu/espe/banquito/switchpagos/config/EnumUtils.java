@@ -9,6 +9,10 @@ import ec.edu.espe.banquito.switchpagos.enums.ServiceTypeEnum;
  */
 public class EnumUtils {
 
+    public static boolean isValidationSuccess(String value) {
+        return value != null && "SUCCESS".equalsIgnoreCase(value.trim());
+    }
+
     /**
      * Safely converts a string to ChannelEnum, returns null if invalid.
      */

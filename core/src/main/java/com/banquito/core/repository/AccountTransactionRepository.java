@@ -18,5 +18,8 @@ public interface AccountTransactionRepository extends JpaRepository<AccountTrans
     boolean existsByTransactionUuidAndTransactionDateBetween(
             String transactionUuid, LocalDateTime start, LocalDateTime end);
 
+    boolean existsByAccount_IdAndTransactionUuidAndTransactionDateBetween(
+            Integer accountId, String transactionUuid, LocalDateTime start, LocalDateTime end);
+
     List<AccountTransaction> findTop10ByAccount_IdOrderByTransactionDateDesc(Integer accountId);
 }

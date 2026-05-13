@@ -3,6 +3,9 @@ package ec.edu.espe.banquito.switchpagos.dto;
 import java.math.BigDecimal;
 
 public class TransferResponseDTO {
+    private Boolean success;
+    private String code;
+    private String uuid;
     private String transferId;
     private String status;
     private String message;
@@ -31,6 +34,24 @@ public class TransferResponseDTO {
     }
     public void setAmount(BigDecimal amount) {
         this.amount = amount;
+    }
+    public Boolean getSuccess() {
+        return success;
+    }
+    public void setSuccess(Boolean success) {
+        this.success = success;
+    }
+    public String getCode() {
+        return code;
+    }
+    public void setCode(String code) {
+        this.code = code;
+    }
+    public String getUuid() {
+        return uuid;
+    }
+    public void setUuid(String uuid) {
+        this.uuid = uuid;
     }
     @Override
     public String toString() {

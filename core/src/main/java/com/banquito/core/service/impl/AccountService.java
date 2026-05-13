@@ -2,16 +2,27 @@ package com.banquito.core.service.impl;
 
 import com.banquito.core.dto.AccountRequestDTO;
 import com.banquito.core.dto.AccountResponseDTO;
+import com.banquito.core.dto.BalanceDTO;
+import com.banquito.core.dto.TransactionResponseDTO;
 import com.banquito.core.enums.AccountStatusEnum;
+import com.banquito.core.enums.CommonStatusEnum;
+import com.banquito.core.enums.MovementTypeEnum;
+import com.banquito.core.enums.TransactionStatusEnum;
 import com.banquito.core.exception.AccountNotFoundException;
+import com.banquito.core.exception.DuplicateTransactionException;
+import com.banquito.core.exception.InactiveAccountException;
+import com.banquito.core.exception.InsufficientBalanceException;
 import com.banquito.core.model.Account;
 import com.banquito.core.model.AccountSubtype;
+import com.banquito.core.model.AccountTransaction;
 import com.banquito.core.model.Branch;
 import com.banquito.core.model.Customer;
 import com.banquito.core.repository.AccountRepository;
 import com.banquito.core.repository.AccountSubtypeRepository;
+import com.banquito.core.repository.AccountTransactionRepository;
 import com.banquito.core.repository.BranchRepository;
 import com.banquito.core.repository.CustomerRepository;
+import com.banquito.core.repository.TransactionSubtypeRepository;
 import com.banquito.core.service.IAccountService;
 import com.banquito.core.service.IAuthenticationService;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +33,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -33,6 +45,8 @@ public class AccountService implements IAccountService {
     private final CustomerRepository customerRepository;
     private final BranchRepository branchRepository;
     private final AccountSubtypeRepository accountSubtypeRepository;
+    private final AccountTransactionRepository transactionRepository;
+    private final TransactionSubtypeRepository transactionSubtypeRepository;
     private final IAuthenticationService authenticationService;
 
     @Transactional(readOnly = true)
@@ -230,15 +244,30 @@ public class AccountService implements IAccountService {
         transaction.setAmount(amount);
         transaction.setResultingBalance(resultingBalance);
         transaction.setTransactionUuid(uuid);
-        transaction.setStatus("COMPLETADA");
+        transaction.setStatus(TransactionStatusEnum.COMPLETADA);
         transaction.setTransactionDate(LocalDateTime.now());
         transaction.setTransactionSubtype(transactionSubtypeRepository.findByCode(subtypeCode)
                 .orElseThrow(() -> new RuntimeException("Subtipo de transaccion no configurado: " + subtypeCode)));
-        if (!"ACTIVO".equals(transaction.getTransactionSubtype().getStatus())) {
+        if (transaction.getTransactionSubtype().getStatus() != CommonStatusEnum.ACTIVO) {
             throw new IllegalArgumentException("El subtipo de transaccion no esta activo");
         }
         transaction.setDescription(transaction.getTransactionSubtype().getName());
         return transactionRepository.save(transaction);
+    }
+
+    private TransactionResponseDTO toTransactionResponse(AccountTransaction transaction, String accountNumber,
+                                                         String message) {
+        return new TransactionResponseDTO(
+                transaction.getId(),
+                accountNumber,
+                transaction.getMovementType(),
+                transaction.getAmount(),
+                transaction.getResultingBalance(),
+                transaction.getTransactionDate(),
+                transaction.getTransactionUuid(),
+                transaction.getStatus(),
+                message
+        );
     }
 
     private void validateAccountRequest(AccountRequestDTO request) {
