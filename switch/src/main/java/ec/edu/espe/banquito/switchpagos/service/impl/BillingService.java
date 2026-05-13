@@ -1,4 +1,4 @@
-﻿package ec.edu.espe.banquito.switchpagos.service.impl;
+package ec.edu.espe.banquito.switchpagos.service.impl;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -186,9 +186,13 @@ public class BillingService {
         cargo.setSuccessfulTransactions(exitosos);
         cargo.setUnitFee(tarifa);
         cargo.setCommissionSubtotal(subtotal);
+        cargo.setFeeAmount(subtotal);
         cargo.setVatAmount(iva);
+        cargo.setIvaAmount(iva);
         cargo.setTotalCharge(total);
+        cargo.setTotalAmount(total);
         cargo.setChargeStatus(ChargeStatusEnum.PENDING);
+        cargo.setStatus(ChargeStatusEnum.PENDING);
 
         ServiceCharge cargoGuardado = serviceChargeRepository.save(cargo);
         logger.info("ServiceCharge creado con ID: {}", cargoGuardado.getId());
@@ -207,10 +211,12 @@ public class BillingService {
 
         if (cobroExitoso) {
             cargoGuardado.setChargeStatus(ChargeStatusEnum.CHARGED);
+            cargoGuardado.setStatus(ChargeStatusEnum.CHARGED);
             cargoGuardado.setChargedAt(LocalDateTime.now());
             logger.info("Cobro exitoso - Status actualizado a CHARGED");
         } else {
             cargoGuardado.setChargeStatus(ChargeStatusEnum.REJECTED);
+            cargoGuardado.setStatus(ChargeStatusEnum.REJECTED);
             logger.warn("Cobro rechazado - Status actualizado a REJECTED");
         }
 

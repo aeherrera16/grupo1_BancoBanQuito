@@ -1,13 +1,5 @@
-<<<<<<< HEAD
 package com.banquito.core.controller;
 
-import com.banquito.core.dto.BalanceDTO;
-import com.banquito.core.dto.TransactionRequestDTO;
-import com.banquito.core.dto.TransactionResponseDTO;
-import com.banquito.core.dto.TransferRequestDTO;
-import com.banquito.core.dto.TransferResultDTO;
-import com.banquito.core.integration.CoreSwitchService;
-import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -16,59 +8,13 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-@RestController
-@RequestMapping("/core/v1/integration")
-@RequiredArgsConstructor
-public class CoreIntegrationController {
-
-    private final CoreSwitchService coreSwitchService;
-
-    @GetMapping("/balance/{accountNumber}")
-    public ResponseEntity<BalanceDTO> getBalance(@PathVariable String accountNumber) {
-        return ResponseEntity.ok(coreSwitchService.getBalance(accountNumber));
-    }
-
-    @GetMapping("/account/{accountNumber}/valid")
-    public ResponseEntity<Boolean> isAccountValid(@PathVariable String accountNumber) {
-        return ResponseEntity.ok(coreSwitchService.validateAccount(accountNumber));
-    }
-
-    @PostMapping("/transfer")
-    public ResponseEntity<TransferResultDTO> transfer(@RequestBody TransferRequestDTO request) {
-        return ResponseEntity.ok(coreSwitchService.transfer(
-                request.getOriginAccountNumber(),
-                request.getDestinationAccountNumber(),
-                request.getAmount(),
-                request.getTransactionUuid()
-        ));
-    }
-
-    @PostMapping("/commission")
-    public ResponseEntity<TransferResultDTO> chargeCommission(@RequestBody TransactionRequestDTO request) {
-        return ResponseEntity.ok(coreSwitchService.chargeCommission(
-                request.getAccountNumber(),
-                request.getAmount(),
-                request.getTransactionUuid()
-        ));
-    }
-}
-=======
-package com.banquito.core.controller;
-
 import com.banquito.core.dto.BalanceDTO;
 import com.banquito.core.dto.TransactionRequestDTO;
-import com.banquito.core.dto.TransactionResponseDTO;
 import com.banquito.core.dto.TransferRequestDTO;
 import com.banquito.core.dto.TransferResultDTO;
 import com.banquito.core.integration.CoreSwitchService;
+
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/core/v1/integration")
@@ -117,4 +63,3 @@ public class CoreIntegrationController {
         ));
     }
 }
->>>>>>> a3271e9 (feat: Refactor core banking integration and add business day validation)

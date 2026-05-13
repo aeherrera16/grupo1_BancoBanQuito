@@ -19,5 +19,11 @@ public interface PaymentBatchRepository extends JpaRepository<PaymentBatch, Inte
             BatchStatusEnum status,
             LocalDateTime receivedAt);
 
+    Optional<PaymentBatch> findFirstByFileHashAndReceivedAtAfter(
+            String fileHash,
+            LocalDateTime receivedAt);
+
+    Optional<PaymentBatch> findFirstByFileHash(String fileHash);
+
     List<PaymentBatch> findByStatusOrderByReceivedAtAsc(BatchStatusEnum status);
 }

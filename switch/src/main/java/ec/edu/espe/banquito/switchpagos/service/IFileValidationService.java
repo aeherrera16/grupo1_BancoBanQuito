@@ -1,4 +1,4 @@
-﻿package ec.edu.espe.banquito.switchpagos.service;
+package ec.edu.espe.banquito.switchpagos.service;
 
 import java.util.List;
 

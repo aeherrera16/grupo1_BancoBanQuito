@@ -50,15 +50,28 @@ public class ServiceCharge {
     @Column(name = "commission_subtotal", nullable = false, precision = 18, scale = 2)
     private BigDecimal commissionSubtotal;
 
+    @Column(name = "fee_amount", nullable = false, precision = 18, scale = 2)
+    private BigDecimal feeAmount;
+
     @Column(name = "vat_amount", nullable = false, precision = 18, scale = 2)
     private BigDecimal vatAmount;
+
+    @Column(name = "iva_amount", nullable = false, precision = 18, scale = 2)
+    private BigDecimal ivaAmount;
 
     @Column(name = "total_charge", nullable = false, precision = 18, scale = 2)
     private BigDecimal totalCharge;
 
+    @Column(name = "total_amount", nullable = false, precision = 18, scale = 2)
+    private BigDecimal totalAmount;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "charge_status", nullable = false, length = 30)
     private ChargeStatusEnum chargeStatus;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false, length = 30)
+    private ChargeStatusEnum status;
 
     @Column(name = "charged_at")
     private LocalDateTime chargedAt;
@@ -128,12 +141,28 @@ public class ServiceCharge {
         this.commissionSubtotal = commissionSubtotal;
     }
 
+    public BigDecimal getFeeAmount() {
+        return feeAmount;
+    }
+
+    public void setFeeAmount(BigDecimal feeAmount) {
+        this.feeAmount = feeAmount;
+    }
+
     public BigDecimal getVatAmount() {
         return vatAmount;
     }
 
     public void setVatAmount(BigDecimal vatAmount) {
         this.vatAmount = vatAmount;
+    }
+
+    public BigDecimal getIvaAmount() {
+        return ivaAmount;
+    }
+
+    public void setIvaAmount(BigDecimal ivaAmount) {
+        this.ivaAmount = ivaAmount;
     }
 
     public BigDecimal getTotalCharge() {
@@ -144,12 +173,28 @@ public class ServiceCharge {
         this.totalCharge = totalCharge;
     }
 
+    public BigDecimal getTotalAmount() {
+        return totalAmount;
+    }
+
+    public void setTotalAmount(BigDecimal totalAmount) {
+        this.totalAmount = totalAmount;
+    }
+
     public ChargeStatusEnum getChargeStatus() {
         return chargeStatus;
     }
 
     public void setChargeStatus(ChargeStatusEnum chargeStatus) {
         this.chargeStatus = chargeStatus;
+    }
+
+    public ChargeStatusEnum getStatus() {
+        return status;
+    }
+
+    public void setStatus(ChargeStatusEnum status) {
+        this.status = status;
     }
 
     public LocalDateTime getChargedAt() {

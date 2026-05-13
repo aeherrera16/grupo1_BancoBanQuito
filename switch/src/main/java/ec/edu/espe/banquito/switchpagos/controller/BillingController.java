@@ -457,7 +457,7 @@ public class BillingController {
      * @return Archivo con el reporte de novedades en formato CSV
      */
     @GetMapping("/batches/{batchId}/download/novedades")
-    public ResponseEntity<?> descargarReporteNovedades(@PathVariable Integer batchId) {
+    public ResponseEntity<?> descargarReporteNovedadesDetallado(@PathVariable Integer batchId) {
         logger.info("GET /api/billing/batches/{}/download/novedades", batchId);
 
         try {

@@ -1,4 +1,4 @@
-﻿package ec.edu.espe.banquito.switchpagos.controller;
+package ec.edu.espe.banquito.switchpagos.controller;
 
 
 import java.time.LocalDateTime;

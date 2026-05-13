@@ -23,6 +23,12 @@ public class CutoffTimeService implements ICutoffTimeService {
     @Value("${app.ingest.cutoff-hour:18}")
     private int cutoffHour;
 
+    private final BusinessDayService businessDayService;
+
+    public CutoffTimeService(BusinessDayService businessDayService) {
+        this.businessDayService = businessDayService;
+    }
+
     /**
      * Verifica si el tiempo actual está dentro de la ventana de ingesta.
      * @return true si está antes de la hora de corte, false otherwise
@@ -34,21 +40,7 @@ public class CutoffTimeService implements ICutoffTimeService {
         return now.isBefore(cutoff);
     }
 
-    /**
-     * Obtiene la hora de corte configurada.
-     * @return LocalTime con la hora de corte
-     */
     @Override
-    private final CoreBankingClient coreBankingClient;
-
-    public CutoffTimeService(CoreBankingClient coreBankingClient) {
-        this.coreBankingClient = coreBankingClient;
-    }
-
-    public boolean isWithinIngestionWindow() {
-        return LocalTime.now().isBefore(LocalTime.of(cutoffHour, 0));
-    }
-
     public LocalTime getCutoffTime() {
         return LocalTime.of(cutoffHour, 0);
     }
@@ -86,7 +78,7 @@ public class CutoffTimeService implements ICutoffTimeService {
             logger.info("Dia {} es fin de semana ({})", date, dow);
             return true;
         }
-        boolean holiday = coreBankingClient.isHoliday(date);
+        boolean holiday = !businessDayService.isBusinessDay(date);
         if (holiday) {
             logger.info("Dia {} es feriado segun el core", date);
         }
