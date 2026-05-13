@@ -24,7 +24,6 @@ import com.banquito.core.repository.BranchRepository;
 import com.banquito.core.repository.CustomerRepository;
 import com.banquito.core.repository.TransactionSubtypeRepository;
 import com.banquito.core.service.IAccountService;
-import com.banquito.core.service.IAuthenticationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -47,12 +46,10 @@ public class AccountService implements IAccountService {
     private final AccountSubtypeRepository accountSubtypeRepository;
     private final AccountTransactionRepository transactionRepository;
     private final TransactionSubtypeRepository transactionSubtypeRepository;
-    private final IAuthenticationService authenticationService;
 
     @Transactional(readOnly = true)
     @Override
     public AccountResponseDTO findByAccountNumber(String accountNumber, Integer coreUserId) {
-        authenticationService.validateActiveCoreUser(coreUserId);
         Account account = accountRepository.findByAccountNumber(accountNumber)
                 .orElseThrow(() -> new AccountNotFoundException(accountNumber));
         return toResponse(account);
@@ -61,7 +58,6 @@ public class AccountService implements IAccountService {
     @Transactional(readOnly = true)
     @Override
     public List<AccountResponseDTO> findByCustomerId(Integer customerId, Integer coreUserId) {
-        authenticationService.validateActiveCoreUser(coreUserId);
         return accountRepository.findByCustomer_Id(customerId)
                 .stream()
                 .map(this::toResponse)
@@ -71,8 +67,6 @@ public class AccountService implements IAccountService {
     @Transactional
     @Override
     public AccountResponseDTO create(AccountRequestDTO request, Integer coreUserId) {
-        authenticationService.validateActiveCoreUser(coreUserId);
-
         Customer customer = customerRepository.findById(request.getCustomerId())
                 .orElseThrow(() -> new RuntimeException("Cliente no encontrado: " + request.getCustomerId()));
         Branch branch = branchRepository.findById(request.getBranchId())
@@ -121,7 +115,6 @@ public class AccountService implements IAccountService {
     }
 
     private AccountResponseDTO changeStatus(String accountNumber, AccountStatusEnum status, Integer coreUserId) {
-        authenticationService.validateActiveCoreUser(coreUserId);
         Account account = accountRepository.findByAccountNumber(accountNumber)
                 .orElseThrow(() -> new AccountNotFoundException(accountNumber));
         account.setStatus(status);
@@ -350,6 +343,23 @@ public class AccountService implements IAccountService {
         if (uuid.length() > 35) {
             throw new IllegalArgumentException("El UUID de transaccion no debe superar 35 caracteres");
         }
+    }
+
+    @Transactional
+    @Override
+    public AccountResponseDTO setFavorite(String accountNumber) {
+        Account accountToFavorite = accountRepository.findByAccountNumber(accountNumber)
+                .orElseThrow(() -> new AccountNotFoundException("Account not found: " + accountNumber));
+
+        accountRepository.findByIsFavoriteTrue()
+                .ifPresent(currentFavorite -> {
+                    currentFavorite.setIsFavorite(false);
+                    accountRepository.save(currentFavorite);
+                });
+
+        accountToFavorite.setIsFavorite(true);
+        Account saved = accountRepository.save(accountToFavorite);
+        return toResponse(saved);
     }
 
     @Transactional(readOnly = true)
