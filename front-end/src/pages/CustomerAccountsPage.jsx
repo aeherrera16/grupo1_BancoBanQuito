@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Field, inputClass, PageShell, Panel, primaryButtonClass } from '../components/PageShell';
 import { useAuth } from '../hooks/useAuth';
-import { getAccountByNumber, getAccountsByCustomerId, getCustomerByIdentification, getTransactions } from '../services/apiClient';
+import { getAccountByNumber, getAccountsByCustomerId, getCustomerByIdentification, getTransactions, setFavoriteAccount } from '../services/apiClient';
 
 export function CustomerAccountsPage() {
   const { user, portal } = useAuth();
@@ -21,6 +21,7 @@ export function CustomerAccountsPage() {
   const [history, setHistory] = useState(null);
   const [error, setError] = useState('');
   const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
   const [showDetails, setShowDetails] = useState(false);
 
   useEffect(() => {
@@ -45,9 +46,11 @@ export function CustomerAccountsPage() {
         setCustomerAccounts(accounts);
 
         if (accounts.length > 0) {
-          const firstAccount = accounts[0].accountNumber;
-          setSelectedAccountNumber(firstAccount);
-          await fetchAccountDetails(firstAccount);
+          // Priorizar la cuenta favorita para mostrarla primero
+          const favorite = accounts.find(a => a.isFavorite);
+          const initialAcc = favorite ? favorite.accountNumber : accounts[0].accountNumber;
+          setSelectedAccountNumber(initialAcc);
+          await fetchAccountDetails(initialAcc);
         }
       } catch (err) {
         console.error("Error loading accounts:", err);
@@ -101,11 +104,33 @@ export function CustomerAccountsPage() {
     await fetchAccountDetails(accNumber);
   };
 
+  const handleSetFavorite = async () => {
+    if (!result?.accountNumber) return;
+    try {
+      await setFavoriteAccount(result.accountNumber);
+      // Refrescar datos
+      await fetchAccountDetails(result.accountNumber);
+      // Actualizar lista local de cuentas para reflejar el cambio de favorita
+      setCustomerAccounts(prev => prev.map(acc => ({
+        ...acc,
+        isFavorite: acc.accountNumber === result.accountNumber
+      })));
+      showToastNotification("Cuenta marcada como favorita con éxito");
+    } catch (err) {
+      setError("No se pudo marcar la cuenta como favorita: " + err.message);
+    }
+  };
+
+  const showToastNotification = (msg) => {
+    setToastMessage(msg);
+    setShowToast(true);
+    setTimeout(() => setShowToast(false), 3000);
+  };
+
   const handleShare = () => {
     if (result?.accountNumber) {
       navigator.clipboard.writeText(result.accountNumber);
-      setShowToast(true);
-      setTimeout(() => setShowToast(false), 3000);
+      showToastNotification("Número de cuenta copiado al portapapeles");
     }
   };
 
@@ -224,7 +249,16 @@ export function CustomerAccountsPage() {
                     <h2 className="text-2xl font-black text-slate-900">{result.accountSubtypeDescription}</h2>
                     <span className="px-3 py-1 bg-green-100 text-green-700 text-[10px] font-black rounded-full uppercase">{result.status}</span>
                   </div>
-                  <p className="text-lg font-bold text-[#006644] tracking-tight">{result.accountNumber}</p>
+                  <div className="flex items-center gap-2">
+                    <p className="text-lg font-bold text-[#006644] tracking-tight">{result.accountNumber}</p>
+                    {result.isFavorite && (
+                      <span title="Cuenta Favorita para recaudaciones" className="text-yellow-500 animate-bounce">
+                        <svg className="w-6 h-6 fill-current" viewBox="0 0 24 24">
+                          <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
+                        </svg>
+                      </span>
+                    )}
+                  </div>
                   <p className="text-xs text-slate-400 font-bold uppercase mt-1 tracking-widest">{result.branchName || 'Sede Principal'}</p>
                 </div>
               </div>
@@ -243,6 +277,12 @@ export function CustomerAccountsPage() {
           </div>
 
           <div className="px-10 py-5 bg-slate-50 border-t border-slate-100 flex justify-end gap-6">
+            {!result.isFavorite && (
+              <button onClick={handleSetFavorite} className="flex items-center gap-2 text-[11px] font-black text-yellow-600 hover:text-yellow-700 uppercase tracking-widest transition-colors">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.921-.755 1.688-1.54 1.118l-3.976-2.888a1 1 0 00-1.175 0l-3.976 2.888c-.784.57-1.838-.197-1.539-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" /></svg>
+                Marcar como Favorita
+              </button>
+            )}
             <button onClick={handleShare} className="flex items-center gap-2 text-[11px] font-black text-slate-400 hover:text-[#006644] uppercase tracking-widest transition-colors">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" /></svg>
               Compartir

@@ -70,18 +70,6 @@ public class AccountController {
         return ResponseEntity.ok(accountService.suspend(accountNumber, null));
     }
 
-    @PostMapping("/{accountNumber}/credit")
-    public ResponseEntity<TransactionResponseDTO> credit(@PathVariable String accountNumber,
-            @RequestBody AmountRequest request) {
-        return ResponseEntity.ok(accountService.credit(accountNumber, request.amount()));
-    }
-
-    @PostMapping("/transfer")
-    public ResponseEntity<TransactionResponseDTO> transfer(@RequestBody TransferRequest request) {
-        return ResponseEntity
-                .ok(accountService.transfer(request.origin(), request.destination(), request.amount(), request.uuid()));
-    }
-
     @GetMapping("/default/favorite")
     public ResponseEntity<AccountResponseDTO> getFavoriteAccount() {
         return ResponseEntity.ok(accountService.getFavoriteAccount());
@@ -90,11 +78,5 @@ public class AccountController {
     @PatchMapping("/{accountNumber}/set-favorite")
     public ResponseEntity<AccountResponseDTO> setFavorite(@PathVariable String accountNumber) {
         return ResponseEntity.ok(accountService.setFavorite(accountNumber));
-    }
-
-    record AmountRequest(BigDecimal amount) {
-    }
-
-    record TransferRequest(String origin, String destination, BigDecimal amount, String uuid) {
     }
 }

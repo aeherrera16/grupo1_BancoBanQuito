@@ -6,10 +6,8 @@ import com.banquito.core.dto.TransferRequestDTO;
 import com.banquito.core.service.ITransactionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+import java.util.List;
 
 @RestController
 @RequestMapping("/core/v1/transactions")
@@ -17,6 +15,11 @@ import org.springframework.web.bind.annotation.RestController;
 public class TransactionController {
 
     private final ITransactionService transactionService;
+
+    @GetMapping("/history/{accountNumber}")
+    public ResponseEntity<List<TransactionResponseDTO>> getHistory(@PathVariable String accountNumber) {
+        return ResponseEntity.ok(transactionService.findHistoryByAccountNumber(accountNumber));
+    }
 
     @PostMapping("/debits")
     public ResponseEntity<TransactionResponseDTO> debit(@RequestBody TransactionRequestDTO request) {

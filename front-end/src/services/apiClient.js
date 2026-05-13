@@ -81,7 +81,7 @@ export async function changeAccountStatus(accountNumber, action) {
 }
 
 export async function getTransactions(accountNumber) {
-  return coreRequest(`/core/v1/accounts/${accountNumber}/transactions`);
+  return coreRequest(`/core/v1/transactions/history/${accountNumber}`);
 }
 
 export async function getFavoriteAccount() {
@@ -94,26 +94,45 @@ export async function setFavoriteAccount(accountNumber) {
   });
 }
 
-// === TRANSACTION ENDPOINTS (Legacy/Core) ===
+// === TRANSACTION ENDPOINTS (Consolidated) ===
 
-export async function debit(accountNumber, amount) {
-  return coreRequest(`/core/v1/accounts/${accountNumber}/debit`, {
+export async function debit(accountNumber, amount, description = 'Retiro en ventanilla') {
+  return coreRequest('/core/v1/transactions/debits', {
     method: 'POST',
-    body: JSON.stringify({ amount }),
+    body: JSON.stringify({ 
+      accountNumber, 
+      amount, 
+      transactionUuid: crypto.randomUUID(),
+      subtypeCode: 'WITHDRAW',
+      description 
+    }),
   });
 }
 
-export async function credit(accountNumber, amount) {
-  return coreRequest(`/core/v1/accounts/${accountNumber}/credit`, {
+export async function credit(accountNumber, amount, description = 'Deposito en ventanilla') {
+  return coreRequest('/core/v1/transactions/credits', {
     method: 'POST',
-    body: JSON.stringify({ amount }),
+    body: JSON.stringify({ 
+      accountNumber, 
+      amount, 
+      transactionUuid: crypto.randomUUID(),
+      subtypeCode: 'DEPOSIT',
+      description 
+    }),
   });
 }
 
-export async function transfer(origin, destination, amount, uuid) {
-  return coreRequest('/core/v1/accounts/transfer', {
+export async function transfer(origin, destination, amount, uuid, description = 'Transferencia bancaria') {
+  return coreRequest('/core/v1/transactions/transfers', {
     method: 'POST',
-    body: JSON.stringify({ origin, destination, amount, uuid }),
+    body: JSON.stringify({ 
+      originAccountNumber: origin, 
+      destinationAccountNumber: destination, 
+      amount, 
+      transactionUuid: uuid || crypto.randomUUID(),
+      subtypeCode: 'TRANSFER',
+      description
+    }),
   });
 }
 
@@ -129,7 +148,21 @@ export async function markNotificationAsRead(id) {
   });
 }
 
-// === CREDENTIALS ENDPOINTS ===
+// === AUTH & CREDENTIALS ENDPOINTS ===
+
+export async function loginStaff(username, password) {
+  return coreRequest('/core/v1/auth/login/staff', {
+    method: 'POST',
+    body: JSON.stringify({ username, password }),
+  });
+}
+
+export async function loginCustomer(username, password) {
+  return coreRequest('/core/v1/auth/login/customer', {
+    method: 'POST',
+    body: JSON.stringify({ username, password }),
+  });
+}
 
 export async function createWebCredential(data) {
   return coreRequest('/core/v1/auth/customers/credentials', {

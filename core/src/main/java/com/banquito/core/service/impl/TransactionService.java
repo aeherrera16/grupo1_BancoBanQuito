@@ -23,6 +23,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -103,6 +105,18 @@ public class TransactionService implements ITransactionService {
         return toResponse(debit, "Transferencia procesada correctamente");
     }
 
+    @Override
+    public List<TransactionResponseDTO> findHistoryByAccountNumber(String accountNumber) {
+        log.info("Consultando historial para cuenta: {}", accountNumber);
+        Account account = accountRepository.findByAccountNumber(accountNumber)
+                .orElseThrow(() -> new AccountNotFoundException(accountNumber));
+
+        return transactionRepository.findTop10ByAccount_IdOrderByTransactionDateDesc(account.getId())
+                .stream()
+                .map(t -> toResponse(t, t.getTransactionSubtype() != null ? t.getTransactionSubtype().getName() : t.getDescription()))
+                .collect(Collectors.toList());
+    }
+
     private void validateIdempotency(String uuid) {
         if (uuid == null || uuid.isBlank()) {
             throw new IllegalArgumentException("TRANSACTION_UUID es obligatorio");
@@ -162,7 +176,7 @@ public class TransactionService implements ITransactionService {
     }
 
     private AccountTransaction registerMovement(Account account, BigDecimal amount, MovementTypeEnum type,
-                                                String uuid, String subtypeCode, String description) {
+                                                 String uuid, String subtypeCode, String description) {
         TransactionSubtype subtype = subtypeRepository.findByCode(subtypeCode)
                 .orElseThrow(() -> new RuntimeException("Subtipo de transaccion no configurado: " + subtypeCode));
         if (subtype.getStatus() != CommonStatusEnum.ACTIVO) {

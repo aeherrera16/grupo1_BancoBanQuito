@@ -33,14 +33,12 @@ export function LoginPage() {
   const { portal } = useParams();
   const navigate = useNavigate();
   const { login } = useAuth();
-  const [form, setForm] = useState({ name: '', identificacion: '' });
+  const [form, setForm] = useState({ username: '', password: '' });
   const [authError, setAuthError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const config = useMemo(() => portalConfig[portal], [portal]);
   const portalInfo = portal ? portals[portal] : null;
-  const isStaff = portal === 'operador' || portal === 'cajero';
-  const isPersonaNatural = portal === 'personaNatural';
 
   if (!portal || !config || !portalInfo) {
     return <Navigate to="/" replace />;
@@ -51,27 +49,21 @@ export function LoginPage() {
   }, [portalInfo.label]);
 
   const isFormValid = () => {
-    if (!form.name.trim()) return false;
-    if (!isStaff && !form.identificacion.trim()) return false;
-    return true;
+    return form.username.trim() !== '' && form.password.trim() !== '';
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!isFormValid()) return;
+    
     setIsSubmitting(true);
     setAuthError('');
 
     try {
-      if (isStaff) {
-        login(portal, form.name);
-      } else if (isPersonaNatural) {
-        login(portal, form.name, form.identificacion, 'CEDULA');
-      } else {
-        login(portal, form.name, form.identificacion, 'RUC');
-      }
+      await login(portal, form.username, form.password);
       navigate(portalInfo.startPath);
     } catch (err) {
-      setAuthError(err.message || 'Error al iniciar sesión');
+      setAuthError(err.message || 'Credenciales inválidas. Por favor intente de nuevo.');
     } finally {
       setIsSubmitting(false);
     }
@@ -94,71 +86,76 @@ export function LoginPage() {
       </header>
 
       <main className="mx-auto max-w-6xl px-6 py-12">
-        <section className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl">
+        <section className="overflow-hidden rounded-[2.5rem] border border-slate-200 bg-white shadow-2xl">
           <div className="grid gap-0 lg:grid-cols-[1.05fr_1fr]">
-            <div className="bg-white p-10">
-              <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.3em] text-emerald-600">
+            <div className="bg-white p-12 lg:p-16">
+              <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.3em] text-emerald-600 mb-8">
                 <span className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-emerald-200 bg-emerald-50 text-[11px] font-black text-emerald-700">
                   BQ
                 </span>
-                {portalInfo.label}
+                Portal {portalInfo.label}
               </div>
-              <h1 className="mt-4 text-3xl font-black text-banker-navy">{config.intro}</h1>
-              <p className="mt-2 text-sm text-slate-600">{config.subtitle}</p>
+              
+              <h1 className="text-4xl font-black text-slate-900 tracking-tight leading-tight">{config.intro}</h1>
+              <p className="mt-3 text-slate-500 font-medium">{config.subtitle}</p>
 
-              <form className="mt-6 grid gap-4" onSubmit={handleSubmit}>
-                <label className="text-xs font-semibold text-slate-600">
-                  {isStaff ? 'Nombre del empleado' : 'Nombre'}
+              <form className="mt-10 space-y-6" onSubmit={handleSubmit}>
+                <div>
+                  <label className="block text-[11px] font-black text-slate-400 uppercase tracking-widest mb-2">Nombre de Usuario</label>
                   <input
-                    className="mt-2 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none transition focus:border-banker-blue"
+                    className="w-full bg-slate-50 rounded-2xl border border-slate-100 px-5 py-4 text-sm font-bold text-slate-900 outline-none transition-all focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500"
                     type="text"
-                    placeholder={isStaff ? 'Ej: Juan García' : 'Ej: Juan Pérez'}
-                    value={form.name}
-                    onChange={(e) => setForm({ ...form, name: e.target.value })}
+                    placeholder="Ingrese su usuario..."
+                    value={form.username}
+                    onChange={(e) => setForm({ ...form, username: e.target.value })}
                     required
                   />
-                </label>
+                </div>
 
-                {!isStaff && (
-                  <label className="text-xs font-semibold text-slate-600">
-                    {isPersonaNatural ? 'Número de cédula' : 'RUC'}
-                    <input
-                      className="mt-2 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none transition focus:border-banker-blue"
-                      type="text"
-                      placeholder={isPersonaNatural ? 'Ej: 0912345678' : 'Ej: 1791111111001'}
-                      value={form.identificacion}
-                      onChange={(e) => setForm({ ...form, identificacion: e.target.value })}
-                      required
-                    />
-                  </label>
+                <div>
+                  <label className="block text-[11px] font-black text-slate-400 uppercase tracking-widest mb-2">Contraseña Segura</label>
+                  <input
+                    className="w-full bg-slate-50 rounded-2xl border border-slate-100 px-5 py-4 text-sm font-bold text-slate-900 outline-none transition-all focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500"
+                    type="password"
+                    placeholder="••••••••"
+                    value={form.password}
+                    onChange={(e) => setForm({ ...form, password: e.target.value })}
+                    required
+                  />
+                </div>
+
+                {authError && (
+                  <div className="p-4 bg-red-50 border border-red-100 rounded-2xl text-red-600 text-xs font-bold animate-in shake duration-300">
+                    ✗ {authError}
+                  </div>
                 )}
+
+                <button
+                  className="w-full py-5 rounded-2xl bg-slate-900 text-white text-sm font-black uppercase tracking-widest transition-all hover:bg-slate-800 hover:shadow-xl hover:shadow-slate-200 active:scale-[0.98] disabled:bg-slate-300"
+                  disabled={isSubmitting || !isFormValid()}
+                >
+                  {isSubmitting ? 'Verificando...' : 'Iniciar Sesión'}
+                </button>
               </form>
 
-              {authError ? <p className="mt-3 text-xs text-rose-600">{authError}</p> : null}
-
-              <button
-                className="mt-6 w-full rounded-lg bg-banker-blue px-4 py-2 text-sm font-semibold text-white transition hover:bg-banker-navy disabled:cursor-not-allowed disabled:bg-slate-400"
-                disabled={isSubmitting || !isFormValid()}
-                onClick={handleSubmit}
-              >
-                {isSubmitting ? 'Ingresando...' : 'Ingresar'}
-              </button>
-
-              <div className="mt-6 rounded-xl border border-slate-200 bg-slate-50 p-4 text-xs text-slate-600">
-                Verifica que estas en el portal oficial antes de ingresar tus datos.
+              <div className="mt-10 flex items-center gap-4 p-5 bg-slate-50 rounded-2xl border border-slate-100">
+                <svg className="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
+                <p className="text-[11px] text-slate-500 font-medium leading-relaxed">
+                  Estás en una zona segura. Tus datos están protegidos por encriptación de grado bancario.
+                </p>
               </div>
-              <p className="mt-4 text-xs text-slate-500">
-                Acceso seguro para clientes y personal autorizado. Si tienes problemas, contacta al soporte.
-              </p>
             </div>
 
-            <div className="relative min-h-[360px] bg-slate-100">
+            <div className="relative hidden lg:block overflow-hidden">
               <div
-                className="absolute inset-0 bg-cover bg-center"
+                className="absolute inset-0 bg-cover bg-center transition-transform duration-[10s] hover:scale-110"
                 style={{ backgroundImage: `url(${config.image})` }}
               />
-              <div className="absolute inset-0 bg-gradient-to-br from-emerald-900/35 via-emerald-900/10 to-transparent" />
-              <div className="absolute inset-0 bg-white/10" />
+              <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 via-transparent to-transparent" />
+              <div className="absolute bottom-10 left-10 right-10">
+                <p className="text-white text-2xl font-black tracking-tight leading-tight">BancoBanQuito</p>
+                <p className="text-white/60 text-xs font-bold uppercase tracking-widest mt-1">Excelencia e integridad financiera</p>
+              </div>
             </div>
           </div>
         </section>
