@@ -71,4 +71,24 @@ public class AccountController {
             @RequestHeader(CORE_USER_HEADER) Integer coreUserId) {
         return ResponseEntity.ok(accountService.suspend(accountNumber, coreUserId));
     }
+
+    @PostMapping("/{accountNumber}/credit")
+    public ResponseEntity<TransactionResponseDTO> credit(@PathVariable String accountNumber,
+                                                         @RequestBody AmountRequest request) {
+        return ResponseEntity.ok(accountService.credit(accountNumber, request.amount()));
+    }
+
+    @PostMapping("/transfer")
+    public ResponseEntity<TransactionResponseDTO> transfer(@RequestBody TransferRequest request) {
+        return ResponseEntity.ok(accountService.transfer(request.origin(), request.destination(), request.amount(), request.uuid()));
+    }
+
+    @GetMapping("/default/favorite")
+    public ResponseEntity<AccountResponseDTO> getFavoriteAccount() {
+        return ResponseEntity.ok(accountService.getFavoriteAccount());
+    }
+
+    record AmountRequest(BigDecimal amount) {}
+
+    record TransferRequest(String origin, String destination, BigDecimal amount, String uuid) {}
 }

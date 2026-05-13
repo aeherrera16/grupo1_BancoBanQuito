@@ -18,4 +18,6 @@ public interface AccountRepository extends JpaRepository<Account, Integer> {
     Optional<Account> findWithLockByAccountNumber(@Param("accountNumber") String accountNumber);
 
     List<Account> findByCustomer_Id(Integer customerId);
+    boolean existsByAccountNumber(String accountNumber);
+    Optional<Account> findByIsFavoriteTrue();
 }

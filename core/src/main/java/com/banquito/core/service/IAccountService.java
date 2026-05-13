@@ -18,4 +18,9 @@ public interface IAccountService {
     AccountResponseDTO block(String accountNumber, Integer coreUserId);
 
     AccountResponseDTO suspend(String accountNumber, Integer coreUserId);
+    TransactionResponseDTO credit(String accountNumber, BigDecimal amount);
+
+    TransactionResponseDTO transfer(String origin, String destination, BigDecimal amount, String uuid);
+
+    AccountResponseDTO getFavoriteAccount();
 }

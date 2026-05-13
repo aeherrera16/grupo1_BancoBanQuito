@@ -1,8 +1,11 @@
 package ec.edu.espe.banquito.switchpagos.service.impl;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.Map;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
@@ -11,6 +14,8 @@ import ec.edu.espe.banquito.switchpagos.service.ICoreBankingClient;
 
 @Service("coreBankingClientImpl")
 public class CoreBankingClient implements ICoreBankingClient {
+
+    private static final Logger logger = LoggerFactory.getLogger(CoreBankingClient.class);
 
     private final RestClient restClient;
 
@@ -31,5 +36,36 @@ public class CoreBankingClient implements ICoreBankingClient {
                 ))
                 .retrieve()
                 .toBodilessEntity();
+    }
+
+    public boolean isHoliday(LocalDate date) {
+        try {
+            Boolean result = restClient.get()
+                    .uri("/core/v1/holidays/{date}", date.toString())
+                    .retrieve()
+                    .body(Boolean.class);
+            return Boolean.TRUE.equals(result);
+        } catch (Exception e) {
+            logger.warn("No se pudo consultar feriados al core para la fecha {}: {}. Se asume dia habil.", date, e.getMessage());
+            return false;
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    public String getFavoriteAccountNumber() {
+        try {
+            Map<String, Object> response = restClient.get()
+                    .uri("/core/v1/accounts/default/favorite")
+                    .retrieve()
+                    .body(Map.class);
+            if (response != null && response.containsKey("accountNumber")) {
+                return (String) response.get("accountNumber");
+            }
+            logger.warn("La respuesta del core no contiene accountNumber para cuenta favorita");
+            return null;
+        } catch (Exception e) {
+            logger.warn("No se pudo obtener cuenta favorita del core: {}", e.getMessage());
+            return null;
+        }
     }
 }
