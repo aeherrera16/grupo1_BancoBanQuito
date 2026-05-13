@@ -117,8 +117,8 @@ public class DataInitializer implements CommandLineRunner {
         admin.setRole("ADMIN");
         admin.setStatus(CommonStatusEnum.ACTIVO);
         admin.setCreationDate(LocalDateTime.now());
-        coreUserRepository.save(admin);
-        log.info("CoreUsers creados");
+        CoreUser saved = coreUserRepository.save(admin);
+        log.info("CoreUsers creados con ID: {}", saved.getId());
     }
 
     private void initCustomers() {

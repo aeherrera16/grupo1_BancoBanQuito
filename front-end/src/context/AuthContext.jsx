@@ -1,4 +1,4 @@
-import { createContext, useState } from 'react';
+import { createContext, useState, useEffect } from 'react';
 
 export const AuthContext = createContext();
 
@@ -7,27 +7,56 @@ export function AuthProvider({ children }) {
     isAuthenticated: false,
     portal: null,
     user: null,
+    coreUserId: null,
+    testData: null,
   });
 
+  useEffect(() => {
+    const loadTestData = async () => {
+      try {
+        const response = await fetch('http://localhost:8080/core/v1/auth/test-data');
+        if (response.ok) {
+          const data = await response.json();
+          setAuth(prev => ({
+            ...prev,
+            testData: data,
+            coreUserId: data.coreUserId,
+          }));
+        }
+      } catch (error) {
+        console.error('Error loading test data:', error);
+      }
+    };
+
+    loadTestData();
+  }, []);
+
   const login = (portal) => {
-    setAuth({
+    let selectedUser = null;
+
+    if (auth.testData && auth.testData.customers.length > 0) {
+      selectedUser = auth.testData.customers[0];
+    }
+
+    setAuth(prev => ({
+      ...prev,
       isAuthenticated: true,
       portal,
-      user: {
-        id: '1001',
+      user: selectedUser || {
+        id: '1',
         name: 'Usuario Corporativo',
         email: 'user@empresa.ec',
-        role: portal === 'empresa' ? 'ADMIN' : 'USER',
       },
-    });
+    }));
   };
 
   const logout = () => {
-    setAuth({
+    setAuth(prev => ({
+      ...prev,
       isAuthenticated: false,
       portal: null,
       user: null,
-    });
+    }));
   };
 
   return (

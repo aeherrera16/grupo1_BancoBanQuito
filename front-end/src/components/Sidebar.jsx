@@ -12,33 +12,33 @@ export default function Sidebar({ logout }) {
   const isActive = (path) => location.pathname === path;
 
   return (
-    <div className="w-64 bg-banker-navy text-white shadow-lg">
+    <div className="w-64 bg-banker-navy text-white shadow-lg flex flex-col h-screen">
       {/* Logo */}
-      <div className="p-6 border-b border-banker-blue">
+      <div className="p-6 border-b border-banker-blue/30">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-banker-gold rounded-lg flex items-center justify-center">
+          <div className="w-10 h-10 bg-banker-gold rounded-lg flex items-center justify-center flex-shrink-0">
             <span className="text-lg font-bold text-banker-navy">₡</span>
           </div>
-          <span className="text-xl font-bold">BancoBanQuito</span>
+          <span className="text-lg font-bold truncate">BancoBanQuito</span>
         </div>
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 p-6">
-        <div className="space-y-2">
+      <nav className="flex-1 p-4">
+        <div className="space-y-1">
           <Link
             to="/dashboard"
             className={`block px-4 py-3 rounded-lg transition-colors ${
               isActive('/dashboard')
-                ? 'bg-banker-blue text-white'
-                : 'text-banker-light hover:bg-banker-blue/20'
+                ? 'bg-banker-blue text-white shadow-md'
+                : 'text-banker-light hover:bg-banker-blue/30'
             }`}
           >
             <span className="flex items-center gap-3">
-              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+              <svg className="w-5 h-5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                 <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z" />
               </svg>
-              Dashboard
+              <span>Dashboard</span>
             </span>
           </Link>
 
@@ -46,22 +46,22 @@ export default function Sidebar({ logout }) {
             to="/pagos-masivos"
             className={`block px-4 py-3 rounded-lg transition-colors ${
               isActive('/pagos-masivos')
-                ? 'bg-banker-blue text-white'
-                : 'text-banker-light hover:bg-banker-blue/20'
+                ? 'bg-banker-blue text-white shadow-md'
+                : 'text-banker-light hover:bg-banker-blue/30'
             }`}
           >
             <span className="flex items-center gap-3">
-              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+              <svg className="w-5 h-5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                 <path d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zm2 6a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2v-4zm6 4a2 2 0 100-4 2 2 0 000 4z" />
               </svg>
-              Pagos Masivos
+              <span>Pagos Masivos</span>
             </span>
           </Link>
         </div>
       </nav>
 
       {/* Logout Button */}
-      <div className="p-6 border-t border-banker-blue">
+      <div className="p-4 border-t border-banker-blue/30">
         <button
           onClick={handleLogout}
           className="w-full px-4 py-3 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold transition-colors flex items-center justify-center gap-2"

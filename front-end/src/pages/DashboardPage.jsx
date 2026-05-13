@@ -5,7 +5,8 @@ import { AccountCardSkeleton } from '../components/AccountCardSkeleton';
 
 export function DashboardPage() {
   const { user } = useAuth();
-  const { accounts, isLoading, error } = useAccounts(parseInt(user?.id));
+  const customerId = user?.id ? parseInt(user.id) : null;
+  const { accounts, isLoading, error } = useAccounts(customerId);
 
   const calculateTotalBalance = () => {
     return accounts.reduce((sum, acc) => sum + (acc.availableBalance || 0), 0);
