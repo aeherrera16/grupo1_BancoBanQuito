@@ -9,6 +9,10 @@ export function Home() {
     login(portal);
     if (portal === 'empresa') {
       navigate('/dashboard');
+    } else if (portal === 'personal') {
+      navigate('/personal');
+    } else if (portal === 'asesores') {
+      navigate('/asesores');
     }
   };
 
