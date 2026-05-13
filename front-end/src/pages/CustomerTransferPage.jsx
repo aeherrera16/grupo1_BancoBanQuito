@@ -1,71 +1,92 @@
 import { useState, useRef, useEffect } from 'react';
 import { Field, inputClass, PageShell, Panel, primaryButtonClass } from '../components/PageShell';
-import { coreRequest, fetchBalance } from '../services/apiClient';
+import { transfer, getAccountByNumber, getAccountsByCustomerId, getCustomerByIdentification } from '../services/apiClient';
 import { useAuth } from '../hooks/useAuth';
 
 const emptyForm = (origin) => ({
   originAccountNumber: origin,
   destinationAccountNumber: '',
   amount: '',
-  subtypeCode: 'TRANSFER',
-  description: '',
+  description: 'TRANSFERENCIA ENTRE CUENTAS',
+  subtypeCode: 'TRANSFER'
 });
 
 export function CustomerTransferPage() {
-  const { portal, user } = useAuth();
-  const defaultOrigin = user?.email === 'ana123' ? 'GYE-200001' : 'UIO-100001';
+  const { user } = useAuth();
+  const [customerAccounts, setCustomerAccounts] = useState([]);
+  const [loadingAccounts, setLoadingAccounts] = useState(true);
 
-  const [form, setForm] = useState(emptyForm(portal === 'personaNatural' ? defaultOrigin : ''));
+  const [form, setForm] = useState(emptyForm(''));
   const [result, setResult] = useState(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [destinationInfo, setDestinationInfo] = useState(null);
-  const [originAccountInfo, setOriginAccountInfo] = useState(null);
-  // UUID fijo por sesión de transferencia – garantiza idempotencia
   const txUuidRef = useRef(crypto.randomUUID());
 
-  // Cargar información real de la cuenta origen desde el backend
+  // Cargar cuentas reales del cliente al montar
   useEffect(() => {
-    if (portal === 'personaNatural' && defaultOrigin) {
-      fetchBalance(defaultOrigin)
-        .then(data => setOriginAccountInfo(data))
-        .catch(() => {}); // silencioso si falla
-    }
-  }, [defaultOrigin, portal]);
+    const loadAccounts = async () => {
+      if (!user?.identificacion) {
+        setLoadingAccounts(false);
+        return;
+      }
+      setLoadingAccounts(true);
+      try {
+        const customer = await getCustomerByIdentification(
+          user.identificationType || 'CEDULA',
+          user.identificacion
+        );
+        const accounts = await getAccountsByCustomerId(customer.id);
+        setCustomerAccounts(accounts);
+        if (accounts.length > 0) {
+          setForm(emptyForm(accounts[0].accountNumber));
+        }
+      } catch (err) {
+        console.error("Error loading accounts for transfer:", err);
+        setError("Error cargando tus cuentas origen.");
+      } finally {
+        setLoadingAccounts(false);
+      }
+    };
+
+    loadAccounts();
+  }, [user]);
 
   const resetForm = () => {
-    setForm(emptyForm(portal === 'personaNatural' ? defaultOrigin : ''));
+    if (customerAccounts.length > 0) {
+      setForm(emptyForm(customerAccounts[0].accountNumber));
+    } else {
+      setForm(emptyForm(''));
+    }
     setResult(null);
     setError('');
     setDestinationInfo(null);
-    txUuidRef.current = crypto.randomUUID(); // nuevo UUID para la próxima operación
+    txUuidRef.current = crypto.randomUUID();
   };
 
   const validateDestination = async () => {
     if (!form.destinationAccountNumber) return;
     try {
-      const data = await fetchBalance(form.destinationAccountNumber);
+      const data = await getAccountByNumber(form.destinationAccountNumber);
       setDestinationInfo(data.customerFullName || 'Titular encontrado');
       setError('');
     } catch {
       setDestinationInfo(null);
-      setError('Cuenta destino no encontrada');
+      setError('Cuenta destino no encontrada en el Core');
     }
   };
 
   const submitTransfer = async () => {
-    if (loading || result) return; // bloqueo doble-clic
+    if (loading || result) return;
     setLoading(true);
     setError('');
     try {
-      const res = await coreRequest('/core/v1/transactions/transfers', {
-        method: 'POST',
-        body: JSON.stringify({
-          ...form,
-          amount: Number(form.amount),
-          transactionUuid: txUuidRef.current,
-        }),
-      });
+      const res = await transfer(
+        form.originAccountNumber,
+        form.destinationAccountNumber,
+        Number(form.amount),
+        txUuidRef.current
+      );
       setResult(res);
     } catch (err) {
       setError(err.message);
@@ -111,10 +132,10 @@ export function CustomerTransferPage() {
             <div class="row"><span class="label">Cuenta Origen</span><span class="value">${form.originAccountNumber}</span></div>
             <div class="row"><span class="label">Cuenta Destino</span><span class="value">${form.destinationAccountNumber}</span></div>
             <div class="row"><span class="label">Beneficiario</span><span class="value">${destinationInfo || 'N/A'}</span></div>
-            <div class="row"><span class="label">Concepto</span><span class="value">${(form.description || form.subtypeCode).toUpperCase()}</span></div>
+            <div class="row"><span class="label">Concepto</span><span class="value">${form.description.toUpperCase()}</span></div>
             <div class="row"><span class="label">Referencia</span><span class="value">${result.transactionUuid?.slice(-8).toUpperCase()}</span></div>
           </div>
-          <div class="footer">Documento generado digitalmente &mdash; Información confidencial &mdash; BancoBanQuito</div>
+          <div class="footer">Documento generado digitalmente — Información confidencial — BancoBanQuito</div>
         </div>
         <script>window.onload=()=>window.print();<\/script>
       </body>
@@ -130,32 +151,51 @@ export function CustomerTransferPage() {
     Number(form.amount) > 0 &&
     destinationInfo;
 
+  if (loadingAccounts) {
+    return (
+      <PageShell title="Transferencias" description="">
+        <div className="flex flex-col items-center justify-center p-20">
+           <div className="w-10 h-10 border-4 border-[#006644] border-t-transparent rounded-full animate-spin mb-4"></div>
+           <p className="text-slate-400 font-bold uppercase tracking-widest text-[10px]">Cargando tus cuentas bancarias...</p>
+        </div>
+      </PageShell>
+    );
+  }
+
+  if (customerAccounts.length === 0) {
+    return (
+      <PageShell title="Transferencias" description="">
+        <Panel title="Sin cuentas disponibles">
+          <p className="text-slate-600">No se encontraron cuentas asociadas para realizar transferencias.</p>
+        </Panel>
+      </PageShell>
+    );
+  }
+
   return (
     <PageShell
       title="Transferencias"
-      description="Persona natural solo envía transferencias propias mediante el endpoint transaccional del Core."
+      description="Envía dinero de forma segura entre cuentas del BancoBanQuito."
     >
-      {/* ── FORMULARIO (oculto al imprimir) ── */}
       {!result && (
-        <div className="print:hidden">
-          <Panel title="Nueva transferencia">
-            <div className="grid gap-4 md:grid-cols-2">
-              <Field label="Cuenta origen">
+        <div className="max-w-4xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500">
+          <Panel title="Nueva Transferencia">
+            <div className="grid gap-6 md:grid-cols-2">
+              <Field label="Cuenta de Origen">
                 <select
-                  className={inputClass}
+                  className={`${inputClass} !bg-slate-50 font-bold`}
                   value={form.originAccountNumber}
-                  disabled={true}
                   onChange={(e) => setForm({ ...form, originAccountNumber: e.target.value })}
                 >
-                  <option value={defaultOrigin}>
-                    {originAccountInfo
-                      ? `${originAccountInfo.accountSubtypeDescription || 'Cuenta de Ahorros'} — ${defaultOrigin}${originAccountInfo.branchName ? ` (${originAccountInfo.branchName})` : ''}`
-                      : `Cuenta — ${defaultOrigin}`
-                    }
-                  </option>
+                  {customerAccounts.map((acc) => (
+                    <option key={acc.accountNumber} value={acc.accountNumber}>
+                      {acc.accountSubtypeDescription} — {acc.accountNumber}
+                    </option>
+                  ))}
                 </select>
               </Field>
-              <Field label="Cuenta destino">
+
+              <Field label="Cuenta de Destino">
                 <div className="flex gap-2">
                   <input
                     className={`${inputClass} flex-1`}
@@ -164,181 +204,100 @@ export function CustomerTransferPage() {
                       setForm({ ...form, destinationAccountNumber: e.target.value });
                       setDestinationInfo(null);
                     }}
-                    placeholder="Ej: 001-00001234"
+                    placeholder="Ej: UIO-123456"
                   />
                   <button
-                    className={`${primaryButtonClass} bg-[#006644]`}
+                    className={`${primaryButtonClass} !w-auto px-6 bg-[#006644] hover:bg-[#004d33]`}
                     onClick={validateDestination}
                     disabled={!form.destinationAccountNumber}
                   >
-                    Validar
+                    VALIDAR
                   </button>
                 </div>
                 {destinationInfo && (
-                  <p className="mt-1 text-sm text-green-700 font-medium">Titular: {destinationInfo}</p>
+                  <p className="mt-2 text-[11px] text-green-700 font-black uppercase tracking-tighter bg-green-50 px-3 py-1 rounded-lg border border-green-100 animate-in zoom-in-95">
+                    ✓ Titular: {destinationInfo}
+                  </p>
                 )}
               </Field>
-              <Field label="Monto">
+
+              <Field label="Monto a Transferir ($)">
                 <input
-                  className={inputClass}
+                  className={`${inputClass} text-2xl font-black text-[#006644]`}
                   type="number"
                   min="0.01"
                   step="0.01"
                   value={form.amount}
                   onChange={(e) => setForm({ ...form, amount: e.target.value })}
+                  placeholder="0.00"
                 />
               </Field>
-              <Field label="Subtipo">
-                <input className={inputClass} value={form.subtypeCode} disabled />
-              </Field>
-              <Field label="Descripción">
+
+              <Field label="Concepto / Descripción">
                 <input
                   className={inputClass}
                   value={form.description}
                   onChange={(e) => setForm({ ...form, description: e.target.value })}
-                  placeholder="Ej: Pago de arriendo"
                 />
               </Field>
             </div>
+
             <button
-              className={`${primaryButtonClass} mt-5`}
+              className={`${primaryButtonClass} mt-8 py-5 text-lg shadow-xl shadow-green-900/10`}
               disabled={loading || !isFormValid}
               onClick={submitTransfer}
             >
-              {loading ? (
-                <span className="flex items-center gap-2">
-                  <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
-                  </svg>
-                  Procesando…
-                </span>
-              ) : (
-                'Enviar transferencia'
-              )}
+              {loading ? 'PROCESANDO TRANSFERENCIA...' : 'CONFIRMAR Y ENVIAR DINERO'}
             </button>
           </Panel>
         </div>
       )}
 
-      {/* ── ERROR ESTILIZADO (oculto al imprimir) ── */}
       {error && !result && (
-        <div className="print:hidden mt-6 max-w-lg mx-auto bg-red-50 border border-red-200 rounded-xl p-5 flex gap-4 items-start shadow-sm">
+        <div className="mt-6 max-w-lg mx-auto bg-red-50 border border-red-200 rounded-2xl p-5 flex gap-4 items-start animate-in shake duration-500">
           <div className="flex-shrink-0 w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
-            <svg className="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"
-                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-            </svg>
+            <svg className="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
           </div>
-          <div className="flex-1">
-            <p className="font-semibold text-red-700">Transacción rechazada</p>
-            <p className="mt-1 text-sm text-red-600">
-              {error.toLowerCase().includes('insuficiente')
-                ? `Saldo insuficiente en la cuenta ${form.originAccountNumber}. Verifique su saldo disponible antes de reintentar.`
-                : error}
-            </p>
+          <div>
+            <p className="font-black text-red-700 uppercase text-xs tracking-widest">Error Transaccional</p>
+            <p className="mt-1 text-sm text-red-600 font-medium">{error}</p>
           </div>
-          <button
-            onClick={() => setError('')}
-            className="text-red-400 hover:text-red-600 focus:outline-none"
-          >
-            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
-            </svg>
-          </button>
         </div>
       )}
 
-      {/* ── COMPROBANTE (único visible al imprimir) ── */}
       {result && (
-        <>
-          {/* Sección solo para impresión */}
-          <div className="print:block hidden print-voucher">
-            <div className="max-w-sm mx-auto mt-8 border border-gray-200 rounded-xl overflow-hidden shadow-lg">
-              <div className="bg-[#006644] px-6 py-4 text-center">
-                <p className="text-white font-bold text-lg">BancoBanQuito</p>
-                <p className="text-green-100 text-xs">Comprobante de Transferencia</p>
+        <div className="mt-8 max-w-md mx-auto animate-in zoom-in-95 duration-500">
+          <div className="bg-white border border-gray-200 rounded-[3rem] shadow-2xl overflow-hidden relative">
+            <div className="bg-[#006644] px-6 py-10 text-center">
+              <div className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4 border-2 border-white/30">
+                <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" /></svg>
               </div>
-              <div className="p-6 space-y-3 text-sm">
-                {[
-                  ['Fecha', new Date(result.transactionDate).toLocaleString()],
-                  ['Referencia', result.transactionUuid?.slice(-8).toUpperCase()],
-                  ['Monto', `$${result.amount?.toFixed(2)}`],
-                  ['Cuenta Origen', form.originAccountNumber],
-                  ['Cuenta Destino', form.destinationAccountNumber],
-                  ['Beneficiario', destinationInfo || 'N/A'],
-                  ['Concepto', form.description || form.subtypeCode],
-                ].map(([label, val]) => (
-                  <div key={label} className="flex justify-between border-b border-gray-100 pb-2">
-                    <span className="text-gray-500">{label}</span>
-                    <span className="font-semibold text-gray-800">{val}</span>
-                  </div>
-                ))}
-              </div>
-              <div className="bg-gray-50 px-6 py-3 text-center text-xs text-gray-400">
-                Documento generado digitalmente — BancoBanQuito EN LÍNEA
-              </div>
+              <h2 className="text-2xl font-black text-white tracking-tight uppercase">¡Éxito!</h2>
+              <p className="text-green-100 text-[10px] font-black uppercase tracking-[0.2em] mt-2">Transferencia Procesada</p>
+            </div>
+            
+            <div className="p-8 space-y-4">
+              {[
+                ['Monto', `$${result.amount?.toFixed(2)}`, true],
+                ['Origen', form.originAccountNumber],
+                ['Destino', form.destinationAccountNumber],
+                ['Titular', destinationInfo || 'N/A'],
+                ['Referencia', result.transactionUuid?.slice(-8).toUpperCase()]
+              ].map(([label, val, highlight], i) => (
+                <div key={i} className="flex justify-between items-center border-b border-slate-50 pb-3 last:border-none">
+                  <span className="text-slate-400 text-[10px] font-black uppercase tracking-widest">{label}</span>
+                  <span className={highlight ? 'text-2xl font-black text-[#006644] tracking-tighter' : 'font-bold text-slate-800 text-sm'}>{val}</span>
+                </div>
+              ))}
+            </div>
+
+            <div className="p-8 pt-0 flex flex-col gap-3">
+              <button onClick={handlePrint} className="w-full py-4 rounded-2xl border-2 border-[#006644] text-[#006644] font-black text-xs uppercase tracking-widest hover:bg-green-50 transition-all active:scale-[0.98]">Imprimir Comprobante</button>
+              <button onClick={resetForm} className="w-full py-4 bg-slate-900 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-slate-800 transition-all active:scale-[0.98]">Nueva Transferencia</button>
             </div>
           </div>
-
-          {/* Comprobante visual (oculto al imprimir el resto de la página) */}
-          <div className="mt-8 max-w-md mx-auto print:hidden">
-            <div className="bg-white border border-gray-200 rounded-2xl shadow-xl overflow-hidden">
-              <div className="bg-[#006644] px-6 py-5 text-center">
-                <svg className="w-12 h-12 text-white mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <h2 className="text-xl font-bold text-white">¡Transferencia Exitosa!</h2>
-                <p className="text-green-100 text-sm mt-1">{new Date(result.transactionDate).toLocaleString()}</p>
-              </div>
-              <div className="p-6 space-y-3">
-                {[
-                  ['Monto enviado', `$${result.amount?.toFixed(2)}`, true],
-                  ['Cuenta Origen', form.originAccountNumber, false],
-                  ['Cuenta Destino', form.destinationAccountNumber, false],
-                  ['Beneficiario', destinationInfo || 'N/A', false],
-                  ['Concepto', (form.description || form.subtypeCode).toUpperCase(), false],
-                  ['Referencia', result.transactionUuid?.slice(-8).toUpperCase(), false],
-                ].map(([label, val, big]) => (
-                  <div key={label} className="flex justify-between items-center border-b border-gray-100 pb-2 last:border-none last:pb-0">
-                    <span className="text-gray-500 text-sm">{label}</span>
-                    <span className={big ? 'text-2xl font-black text-gray-900' : 'font-semibold text-gray-800 text-sm'}>
-                      {val}
-                    </span>
-                  </div>
-                ))}
-              </div>
-
-              {/* Botones de acción */}
-              <div className="px-6 pb-6 flex flex-col gap-3">
-                <button
-                  onClick={handlePrint}
-                  className="flex items-center justify-center gap-2 w-full py-2.5 rounded-lg border-2 border-[#006644] text-[#006644] font-semibold text-sm hover:bg-green-50 transition-colors"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
-                  </svg>
-                  Descargar / Imprimir comprobante
-                </button>
-                <button
-                  onClick={resetForm}
-                  className={`${primaryButtonClass} w-full`}
-                >
-                  Hacer otra transferencia
-                </button>
-              </div>
-            </div>
-          </div>
-        </>
+        </div>
       )}
-
-      {/* Estilos de impresión */}
-      <style>{`
-        @media print {
-          body > * { display: none !important; }
-          .print-voucher { display: block !important; }
-        }
-      `}</style>
     </PageShell>
   );
 }

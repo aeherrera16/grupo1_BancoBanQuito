@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { uploadPaymentBatch } from '../api/switchService';
+import { uploadPaymentBatch } from '../services/apiClient';
 
 export function useMassivePayments() {
   const [selectedFile, setSelectedFile] = useState(null);

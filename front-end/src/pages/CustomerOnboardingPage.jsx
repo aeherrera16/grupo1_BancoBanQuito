@@ -1,7 +1,13 @@
 import { useState, useEffect } from 'react';
 import { Field, inputClass, PageShell, Panel, primaryButtonClass, ResultBox } from '../components/PageShell';
-import { coreRequest } from '../services/apiClient';
-import { useAuth } from '../hooks/useAuth';
+import {
+  getCustomerByIdentification,
+  createCustomer as createCustomerApi,
+  createAccount as createAccountApi,
+  getBranches,
+  getAccountSubtypes,
+  getCustomerSubtypes,
+} from '../services/apiClient';
 
 const emptyCustomer = {
   identificationType: 'CEDULA',
@@ -16,7 +22,6 @@ const emptyCustomer = {
   mobilePhone: '',
   address: '',
   customerSubtypeId: '',
-  legalRepresentativeId: '',
 };
 
 const emptyAccount = {
@@ -27,10 +32,10 @@ const emptyAccount = {
 };
 
 export function CustomerOnboardingPage() {
-  const { user } = useAuth();
   const [lookup, setLookup] = useState({ type: 'CEDULA', number: '' });
   const [customer, setCustomer] = useState(emptyCustomer);
   const [account, setAccount] = useState(emptyAccount);
+  
   const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [result, setResult] = useState(null);
   const [error, setError] = useState('');
@@ -48,9 +53,9 @@ export function CustomerOnboardingPage() {
   const loadCatalogs = async () => {
     try {
       const [b, cs, as] = await Promise.all([
-        coreRequest('/core/v1/branches'),
-        coreRequest('/core/v1/customers/subtypes'),
-        coreRequest('/core/v1/accounts/subtypes')
+        getBranches(),
+        getCustomerSubtypes(),
+        getAccountSubtypes()
       ]);
       setBranches(Array.isArray(b) ? b : []);
       setCustomerSubtypes(Array.isArray(cs) ? cs : []);
@@ -65,7 +70,7 @@ export function CustomerOnboardingPage() {
     setError('');
     setResult(null);
     try {
-      const res = await coreRequest(`/core/v1/customers/identification/${lookup.type}/${lookup.number}`);
+      const res = await getCustomerByIdentification(lookup.type, lookup.number);
       setResult(res);
       if (res && res.id) {
         selectCustomer(res);
@@ -81,20 +86,18 @@ export function CustomerOnboardingPage() {
   const selectCustomer = (c) => {
     setSelectedCustomer(c);
     setAccount(prev => ({ ...prev, customerId: c.id }));
-    // Desplazar suavemente a la apertura de cuenta
-    document.getElementById('apertura-panel')?.scrollIntoView({ behavior: 'smooth' });
+    setTimeout(() => {
+      document.getElementById('apertura-panel')?.scrollIntoView({ behavior: 'smooth' });
+    }, 100);
   };
 
   const handleCreateCustomer = async () => {
     setLoading(true);
     setError('');
     try {
-      const res = await coreRequest('/core/v1/customers', {
-        method: 'POST',
-        body: JSON.stringify({
-          ...customer,
-          customerSubtypeId: Number(customer.customerSubtypeId),
-        }),
+      const res = await createCustomerApi({
+        ...customer,
+        customerSubtypeId: customer.customerSubtypeId ? Number(customer.customerSubtypeId) : null,
       });
       setResult(res);
       if (res && res.id) selectCustomer(res);
@@ -109,15 +112,11 @@ export function CustomerOnboardingPage() {
     setLoading(true);
     setError('');
     try {
-      const res = await coreRequest('/core/v1/accounts', {
-        method: 'POST',
-        coreUserId: user.coreUserId,
-        body: JSON.stringify({
-          ...account,
-          customerId: Number(account.customerId),
-          accountSubtypeId: Number(account.accountSubtypeId),
-          branchId: Number(account.branchId),
-        }),
+      const res = await createAccountApi({
+        ...account,
+        customerId: Number(account.customerId),
+        accountSubtypeId: Number(account.accountSubtypeId),
+        branchId: Number(account.branchId),
       });
       setResult(res);
       alert("¡Cuenta creada con éxito!");
@@ -180,9 +179,9 @@ export function CustomerOnboardingPage() {
               </select>
             </Field>
             <Field label="Identificación">
-              <input className={inputClass} value={customer.identification} onChange={(e) => setCustomer({ ...customer, identification: e.target.value })} />
+              <input className={inputClass} value={customer.identification} onChange={(e) => setCustomer({ ...customer, identification: e.target.value })} placeholder="Ej: 1712345678" />
             </Field>
-            
+
             {customer.customerType === 'NATURAL' ? (
               <>
                 <Field label="Nombres">
@@ -191,14 +190,17 @@ export function CustomerOnboardingPage() {
                 <Field label="Apellidos">
                   <input className={inputClass} value={customer.lastName} onChange={(e) => setCustomer({ ...customer, lastName: e.target.value })} />
                 </Field>
+                <Field label="Fecha de Nacimiento">
+                  <input className={inputClass} type="date" value={customer.birthDate} onChange={(e) => setCustomer({ ...customer, birthDate: e.target.value })} />
+                </Field>
               </>
             ) : (
               <>
                 <Field label="Razón Social">
                   <input className={inputClass} value={customer.legalName} onChange={(e) => setCustomer({ ...customer, legalName: e.target.value })} />
                 </Field>
-                <Field label="Rep. Legal (ID)">
-                  <input className={inputClass} value={customer.legalRepresentativeId} onChange={(e) => setCustomer({ ...customer, legalRepresentativeId: e.target.value })} />
+                <Field label="Fecha de Constitución">
+                  <input className={inputClass} type="date" value={customer.constitutionDate} onChange={(e) => setCustomer({ ...customer, constitutionDate: e.target.value })} />
                 </Field>
               </>
             )}
@@ -210,11 +212,11 @@ export function CustomerOnboardingPage() {
               </select>
             </Field>
             <Field label="Correo Electrónico">
-              <input className={inputClass} value={customer.email} onChange={(e) => setCustomer({ ...customer, email: e.target.value })} />
+              <input className={inputClass} type="email" value={customer.email} onChange={(e) => setCustomer({ ...customer, email: e.target.value })} />
             </Field>
           </div>
           <button className={`${primaryButtonClass} mt-6`} disabled={loading || selectedCustomer} onClick={handleCreateCustomer}>
-            CREAR Y SELECCIONAR TITULAR
+            {loading ? 'CREANDO...' : 'REGISTRAR Y SELECCIONAR TITULAR'}
           </button>
         </Panel>
 
@@ -237,13 +239,18 @@ export function CustomerOnboardingPage() {
                 <Field label="Sucursal de Apertura">
                   <select className={inputClass} value={account.branchId} onChange={(e) => setAccount({ ...account, branchId: e.target.value })}>
                     <option value="">Seleccione Oficina...</option>
-                    {branches.map(b => <option key={b.id} value={b.id}>{b.name} ({b.code})</option>)}
+                    {branches.map(b => <option key={b.id} value={b.id}>{b.name} ({b.branchCode})</option>)}
                   </select>
                 </Field>
               </div>
 
+              <div className="flex items-center gap-2 text-sm font-medium text-slate-600">
+                <input type="checkbox" checked={account.isFavorite} onChange={(e) => setAccount({ ...account, isFavorite: e.target.checked })} className="w-4 h-4 accent-[#006644]" />
+                <label>Marcar como favorita para recaudaciones automáticas</label>
+              </div>
+
               <button className={`${primaryButtonClass} py-5 text-lg shadow-2xl`} disabled={loading || !selectedCustomer || !account.accountSubtypeId || !account.branchId} onClick={handleCreateAccount}>
-                CONFIRMAR APERTURA AUTOMÁTICA
+                {loading ? 'PROCESANDO...' : 'CONFIRMAR APERTURA AUTOMÁTICA'}
               </button>
             </div>
           </Panel>
@@ -261,11 +268,11 @@ export function CustomerOnboardingPage() {
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {branches.length === 0 ? (
-                    <tr><td colSpan="2" className="p-8 text-center text-slate-400 italic">No hay datos disponibles...</td></tr>
+                    <tr><td colSpan="2" className="p-8 text-center text-slate-400 italic">Cargando datos de oficinas...</td></tr>
                   ) : (
                     branches.map(b => (
                       <tr key={b.id} className="hover:bg-slate-50 transition-colors">
-                        <td className="p-4 font-bold text-[#006644]">{b.code}</td>
+                        <td className="p-4 font-bold text-[#006644]">{b.branchCode}</td>
                         <td className="p-4 text-slate-700 font-medium">{b.name}</td>
                       </tr>
                     ))
@@ -275,13 +282,6 @@ export function CustomerOnboardingPage() {
           </div>
         </Panel>
       </div>
-
-      {error && (
-        <div className="mt-8 p-4 bg-red-50 border border-red-100 rounded-2xl flex items-center gap-3 text-red-700 animate-bounce">
-          <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" /></svg>
-          <span className="font-bold">{error}</span>
-        </div>
-      )}
 
       <div className="mt-8">
         <ResultBox result={result} error={error} />

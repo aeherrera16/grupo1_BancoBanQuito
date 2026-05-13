@@ -3,7 +3,7 @@ import { Navigate, useNavigate } from 'react-router-dom';
 import { portals } from '../config/portals';
 import { useAuth } from '../hooks/useAuth';
 import Sidebar from './Sidebar';
-import { coreRequest } from '../services/apiClient';
+import { getNotifications, markNotificationAsRead } from '../services/apiClient';
 
 function NotificationBell({ user }) {
   const [open, setOpen] = useState(false);
@@ -13,7 +13,7 @@ function NotificationBell({ user }) {
   const fetchNotifications = async () => {
     if (!user?.id) return;
     try {
-      const data = await coreRequest(`/core/v1/notifications/${user.id}`);
+      const data = await getNotifications(user.id);
       setNotifications(data);
     } catch (err) {
       console.error("Error fetching notifications:", err);
@@ -33,7 +33,7 @@ function NotificationBell({ user }) {
     setOpen(false);
     if (n.isUnread) {
       try {
-        await coreRequest(`/core/v1/notifications/${n.id}/read`, { method: 'PUT' });
+        await markNotificationAsRead(n.id);
         setNotifications(prev => prev.map(item => 
           item.id === n.id ? { ...item, isUnread: false } : item
         ));
@@ -175,9 +175,11 @@ export function LayoutEmpresas({ children, allowedPortal }) {
               <NotificationBell user={user} />
               <div className="ml-4 mr-4 text-right flex flex-col justify-center">
                 <p className="text-xl font-medium uppercase text-[#006644]">{user?.name || "USUARIO BANQUITO"}</p>
-                <p className="mt-0.5 text-[13px] font-medium text-gray-500">Último Ingreso: 05-13-2026 14:05:44</p>
+                {user?.identificacion && (
+                  <p className="mt-0.5 text-[13px] font-medium text-gray-500">{user.identificacion}</p>
+                )}
               </div>
-              <button 
+              <button
                 onClick={() => setIsProfileOpen(true)}
                 className="w-12 h-12 rounded-full overflow-hidden border-2 border-transparent hover:border-[#006644] transition-colors focus:outline-none flex-shrink-0 bg-gray-100 flex items-center justify-center"
               >

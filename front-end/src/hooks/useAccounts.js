@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { getAccountsByCustomerId } from '../api/accountsService';
+import { getAccountsByCustomerId } from '../services/apiClient';
 
 export function useAccounts(customerId) {
   const [accounts, setAccounts] = useState([]);

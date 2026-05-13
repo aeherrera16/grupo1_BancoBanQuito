@@ -78,7 +78,7 @@ public class AccountService implements IAccountService {
 
         LocalDateTime now = LocalDateTime.now();
         Account account = new Account();
-        // RF-02: Blindaje de generación automática por sucursal
+        // RF-02: Generación automática por sucursal secuencial
         account.setAccountNumber(resolveAccountNumber(null, branch));
         account.setCustomer(customer);
         account.setBranch(branch);
@@ -242,16 +242,30 @@ public class AccountService implements IAccountService {
         AccountTransaction originTransaction = registerTransaction(originAccount, amount, MovementTypeEnum.DEBITO, originAccount.getAvailableBalance(), uuid, "TRANSFER");
         registerTransaction(destinationAccount, amount, MovementTypeEnum.CREDITO, destinationAccount.getAvailableBalance(), uuid, "TRANSFER");
 
-        // Notificaciones automáticas
         createNotification(originAccount.getCustomer(), "Transferencia Enviada", 
-            "Has enviado $" + amount + " a " + destinationAccount.getCustomer().getFirstName() + ".", 
+            "Has enviado $" + amount + " a " + resolveCustomerName(destinationAccount.getCustomer()) + ".", 
             "Cuenta destino: " + destination + ". Ref: " + uuid, "DEBITO");
         
         createNotification(destinationAccount.getCustomer(), "Transferencia Recibida", 
-            "Has recibido $" + amount + " de " + originAccount.getCustomer().getFirstName() + ".", 
+            "Has recibido $" + amount + " de " + resolveCustomerName(originAccount.getCustomer()) + ".", 
             "Cuenta origen: " + origin + ". Ref: " + uuid, "CREDITO");
 
         return toTransactionResponse(originTransaction, origin, "Transferencia realizada exitosamente");
+    }
+
+    @Transactional
+    @Override
+    public AccountResponseDTO setFavorite(String accountNumber) {
+        Account accountToFavorite = accountRepository.findByAccountNumber(accountNumber)
+                .orElseThrow(() -> new AccountNotFoundException(accountNumber));
+
+        accountRepository.findByIsFavoriteTrue().ifPresent(current -> {
+            current.setIsFavorite(false);
+            accountRepository.save(current);
+        });
+
+        accountToFavorite.setIsFavorite(true);
+        return toResponse(accountRepository.save(accountToFavorite));
     }
 
     @Override
@@ -260,7 +274,7 @@ public class AccountService implements IAccountService {
     }
 
     @Override
-    public List<com.banquito.core.model.AccountSubtype> findAllSubtypes() {
+    public List<AccountSubtype> findAllSubtypes() {
         return accountSubtypeRepository.findAll();
     }
 
@@ -284,9 +298,6 @@ public class AccountService implements IAccountService {
     private AccountTransaction registerTransaction(Account account, BigDecimal amount, MovementTypeEnum type,
                                                    BigDecimal resultingBalance, String uuid, String subtypeCode) {
         validateUuid(uuid);
-        if (subtypeCode == null || subtypeCode.isBlank()) {
-            throw new IllegalArgumentException("El subtipo de transaccion es obligatorio");
-        }
         AccountTransaction transaction = new AccountTransaction();
         transaction.setAccount(account);
         transaction.setMovementType(type);
@@ -302,7 +313,7 @@ public class AccountService implements IAccountService {
 
     private void validateIdempotency(String uuid) {
         if (transactionRepository.existsByTransactionUuid(uuid)) {
-            throw new DuplicateTransactionException("Transaccion ya procesada con UUID: " + uuid);
+            throw new DuplicateTransactionException("Transaccion ya procesada: " + uuid);
         }
     }
 
@@ -319,7 +330,7 @@ public class AccountService implements IAccountService {
     }
 
     private String generateTransactionUuid() {
-        return UUID.randomUUID().toString();
+        return UUID.randomUUID().toString().replace("-", "");
     }
 
     private String resolveAccountNumber(String requestedNumber, Branch branch) {
@@ -330,11 +341,19 @@ public class AccountService implements IAccountService {
         return branch.getBranchCode() + "-" + (100000 + count + 1);
     }
 
+    private String resolveCustomerName(Customer customer) {
+        if (customer.getLegalName() != null && !customer.getLegalName().isBlank()) {
+            return customer.getLegalName();
+        }
+        return ((customer.getFirstName() != null ? customer.getFirstName() : "") + " " +
+                (customer.getLastName() != null ? customer.getLastName() : "")).trim();
+    }
+
     private AccountResponseDTO toResponse(Account account) {
         AccountResponseDTO dto = new AccountResponseDTO();
         dto.setId(account.getId());
         dto.setAccountNumber(account.getAccountNumber());
-        dto.setCustomerFullName(account.getCustomer().getFirstName() + " " + account.getCustomer().getLastName());
+        dto.setCustomerFullName(resolveCustomerName(account.getCustomer()));
         dto.setBranchName(account.getBranch().getName());
         dto.setAccountSubtypeDescription(account.getAccountSubtype().getName());
         dto.setStatus(account.getStatus());

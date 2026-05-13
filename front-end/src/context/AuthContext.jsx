@@ -1,8 +1,8 @@
-import { useState } from 'react';
-import { authCoreUser, authCustomer } from '../services/apiClient';
+import { useState, useEffect } from 'react';
 import { AuthContext } from './authContextObject';
 
 const staffPortals = new Set(['operador', 'cajero']);
+const STORAGE_KEY = 'banquito_auth';
 
 export function AuthProvider({ children }) {
   const [auth, setAuth] = useState({
@@ -11,45 +11,53 @@ export function AuthProvider({ children }) {
     user: null,
   });
 
-  const login = async (portal, username, password) => {
+  useEffect(() => {
+    const storedAuth = localStorage.getItem(STORAGE_KEY);
+    if (storedAuth) {
+      try {
+        setAuth(JSON.parse(storedAuth));
+      } catch (e) {
+        console.error('Error al restaurar sesión:', e);
+      }
+    }
+  }, []);
+
+  const login = (portal, name, identificacion = '', identificationType = 'CEDULA') => {
     const isStaff = staffPortals.has(portal);
-    const response = isStaff
-      ? await authCoreUser(username, password)
-      : await authCustomer(username, password);
 
     const user = isStaff
       ? {
-          id: String(response.coreUserId),
-          name: response.fullName,
-          email: response.username,
-          role: response.role,
-          coreUserId: response.coreUserId,
-          lastLogin: response.lastLogin,
+          name,
+          role: 'STAFF',
         }
       : {
-          id: String(response.customerId),
-          name: response.customerName,
-          email: response.username,
+          name,
+          identificacion,
+          identificationType,
           role: 'CUSTOMER',
-          customerId: response.customerId,
-          lastLogin: response.lastLogin,
         };
 
-    setAuth({
+    const newAuth = {
       isAuthenticated: true,
       portal,
       user,
-    });
+    };
+
+    setAuth(newAuth);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(newAuth));
 
     return user;
   };
 
   const logout = () => {
-    setAuth({
+    const newAuth = {
       isAuthenticated: false,
       portal: null,
       user: null,
-    });
+    };
+
+    setAuth(newAuth);
+    localStorage.removeItem(STORAGE_KEY);
   };
 
   return (
