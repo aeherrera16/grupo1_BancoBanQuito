@@ -5,7 +5,11 @@ import { coreRequest, fetchBalance, fetchAccountHistory } from '../services/apiC
 
 export function CustomerAccountsPage({ cashierMode = false }) {
   const { user, portal } = useAuth();
-  const [accountNumber, setAccountNumber] = useState(portal === 'personaNatural' ? (user?.email === 'ana123' ? '001-00005678' : '001-00001234') : (portal === 'empresa' ? '0050000202' : ''));
+  const [accountNumber, setAccountNumber] = useState(
+    portal === 'personaNatural'
+      ? (user?.email === 'ana123' ? 'GYE-200001' : 'UIO-100001')
+      : (portal === 'empresa' ? 'UIO-300001' : '')
+  );
   const [result, setResult] = useState(null);
   const [history, setHistory] = useState(null);
   const [error, setError] = useState('');
@@ -22,7 +26,10 @@ export function CustomerAccountsPage({ cashierMode = false }) {
       // Polling para refrescar datos automáticamente
       const interval = setInterval(async () => {
         try {
-          const accNum = portal === 'personaNatural' ? (user?.email === 'ana123' ? '001-00005678' : '001-00001234') : (portal === 'empresa' ? '0050000202' : '');
+          const accNum =
+            portal === 'personaNatural'
+              ? (user?.email === 'ana123' ? 'GYE-200001' : 'UIO-100001')
+              : (portal === 'empresa' ? 'UIO-300001' : '');
           if (accNum) {
             const bal = await fetchBalance(accNum);
             setResult(bal);
@@ -122,8 +129,28 @@ export function CustomerAccountsPage({ cashierMode = false }) {
                 </svg>
               </div>
               <div>
-                <p className="font-semibold text-gray-900">{result.accountSubtype || 'Cuenta Digital'}</p>
-                <p className="text-sm font-medium text-[#006644] hover:underline cursor-pointer">{result.accountNumber}</p>
+                <div className="flex items-center gap-2">
+                  {/* RF-03: Tipo de cuenta real desde el backend */}
+                  <p className="font-semibold text-gray-900">
+                    {result.accountSubtypeDescription || 'Cuenta de Ahorros'}
+                  </p>
+                  {/* RF-03: Badge de estado de cuenta */}
+                  <span className={`px-2 py-0.5 text-xs font-bold rounded-full ${
+                    result.status === 'ACTIVO' ? 'bg-green-100 text-green-700' :
+                    result.status === 'INACTIVO' ? 'bg-gray-100 text-gray-500' :
+                    result.status === 'BLOQUEADO' ? 'bg-red-100 text-red-700' :
+                    'bg-yellow-100 text-yellow-700'
+                  }`}>
+                    {result.status || 'ACTIVO'}
+                  </span>
+                </div>
+                {/* RF-02: Número de cuenta con nombre de sucursal desde el backend */}
+                <p className="text-sm font-medium text-[#006644]">{result.accountNumber}</p>
+                {result.branchName && (
+                  <p className="text-xs text-gray-400 mt-0.5">
+                    <span className="font-medium">Sucursal:</span> {result.branchName}
+                  </p>
+                )}
               </div>
             </div>
 
@@ -256,19 +283,29 @@ export function CustomerAccountsPage({ cashierMode = false }) {
             <div className="p-6 space-y-4">
                <div className="flex justify-between items-center border-b border-gray-100 pb-3">
                  <span className="text-gray-500 text-sm">Titular</span>
-                 <span className="font-semibold text-gray-800 uppercase">{user?.name}</span>
+                 <span className="font-semibold text-gray-800 uppercase">{result.customerFullName || user?.name}</span>
                </div>
                <div className="flex justify-between items-center border-b border-gray-100 pb-3">
                  <span className="text-gray-500 text-sm">Número de Cuenta</span>
                  <span className="font-semibold text-gray-800">{result.accountNumber}</span>
                </div>
                <div className="flex justify-between items-center border-b border-gray-100 pb-3">
-                 <span className="text-gray-500 text-sm">Tipo</span>
-                 <span className="font-semibold text-gray-800">{result.accountSubtype || 'Cuenta Digital'}</span>
+                 <span className="text-gray-500 text-sm">Tipo de Cuenta</span>
+                 <span className="font-semibold text-gray-800">{result.accountSubtypeDescription || 'Cuenta de Ahorros'}</span>
                </div>
+               {result.branchName && (
+                 <div className="flex justify-between items-center border-b border-gray-100 pb-3">
+                   <span className="text-gray-500 text-sm">Sucursal</span>
+                   <span className="font-semibold text-gray-800">{result.branchName}</span>
+                 </div>
+               )}
                <div className="flex justify-between items-center border-b border-gray-100 pb-3">
                  <span className="text-gray-500 text-sm">Estado</span>
-                 <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-green-100 text-green-800">
+                 <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold ${
+                   result.status === 'ACTIVO' ? 'bg-green-100 text-green-800' :
+                   result.status === 'BLOQUEADO' ? 'bg-red-100 text-red-800' :
+                   'bg-gray-100 text-gray-600'
+                 }`}>
                    {result.status || 'ACTIVA'}
                  </span>
                </div>

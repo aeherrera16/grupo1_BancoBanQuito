@@ -14,4 +14,5 @@ public interface CustomerRepository extends JpaRepository<Customer, Integer> {
     Optional<Customer> findByIdentificationTypeAndIdentification(String identificationType, String identification);
     List<Customer> findByCustomerType(CustomerTypeEnum customerType);
     List<Customer> findByStatus(CustomerStatusEnum status);
+    long countByBranch_Id(Integer branchId);
 }

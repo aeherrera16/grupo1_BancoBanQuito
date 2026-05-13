@@ -5,24 +5,14 @@ import com.banquito.core.dto.AccountResponseDTO;
 import com.banquito.core.dto.BalanceDTO;
 import com.banquito.core.dto.TransactionResponseDTO;
 import com.banquito.core.enums.AccountStatusEnum;
-import com.banquito.core.enums.CommonStatusEnum;
 import com.banquito.core.enums.MovementTypeEnum;
 import com.banquito.core.enums.TransactionStatusEnum;
 import com.banquito.core.exception.AccountNotFoundException;
 import com.banquito.core.exception.DuplicateTransactionException;
 import com.banquito.core.exception.InactiveAccountException;
 import com.banquito.core.exception.InsufficientBalanceException;
-import com.banquito.core.model.Account;
-import com.banquito.core.model.AccountSubtype;
-import com.banquito.core.model.AccountTransaction;
-import com.banquito.core.model.Branch;
-import com.banquito.core.model.Customer;
-import com.banquito.core.repository.AccountRepository;
-import com.banquito.core.repository.AccountSubtypeRepository;
-import com.banquito.core.repository.AccountTransactionRepository;
-import com.banquito.core.repository.BranchRepository;
-import com.banquito.core.repository.CustomerRepository;
-import com.banquito.core.repository.TransactionSubtypeRepository;
+import com.banquito.core.model.*;
+import com.banquito.core.repository.*;
 import com.banquito.core.service.IAccountService;
 import com.banquito.core.service.IAuthenticationService;
 import lombok.RequiredArgsConstructor;
@@ -47,6 +37,7 @@ public class AccountService implements IAccountService {
     private final AccountSubtypeRepository accountSubtypeRepository;
     private final AccountTransactionRepository transactionRepository;
     private final TransactionSubtypeRepository transactionSubtypeRepository;
+    private final NotificationRepository notificationRepository;
     private final IAuthenticationService authenticationService;
 
     @Transactional(readOnly = true)
@@ -87,7 +78,8 @@ public class AccountService implements IAccountService {
 
         LocalDateTime now = LocalDateTime.now();
         Account account = new Account();
-        account.setAccountNumber(request.getAccountNumber());
+        // RF-02: Blindaje de generación automática por sucursal
+        account.setAccountNumber(resolveAccountNumber(null, branch));
         account.setCustomer(customer);
         account.setBranch(branch);
         account.setAccountSubtype(subtype);
@@ -143,6 +135,17 @@ public class AccountService implements IAccountService {
         );
     }
 
+    @Transactional(readOnly = true)
+    @Override
+    public List<TransactionResponseDTO> getTransactions(String accountNumber, Integer limit) {
+        Account account = accountRepository.findByAccountNumber(accountNumber)
+                .orElseThrow(() -> new AccountNotFoundException(accountNumber));
+        return transactionRepository.findTop10ByAccount_IdOrderByTransactionDateDesc(account.getId())
+                .stream()
+                .map(tx -> toTransactionResponse(tx, accountNumber, tx.getTransactionSubtype().getName()))
+                .collect(Collectors.toList());
+    }
+
     @Transactional
     @Override
     public TransactionResponseDTO debit(String accountNumber, BigDecimal amount) {
@@ -164,6 +167,11 @@ public class AccountService implements IAccountService {
 
         String uuid = generateTransactionUuid();
         AccountTransaction transaction = registerTransaction(account, amount, MovementTypeEnum.DEBITO, account.getAvailableBalance(), uuid, "RETIRO_ATM");
+        
+        createNotification(account.getCustomer(), "Retiro realizado", 
+            "Se ha realizado un débito de $" + amount + " de tu cuenta.", 
+            "Referencia: " + uuid, "DEBITO");
+
         return toTransactionResponse(transaction, accountNumber, "Debito realizado exitosamente");
     }
 
@@ -185,6 +193,11 @@ public class AccountService implements IAccountService {
 
         String uuid = generateTransactionUuid();
         AccountTransaction transaction = registerTransaction(account, amount, MovementTypeEnum.CREDITO, account.getAvailableBalance(), uuid, "DEPOSITO");
+        
+        createNotification(account.getCustomer(), "Depósito recibido", 
+            "Has recibido un crédito de $" + amount + " en tu cuenta.", 
+            "Referencia: " + uuid, "CREDITO");
+
         return toTransactionResponse(transaction, accountNumber, "Credito realizado exitosamente");
     }
 
@@ -204,7 +217,7 @@ public class AccountService implements IAccountService {
         Account destinationAccount = accountRepository.findByAccountNumber(destination)
                 .orElseThrow(() -> new AccountNotFoundException(destination));
 
-        validateIdempotency(originAccount, uuid);
+        validateIdempotency(uuid);
 
         if (originAccount.getStatus() != AccountStatusEnum.ACTIVO) {
             throw new InactiveAccountException(origin);
@@ -229,7 +242,43 @@ public class AccountService implements IAccountService {
         AccountTransaction originTransaction = registerTransaction(originAccount, amount, MovementTypeEnum.DEBITO, originAccount.getAvailableBalance(), uuid, "TRANSFER");
         registerTransaction(destinationAccount, amount, MovementTypeEnum.CREDITO, destinationAccount.getAvailableBalance(), uuid, "TRANSFER");
 
+        // Notificaciones automáticas
+        createNotification(originAccount.getCustomer(), "Transferencia Enviada", 
+            "Has enviado $" + amount + " a " + destinationAccount.getCustomer().getFirstName() + ".", 
+            "Cuenta destino: " + destination + ". Ref: " + uuid, "DEBITO");
+        
+        createNotification(destinationAccount.getCustomer(), "Transferencia Recibida", 
+            "Has recibido $" + amount + " de " + originAccount.getCustomer().getFirstName() + ".", 
+            "Cuenta origen: " + origin + ". Ref: " + uuid, "CREDITO");
+
         return toTransactionResponse(originTransaction, origin, "Transferencia realizada exitosamente");
+    }
+
+    @Override
+    public AccountResponseDTO getFavoriteAccount() {
+        return accountRepository.findByIsFavoriteTrue().stream().findFirst().map(this::toResponse).orElse(null);
+    }
+
+    @Override
+    public List<com.banquito.core.model.AccountSubtype> findAllSubtypes() {
+        return accountSubtypeRepository.findAll();
+    }
+
+    private void createNotification(Customer customer, String title, String msg, String detail, String type) {
+        if (customer == null) return;
+        try {
+            Notification n = new Notification();
+            n.setUserId(customer.getId().toString());
+            n.setTitle(title);
+            n.setMessage(msg);
+            n.setDetail(detail);
+            n.setType(type);
+            n.setIsUnread(true);
+            n.setCreatedAt(LocalDateTime.now());
+            notificationRepository.save(n);
+        } catch (Exception e) {
+            log.error("Error creating notification: {}", e.getMessage());
+        }
     }
 
     private AccountTransaction registerTransaction(Account account, BigDecimal amount, MovementTypeEnum type,
@@ -248,71 +297,12 @@ public class AccountService implements IAccountService {
         transaction.setTransactionDate(LocalDateTime.now());
         transaction.setTransactionSubtype(transactionSubtypeRepository.findByCode(subtypeCode)
                 .orElseThrow(() -> new RuntimeException("Subtipo de transaccion no configurado: " + subtypeCode)));
-        if (transaction.getTransactionSubtype().getStatus() != CommonStatusEnum.ACTIVO) {
-            throw new IllegalArgumentException("El subtipo de transaccion no esta activo");
-        }
-        transaction.setDescription(transaction.getTransactionSubtype().getName());
         return transactionRepository.save(transaction);
     }
 
-    private TransactionResponseDTO toTransactionResponse(AccountTransaction transaction, String accountNumber,
-                                                         String message) {
-        return new TransactionResponseDTO(
-                transaction.getId(),
-                accountNumber,
-                transaction.getMovementType(),
-                transaction.getAmount(),
-                transaction.getResultingBalance(),
-                transaction.getTransactionDate(),
-                transaction.getTransactionUuid(),
-                transaction.getStatus(),
-                message
-        );
-    }
-
-    @Transactional(readOnly = true)
-    @Override
-    public List<TransactionResponseDTO> getTransactions(String accountNumber, Integer limit) {
-        Account account = accountRepository.findByAccountNumber(accountNumber)
-                .orElseThrow(() -> new AccountNotFoundException(accountNumber));
-        
-        return transactionRepository.findTop10ByAccount_IdOrderByTransactionDateDesc(account.getId())
-                .stream()
-                .map(t -> new TransactionResponseDTO(
-                        t.getId(),
-                        accountNumber,
-                        t.getMovementType(),
-                        t.getAmount(),
-                        t.getResultingBalance(),
-                        t.getTransactionDate(),
-                        t.getTransactionUuid(),
-                        t.getStatus(),
-                        t.getTransactionSubtype() != null ? t.getTransactionSubtype().getName() : t.getDescription()
-                ))
-                .collect(Collectors.toList());
-    }
-
-    private void validateAccountRequest(AccountRequestDTO request) {
-        if (request == null) {
-            throw new IllegalArgumentException("La solicitud de cuenta es obligatoria");
-        }
-        if (request.getCustomerId() == null) {
-            throw new IllegalArgumentException("El titular de la cuenta es obligatorio");
-        }
-        if (request.getBranchId() == null) {
-            throw new IllegalArgumentException("La sucursal de la cuenta es obligatoria");
-        }
-        if (request.getAccountSubtypeId() == null) {
-            throw new IllegalArgumentException("El subtipo de cuenta es obligatorio");
-        }
-        if (request.getInitialBalance() != null && request.getInitialBalance().compareTo(BigDecimal.ZERO) < 0) {
-            throw new IllegalArgumentException("El saldo inicial no puede ser negativo");
-        }
-    }
-
-    private void validateAccountSubtype(AccountSubtype subtype) {
-        if (!"ACTIVO".equals(subtype.getStatus())) {
-            throw new IllegalArgumentException("El subtipo de cuenta no esta activo");
+    private void validateIdempotency(String uuid) {
+        if (transactionRepository.existsByTransactionUuid(uuid)) {
+            throw new DuplicateTransactionException("Transaccion ya procesada con UUID: " + uuid);
         }
     }
 
@@ -322,69 +312,50 @@ public class AccountService implements IAccountService {
         }
     }
 
-    private void validateIdempotency(Account account, String uuid) {
-        validateUuid(uuid);
-        LocalDateTime startOfDay = LocalDateTime.now().toLocalDate().atStartOfDay();
-        LocalDateTime endOfDay = startOfDay.plusDays(1);
-
-        if (transactionRepository.existsByAccount_IdAndTransactionUuidAndTransactionDateBetween(
-                account.getId(), uuid, startOfDay, endOfDay)) {
-            throw new DuplicateTransactionException(uuid);
-        }
-    }
-
-    private String resolveAccountNumber(String requestedAccountNumber, Branch branch) {
-        if (requestedAccountNumber != null && !requestedAccountNumber.isBlank()) {
-            if (!requestedAccountNumber.startsWith(branch.getBranchCode() + "-")) {
-                throw new IllegalArgumentException("El numero de cuenta debe iniciar con el codigo de la sucursal");
-            }
-            return requestedAccountNumber;
-        }
-        return branch.getBranchCode() + "-" + UUID.randomUUID().toString().replace("-", "").substring(0, 9).toUpperCase();
-    }
-
     private void validateUuid(String uuid) {
         if (uuid == null || uuid.isBlank()) {
             throw new IllegalArgumentException("El UUID de transaccion es obligatorio");
         }
-        if (uuid.length() > 35) {
-            throw new IllegalArgumentException("El UUID de transaccion no debe superar 35 caracteres");
-        }
-    }
-
-    @Transactional(readOnly = true)
-    @Override
-    public AccountResponseDTO getFavoriteAccount() {
-        Account account = accountRepository.findByIsFavoriteTrue()
-                .orElseThrow(() -> new AccountNotFoundException("No existe cuenta favorita configurada"));
-        return toResponse(account);
     }
 
     private String generateTransactionUuid() {
-        return UUID.randomUUID().toString().replace("-", "");
+        return UUID.randomUUID().toString();
+    }
+
+    private String resolveAccountNumber(String requestedNumber, Branch branch) {
+        if (requestedNumber != null && !requestedNumber.isBlank()) {
+            return requestedNumber;
+        }
+        long count = accountRepository.countByBranch_Id(branch.getId());
+        return branch.getBranchCode() + "-" + (100000 + count + 1);
     }
 
     private AccountResponseDTO toResponse(Account account) {
-        String customerName = resolveCustomerName(account.getCustomer());
-        return new AccountResponseDTO(
-                account.getId(),
-                account.getAccountNumber(),
-                customerName,
-                account.getBranch().getName(),
-                account.getAccountSubtype().getDescription(),
-                account.getStatus(),
-                account.getAccountingBalance(),
-                account.getAvailableBalance(),
-                account.getIsFavorite(),
-                account.getOpeningDate()
-        );
+        AccountResponseDTO dto = new AccountResponseDTO();
+        dto.setId(account.getId());
+        dto.setAccountNumber(account.getAccountNumber());
+        dto.setCustomerFullName(account.getCustomer().getFirstName() + " " + account.getCustomer().getLastName());
+        dto.setBranchName(account.getBranch().getName());
+        dto.setAccountSubtypeDescription(account.getAccountSubtype().getName());
+        dto.setStatus(account.getStatus());
+        dto.setAccountingBalance(account.getAccountingBalance());
+        dto.setAvailableBalance(account.getAvailableBalance());
+        dto.setIsFavorite(account.getIsFavorite());
+        dto.setOpeningDate(account.getOpeningDate());
+        return dto;
     }
 
-    private String resolveCustomerName(Customer customer) {
-        if (customer.getLegalName() != null && !customer.getLegalName().isBlank()) {
-            return customer.getLegalName();
-        }
-        return ((customer.getFirstName() != null ? customer.getFirstName() : "") + " " +
-                (customer.getLastName() != null ? customer.getLastName() : "")).trim();
+    private TransactionResponseDTO toTransactionResponse(AccountTransaction tx, String accountNumber, String message) {
+        TransactionResponseDTO dto = new TransactionResponseDTO();
+        dto.setId(tx.getId());
+        dto.setAccountNumber(accountNumber);
+        dto.setAmount(tx.getAmount());
+        dto.setMovementType(tx.getMovementType());
+        dto.setResultingBalance(tx.getResultingBalance());
+        dto.setTransactionUuid(tx.getTransactionUuid());
+        dto.setTransactionDate(tx.getTransactionDate());
+        dto.setStatus(tx.getStatus());
+        dto.setMessage(message);
+        return dto;
     }
 }

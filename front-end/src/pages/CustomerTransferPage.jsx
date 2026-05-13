@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Field, inputClass, PageShell, Panel, primaryButtonClass } from '../components/PageShell';
 import { coreRequest, fetchBalance } from '../services/apiClient';
 import { useAuth } from '../hooks/useAuth';
@@ -13,15 +13,25 @@ const emptyForm = (origin) => ({
 
 export function CustomerTransferPage() {
   const { portal, user } = useAuth();
-  const defaultOrigin = user?.email === 'ana123' ? '001-00005678' : '001-00001234';
+  const defaultOrigin = user?.email === 'ana123' ? 'GYE-200001' : 'UIO-100001';
 
   const [form, setForm] = useState(emptyForm(portal === 'personaNatural' ? defaultOrigin : ''));
   const [result, setResult] = useState(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [destinationInfo, setDestinationInfo] = useState(null);
+  const [originAccountInfo, setOriginAccountInfo] = useState(null);
   // UUID fijo por sesión de transferencia – garantiza idempotencia
   const txUuidRef = useRef(crypto.randomUUID());
+
+  // Cargar información real de la cuenta origen desde el backend
+  useEffect(() => {
+    if (portal === 'personaNatural' && defaultOrigin) {
+      fetchBalance(defaultOrigin)
+        .then(data => setOriginAccountInfo(data))
+        .catch(() => {}); // silencioso si falla
+    }
+  }, [defaultOrigin, portal]);
 
   const resetForm = () => {
     setForm(emptyForm(portal === 'personaNatural' ? defaultOrigin : ''));
@@ -137,7 +147,12 @@ export function CustomerTransferPage() {
                   disabled={true}
                   onChange={(e) => setForm({ ...form, originAccountNumber: e.target.value })}
                 >
-                  <option value={defaultOrigin}>Cuenta Digital — {defaultOrigin}</option>
+                  <option value={defaultOrigin}>
+                    {originAccountInfo
+                      ? `${originAccountInfo.accountSubtypeDescription || 'Cuenta de Ahorros'} — ${defaultOrigin}${originAccountInfo.branchName ? ` (${originAccountInfo.branchName})` : ''}`
+                      : `Cuenta — ${defaultOrigin}`
+                    }
+                  </option>
                 </select>
               </Field>
               <Field label="Cuenta destino">

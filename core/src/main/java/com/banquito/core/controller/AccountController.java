@@ -97,6 +97,11 @@ public class AccountController {
         return ResponseEntity.ok(accountService.getFavoriteAccount());
     }
 
+    @GetMapping("/subtypes")
+    public ResponseEntity<List<com.banquito.core.model.AccountSubtype>> getSubtypes() {
+        return ResponseEntity.ok(accountService.findAllSubtypes());
+    }
+
     record AmountRequest(BigDecimal amount) {}
 
     record TransferRequest(String origin, String destination, BigDecimal amount, String uuid) {}

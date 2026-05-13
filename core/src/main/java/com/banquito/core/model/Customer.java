@@ -27,9 +27,16 @@ public class Customer {
     @Column(name = "ID", nullable = false)
     private Integer id;
 
+    @Column(name = "CUSTOMER_CODE", nullable = true, unique = true, length = 20)
+    private String customerCode;
+
     @ManyToOne
     @JoinColumn(name = "CUSTOMER_SUBTYPE_ID", nullable = false)
     private CustomerSubtype customerSubtype;
+
+    @ManyToOne
+    @JoinColumn(name = "BRANCH_ID", nullable = true)
+    private Branch branch;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "CUSTOMER_TYPE", nullable = false, length = 15)

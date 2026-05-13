@@ -20,4 +20,5 @@ public interface AccountRepository extends JpaRepository<Account, Integer> {
     List<Account> findByCustomer_Id(Integer customerId);
     boolean existsByAccountNumber(String accountNumber);
     Optional<Account> findByIsFavoriteTrue();
+    long countByBranch_Id(Integer branchId);
 }

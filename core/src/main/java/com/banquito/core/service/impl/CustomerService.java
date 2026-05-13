@@ -24,6 +24,7 @@ public class CustomerService implements ICustomerService {
 
     private final CustomerRepository customerRepository;
     private final CustomerSubtypeRepository customerSubtypeRepository;
+    private final com.banquito.core.repository.BranchRepository branchRepository;
 
     @Transactional(readOnly = true)
     @Override
@@ -52,9 +53,14 @@ public class CustomerService implements ICustomerService {
     public CustomerResponseDTO create(CustomerRequestDTO request) {
         CustomerSubtype subtype = customerSubtypeRepository.findById(request.getCustomerSubtypeId())
                 .orElseThrow(() -> new RuntimeException("Subtipo de cliente no encontrado: " + request.getCustomerSubtypeId()));
+        
+        com.banquito.core.model.Branch branch = branchRepository.findById(request.getBranchId())
+                .orElseThrow(() -> new RuntimeException("Sucursal no encontrada: " + request.getBranchId()));
 
         Customer customer = new Customer();
         customer.setCustomerSubtype(subtype);
+        customer.setBranch(branch);
+        customer.setCustomerCode(generateCustomerCode(branch));
         customer.setCustomerType(request.getCustomerType());
         customer.setIdentificationType(request.getIdentificationType());
         customer.setIdentification(request.getIdentification());
@@ -74,13 +80,19 @@ public class CustomerService implements ICustomerService {
         customer.setStatus(CustomerStatusEnum.ACTIVO);
         customer.setRegistrationDate(LocalDateTime.now());
 
-        log.info("Creando cliente con identificación: {}", customer.getIdentification());
+        log.info("Creando cliente {} en sucursal {}", customer.getCustomerCode(), branch.getBranchCode());
         return toResponse(customerRepository.save(customer));
+    }
+
+    private String generateCustomerCode(com.banquito.core.model.Branch branch) {
+        long count = customerRepository.countByBranch_Id(branch.getId());
+        return branch.getBranchCode() + "-CLI-" + String.format("%05d", count + 1);
     }
 
     private CustomerResponseDTO toResponse(Customer customer) {
         return new CustomerResponseDTO(
                 customer.getId(),
+                customer.getCustomerCode(),
                 customer.getCustomerType(),
                 customer.getIdentificationType(),
                 customer.getIdentification(),
@@ -89,7 +101,14 @@ public class CustomerService implements ICustomerService {
                 customer.getEmail(),
                 customer.getMobilePhone(),
                 customer.getAddress(),
-                customer.getStatus()
+                customer.getStatus(),
+                customer.getLegalName(),
+                customer.getConstitutionDate(),
+                customer.getLegalRepresentative() != null ? customer.getLegalRepresentative().getId() : null
         );
+    }
+    @Override
+    public List<com.banquito.core.model.CustomerSubtype> findAllSubtypes() {
+        return customerSubtypeRepository.findAll();
     }
 }

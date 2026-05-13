@@ -11,6 +11,7 @@ import java.time.LocalDate;
 public class CustomerRequestDTO {
 
     private Integer customerSubtypeId;
+    private Integer branchId;
     private CustomerTypeEnum customerType;
     private String identificationType;
     private String identification;

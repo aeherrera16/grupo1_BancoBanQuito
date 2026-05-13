@@ -1,16 +1,47 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { portals } from '../config/portals';
 import { useAuth } from '../hooks/useAuth';
 import Sidebar from './Sidebar';
+import { coreRequest } from '../services/apiClient';
 
-function NotificationBell() {
+function NotificationBell({ user }) {
   const [open, setOpen] = useState(false);
-  const notifications = [
-    { id: 1, type: 'CREDITO', msg: 'Has recibido una transferencia de saldo a tu favor', date: 'Hace 5 min', unread: true },
-    { id: 2, type: 'DEBITO', msg: 'Débito procesado exitosamente mediante el portal', date: 'Hace 2 horas', unread: true },
-    { id: 3, type: 'INFO', msg: 'Reporte del Switch: El archivo lote fue validado por SFTP', date: 'Ayer', unread: false }
-  ];
+  const [notifications, setNotifications] = useState([]);
+  const [selectedNotif, setSelectedNotif] = useState(null);
+
+  const fetchNotifications = async () => {
+    if (!user?.id) return;
+    try {
+      const data = await coreRequest(`/core/v1/notifications/${user.id}`);
+      setNotifications(data);
+    } catch (err) {
+      console.error("Error fetching notifications:", err);
+    }
+  };
+
+  useEffect(() => {
+    fetchNotifications();
+    const interval = setInterval(fetchNotifications, 10000); 
+    return () => clearInterval(interval);
+  }, [user?.id]);
+
+  const unreadCount = notifications.filter(n => n.isUnread).length;
+
+  const handleNotifClick = async (n) => {
+    setSelectedNotif(n);
+    setOpen(false);
+    if (n.isUnread) {
+      try {
+        await coreRequest(`/core/v1/notifications/${n.id}/read`, { method: 'PUT' });
+        setNotifications(prev => prev.map(item => 
+          item.id === n.id ? { ...item, isUnread: false } : item
+        ));
+      } catch (err) {
+        console.error("Error marking notification as read:", err);
+      }
+    }
+  };
 
   return (
     <div className="relative mr-4">
@@ -19,30 +50,95 @@ function NotificationBell() {
         className="relative p-2 text-gray-500 hover:text-[#006644] transition-colors rounded-full hover:bg-gray-100 focus:outline-none"
       >
         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
-        <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white"></span>
+        {unreadCount > 0 && (
+          <span className="absolute top-1 right-1 w-5 h-5 bg-red-600 text-white text-[10px] font-bold flex items-center justify-center rounded-full border-2 border-white shadow-sm">
+            {unreadCount}
+          </span>
+        )}
       </button>
 
       {open && (
-        <div className="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-2xl border border-gray-100 z-50 overflow-hidden">
+        <div className="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-2xl border border-gray-100 z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
           <div className="px-4 py-3 border-b border-gray-100 bg-[#006644]">
-            <h3 className="font-semibold text-white">Centro de Notificaciones</h3>
-            <p className="text-xs text-green-100">Eventos de Cuentas y Buzón SFTP</p>
+            <h3 className="font-bold text-white text-sm">Centro de Mensajes</h3>
+            <p className="text-[10px] text-green-100 uppercase tracking-widest font-medium">BancoBanQuito Corporativo</p>
           </div>
           <div className="max-h-96 overflow-y-auto">
-            {notifications.map(n => (
-              <div key={n.id} className={`p-4 border-b border-gray-50 hover:bg-gray-50 transition-colors cursor-pointer ${n.unread ? 'bg-green-50/10' : ''}`}>
-                <div className="flex items-start gap-3">
-                  <div className={`mt-1.5 w-2 h-2 rounded-full flex-shrink-0 ${n.type === 'CREDITO' ? 'bg-green-500' : n.type === 'DEBITO' ? 'bg-red-500' : 'bg-blue-500'}`}></div>
-                  <div className="flex-1">
-                    <p className={`text-sm ${n.unread ? 'text-gray-900 font-medium' : 'text-gray-600'}`}>{n.msg}</p>
-                    <p className="text-xs text-gray-400 mt-1">{n.date}</p>
+            {notifications.length === 0 ? (
+              <div className="p-10 text-center">
+                <svg className="w-10 h-10 text-gray-200 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path></svg>
+                <p className="text-gray-400 text-xs italic">No hay mensajes nuevos</p>
+              </div>
+            ) : (
+              notifications.map(n => (
+                <div 
+                  key={n.id} 
+                  onClick={() => handleNotifClick(n)}
+                  className={`p-4 border-b border-gray-50 hover:bg-gray-50 transition-colors cursor-pointer ${n.isUnread ? 'bg-green-50/20' : ''}`}
+                >
+                  <div className="flex items-start gap-3">
+                    <div className={`mt-1.5 w-2 h-2 rounded-full flex-shrink-0 ${n.type === 'CREDITO' ? 'bg-green-500' : n.type === 'DEBITO' ? 'bg-red-500' : n.type === 'SEGURIDAD' ? 'bg-orange-500' : 'bg-blue-500'}`}></div>
+                    <div className="flex-1">
+                      <p className={`text-[13px] leading-tight ${n.isUnread ? 'text-gray-900 font-bold' : 'text-gray-500 font-medium'}`}>{n.title}</p>
+                      <p className="text-[11px] text-gray-500 mt-0.5 line-clamp-1">{n.message}</p>
+                      <p className="text-[9px] text-gray-400 mt-1 font-bold">{new Date(n.createdAt).toLocaleString()}</p>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
-          <div className="px-4 py-3 text-center border-t border-gray-100 bg-gray-50">
-            <button className="text-sm text-[#006644] font-semibold hover:underline">Marcar todas como leídas</button>
+          <div className="px-4 py-2 text-center border-t border-gray-100 bg-gray-50">
+            <button className="text-[11px] text-[#006644] font-bold hover:underline uppercase tracking-wider">Limpiar historial</button>
+          </div>
+        </div>
+      )}
+
+      {selectedNotif && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300" onClick={() => setSelectedNotif(null)}></div>
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden relative z-10 animate-in zoom-in-95 slide-in-from-bottom-4 duration-300">
+            <div className={`h-2.5 w-full ${selectedNotif.type === 'CREDITO' ? 'bg-green-500' : selectedNotif.type === 'DEBITO' ? 'bg-red-500' : selectedNotif.type === 'SEGURIDAD' ? 'bg-orange-500' : 'bg-blue-500'}`}></div>
+            <div className="p-8">
+              <div className="flex justify-between items-start mb-6">
+                <div>
+                  <span className={`px-2 py-1 text-[10px] font-black rounded-lg ${
+                    selectedNotif.type === 'CREDITO' ? 'bg-green-100 text-green-700' : 
+                    selectedNotif.type === 'DEBITO' ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'
+                  }`}>
+                    {selectedNotif.type}
+                  </span>
+                  <h4 className="text-2xl font-black text-slate-900 mt-2 leading-tight">{selectedNotif.title}</h4>
+                </div>
+                <button onClick={() => setSelectedNotif(null)} className="text-slate-300 hover:text-slate-900 transition-colors">
+                  <svg className="w-7 h-7" fill="currentColor" viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" /></svg>
+                </button>
+              </div>
+              
+              <div className="bg-slate-50 rounded-2xl p-5 border border-slate-100 mb-6">
+                <p className="text-[15px] text-slate-700 leading-relaxed font-medium italic">"{selectedNotif.message}"</p>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Detalles del Evento</p>
+                  <p className="text-[14px] text-slate-600 leading-relaxed bg-white border border-slate-100 p-3 rounded-xl shadow-sm">
+                    {selectedNotif.detail}
+                  </p>
+                </div>
+                <div className="flex justify-between items-center text-[11px] text-slate-400 font-bold border-t border-slate-50 pt-4">
+                  <span>ID: #NOT-{selectedNotif.id}</span>
+                  <span>{new Date(selectedNotif.createdAt).toLocaleString()}</span>
+                </div>
+              </div>
+
+              <button 
+                onClick={() => setSelectedNotif(null)}
+                className="mt-8 w-full py-4 bg-[#006644] text-white rounded-2xl font-black text-sm hover:bg-[#004d33] shadow-lg shadow-green-900/20 transition-all active:scale-[0.98]"
+              >
+                ENTENDIDO
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -76,7 +172,7 @@ export function LayoutEmpresas({ children, allowedPortal }) {
               <p className="mt-1 text-sm text-slate-500">Operación segura BancoBanQuito</p>
             </div>
             <div className="flex items-center text-right">
-              <NotificationBell />
+              <NotificationBell user={user} />
               <div className="ml-4 mr-4 text-right flex flex-col justify-center">
                 <p className="text-xl font-medium uppercase text-[#006644]">{user?.name || "USUARIO BANQUITO"}</p>
                 <p className="mt-0.5 text-[13px] font-medium text-gray-500">Último Ingreso: 05-13-2026 14:05:44</p>

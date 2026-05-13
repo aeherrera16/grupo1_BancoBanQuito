@@ -33,4 +33,6 @@ public interface IAccountService {
     TransactionResponseDTO transfer(String origin, String destination, BigDecimal amount, String uuid);
 
     AccountResponseDTO getFavoriteAccount();
+
+    List<com.banquito.core.model.AccountSubtype> findAllSubtypes();
 }

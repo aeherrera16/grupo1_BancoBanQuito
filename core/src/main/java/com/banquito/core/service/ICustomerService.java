@@ -14,4 +14,5 @@ public interface ICustomerService {
     CustomerResponseDTO findByIdentification(String identificationType, String identification);
 
     CustomerResponseDTO create(CustomerRequestDTO request);
+    List<com.banquito.core.model.CustomerSubtype> findAllSubtypes();
 }
