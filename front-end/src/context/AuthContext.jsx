@@ -1,6 +1,35 @@
-import { createContext, useState } from 'react';
+import { useState } from 'react';
+import { AuthContext } from './authContextObject';
 
-export const AuthContext = createContext();
+const portalUsers = {
+  asesor: {
+    id: '2001',
+    name: 'Asesor de Sucursal',
+    email: 'asesor.sucursal@banquito.ec',
+    role: 'ASESOR_SUCURSAL',
+    coreUserId: 2001,
+  },
+  bancaPersonas: {
+    id: '2101',
+    name: 'Banca de Personas',
+    email: 'banca.personas@banquito.ec',
+    role: 'BANCA_PERSONAS',
+    coreUserId: 2101,
+  },
+  personaNatural: {
+    id: '1001',
+    name: 'Cliente Persona Natural',
+    email: 'cliente.natural@correo.ec',
+    role: 'PERSONA_NATURAL',
+  },
+  cajero: {
+    id: '2201',
+    name: 'Cajero de Ventanilla',
+    email: 'cajero@banquito.ec',
+    role: 'CAJERO',
+    coreUserId: 2201,
+  },
+};
 
 export function AuthProvider({ children }) {
   const [auth, setAuth] = useState({
@@ -13,12 +42,7 @@ export function AuthProvider({ children }) {
     setAuth({
       isAuthenticated: true,
       portal,
-      user: {
-        id: '1001',
-        name: 'Usuario Corporativo',
-        email: 'user@empresa.ec',
-        role: portal === 'empresa' ? 'ADMIN' : 'USER',
-      },
+      user: portalUsers[portal],
     });
   };
 

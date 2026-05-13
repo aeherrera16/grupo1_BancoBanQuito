@@ -1,109 +1,121 @@
 import { useNavigate } from 'react-router-dom';
+import { portals } from '../config/portals';
 import { useAuth } from '../hooks/useAuth';
 
 export function Home() {
   const navigate = useNavigate();
   const { login } = useAuth();
+  const clientPortals = ['personaNatural', 'bancaPersonas'];
+  const staffPortals = ['asesor', 'cajero'];
 
   const handlePortalSelect = (portal) => {
     login(portal);
-    if (portal === 'empresa') {
-      navigate('/dashboard');
-    }
+    navigate(portals[portal].startPath);
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-banker-navy to-banker-blue flex items-center justify-center px-4">
-      <div className="max-w-6xl w-full">
-        {/* Header */}
-        <div className="text-center mb-16">
-          <div className="inline-block mb-6">
-            <div className="w-16 h-16 bg-banker-gold rounded-lg flex items-center justify-center">
-              <span className="text-3xl font-bold text-banker-navy">₡</span>
+    <div className="min-h-screen bg-[#eef2f6] text-banker-dark">
+      <header className="border-b border-slate-200 bg-white">
+        <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-6">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-sm bg-banker-navy text-sm font-black text-white">
+              BQ
+            </div>
+            <div>
+              <p className="text-xl font-black tracking-wide text-banker-navy">BancoBanQuito</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-banker-gray">Banca digital</p>
             </div>
           </div>
-          <h1 className="text-5xl font-bold text-white mb-3">BancoBanQuito</h1>
-          <p className="text-banker-light text-lg">Soluciones financieras confiables para tu negocio</p>
-        </div>
-
-        {/* Portal Selection Cards */}
-        <div className="grid md:grid-cols-3 gap-8">
-          {/* Banca Empresas */}
-          <div
-            onClick={() => handlePortalSelect('empresa')}
-            className="bg-white rounded-xl shadow-2xl p-8 cursor-pointer transform hover:scale-105 transition-all duration-300 hover:shadow-banker-gold/50"
-          >
-            <div className="mb-6">
-              <div className="w-16 h-16 bg-banker-blue rounded-lg flex items-center justify-center mx-auto">
-                <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 20 20">
-                  <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" />
-                </svg>
-              </div>
-            </div>
-            <h3 className="text-2xl font-bold text-banker-navy mb-3 text-center">
-              Banca Empresas
-            </h3>
-            <p className="text-banker-gray text-center mb-6">
-              Gestiona pagos masivos, consulta tus cuentas y administra tu liquidez empresarial.
-            </p>
-            <button className="w-full bg-banker-blue text-white py-3 rounded-lg font-semibold hover:bg-banker-navy transition-colors">
-              Acceder
-            </button>
-          </div>
-
-          {/* Banca Personal */}
-          <div
-            onClick={() => handlePortalSelect('personal')}
-            className="bg-white rounded-xl shadow-2xl p-8 cursor-pointer transform hover:scale-105 transition-all duration-300 hover:shadow-banker-gold/50"
-          >
-            <div className="mb-6">
-              <div className="w-16 h-16 bg-banker-blue rounded-lg flex items-center justify-center mx-auto">
-                <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
-                </svg>
-              </div>
-            </div>
-            <h3 className="text-2xl font-bold text-banker-navy mb-3 text-center">
-              Banca Personal
-            </h3>
-            <p className="text-banker-gray text-center mb-6">
-              Accede a tus cuentas, realiza transferencias y gestiona tus finanzas personales.
-            </p>
-            <button className="w-full bg-banker-blue text-white py-3 rounded-lg font-semibold hover:bg-banker-navy transition-colors">
-              Acceder
-            </button>
-          </div>
-
-          {/* Intranet Asesores */}
-          <div
-            onClick={() => handlePortalSelect('asesores')}
-            className="bg-white rounded-xl shadow-2xl p-8 cursor-pointer transform hover:scale-105 transition-all duration-300 hover:shadow-banker-gold/50"
-          >
-            <div className="mb-6">
-              <div className="w-16 h-16 bg-banker-blue rounded-lg flex items-center justify-center mx-auto">
-                <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 20 20">
-                  <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3zM6 8a2 2 0 11-4 0 2 2 0 014 0zM16 18v-3a5.972 5.972 0 00-.75-2.906A3.005 3.005 0 0119 15v3h-3zM4.75 12.094A5.973 5.973 0 004 15v3H1v-3a3 3 0 013.75-2.906z" />
-                </svg>
-              </div>
-            </div>
-            <h3 className="text-2xl font-bold text-banker-navy mb-3 text-center">
-              Intranet Asesores
-            </h3>
-            <p className="text-banker-gray text-center mb-6">
-              Herramientas y recursos para asesores financieros del banco.
-            </p>
-            <button className="w-full bg-banker-blue text-white py-3 rounded-lg font-semibold hover:bg-banker-navy transition-colors">
-              Acceder
-            </button>
+          <div className="hidden items-center gap-6 text-sm font-semibold text-banker-navy md:flex">
+            <span>Seguridad</span>
+            <span>Canales</span>
+            <span>Ayuda</span>
           </div>
         </div>
+      </header>
 
-        {/* Footer */}
-        <div className="mt-16 text-center text-banker-light">
-          <p className="text-sm">© 2024 BancoBanQuito. Todos los derechos reservados.</p>
-          <p className="text-xs mt-2">Seguridad · Privacidad · Términos de Servicio</p>
-        </div>
-      </div>
+      <main className="mx-auto grid min-h-[calc(100vh-5rem)] max-w-7xl gap-10 px-6 py-10 lg:grid-cols-[1fr_520px] lg:items-center">
+        <section className="max-w-2xl">
+          <div className="mb-10 inline-flex rounded-full border border-banker-blue/20 bg-white px-4 py-2 text-sm font-semibold text-banker-blue shadow-sm">
+            Plataforma transaccional Core + Switch
+          </div>
+          <h1 className="text-5xl font-black leading-tight text-banker-navy md:text-6xl">
+            Accede a tu banca con perfiles operativos claros.
+          </h1>
+          <p className="mt-6 max-w-xl text-lg leading-8 text-slate-600">
+            Una experiencia sobria para clientes y personal del banco, con permisos separados según las funciones definidas en Core y Switch.
+          </p>
+
+          <div className="mt-10 grid gap-4 sm:grid-cols-3">
+            <div className="border-l-4 border-banker-gold bg-white p-5 shadow-sm">
+              <p className="text-2xl font-black text-banker-navy">Core</p>
+              <p className="mt-2 text-sm text-slate-600">Clientes, cuentas y movimientos.</p>
+            </div>
+            <div className="border-l-4 border-banker-blue bg-white p-5 shadow-sm">
+              <p className="text-2xl font-black text-banker-navy">Switch</p>
+              <p className="mt-2 text-sm text-slate-600">Pagos masivos por lote.</p>
+            </div>
+            <div className="border-l-4 border-slate-500 bg-white p-5 shadow-sm">
+              <p className="text-2xl font-black text-banker-navy">SFTP</p>
+              <p className="mt-2 text-sm text-slate-600">Buzón de archivos CSV.</p>
+            </div>
+          </div>
+        </section>
+
+        <section className="rounded-sm border border-slate-200 bg-white p-8 shadow-xl shadow-slate-200/80">
+          <div className="mb-8 border-b border-slate-200 pb-6">
+            <p className="text-sm font-bold uppercase tracking-[0.2em] text-banker-gold">BancoBanQuito en línea</p>
+            <h2 className="mt-3 text-3xl font-black text-banker-navy">Seleccione el acceso</h2>
+            <p className="mt-2 text-sm leading-6 text-slate-600">
+              Los accesos internos usan usuario Core; clientes usan credencial web separada.
+            </p>
+          </div>
+
+          <div className="space-y-8">
+            <div>
+              <p className="mb-3 text-xs font-black uppercase tracking-[0.18em] text-slate-500">Clientes</p>
+              <div className="grid gap-3">
+                {clientPortals.map((key) => (
+                  <button
+                    key={key}
+                    onClick={() => handlePortalSelect(key)}
+                    className="group flex w-full items-center justify-between rounded-sm border border-slate-300 bg-white px-5 py-4 text-left transition hover:border-banker-blue hover:bg-[#f8fbfc]"
+                  >
+                    <span>
+                      <span className="block text-lg font-black text-banker-navy">{portals[key].label}</span>
+                      <span className="mt-1 block text-sm text-slate-600">{portals[key].description}</span>
+                    </span>
+                    <span className="text-2xl font-light text-banker-blue transition group-hover:translate-x-1">›</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <p className="mb-3 text-xs font-black uppercase tracking-[0.18em] text-slate-500">Personal Banco</p>
+              <div className="grid gap-3">
+                {staffPortals.map((key) => (
+                  <button
+                    key={key}
+                    onClick={() => handlePortalSelect(key)}
+                    className="group flex w-full items-center justify-between rounded-sm border border-slate-300 bg-white px-5 py-4 text-left transition hover:border-banker-blue hover:bg-[#f8fbfc]"
+                  >
+                    <span>
+                      <span className="block text-lg font-black text-banker-navy">{portals[key].label}</span>
+                      <span className="mt-1 block text-sm text-slate-600">{portals[key].description}</span>
+                    </span>
+                    <span className="text-2xl font-light text-banker-blue transition group-hover:translate-x-1">›</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="rounded-sm bg-[#f3f6f8] p-4 text-sm leading-6 text-slate-600">
+              Verifica que el acceso corresponda a tu rol. La interfaz muestra únicamente las funciones necesarias para operar.
+            </div>
+          </div>
+        </section>
+      </main>
     </div>
   );
 }

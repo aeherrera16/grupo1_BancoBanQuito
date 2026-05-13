@@ -8,12 +8,12 @@ export default {
     extend: {
       colors: {
         banker: {
-          navy: '#1a365d',
-          blue: '#2c5aa0',
-          gold: '#d4a574',
-          light: '#f8f9fa',
-          dark: '#2d3748',
-          gray: '#718096',
+          navy: '#102f3f',
+          blue: '#1f6173',
+          gold: '#b98a3e',
+          light: '#f4f7fb',
+          dark: '#1f2933',
+          gray: '#687684',
         }
       }
     },

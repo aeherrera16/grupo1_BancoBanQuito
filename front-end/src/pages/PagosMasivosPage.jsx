@@ -1,51 +1,71 @@
-import { useAuth } from '../hooks/useAuth';
+import { useState } from 'react';
+import { Field, inputClass, PageShell, Panel, primaryButtonClass, ResultBox, secondaryButtonClass } from '../components/PageShell';
+import { fetchPaymentBatches, processPaymentBatch, uploadPaymentBatch } from '../services/apiClient';
 
 export function PagosMasivosPage() {
-  const { user } = useAuth();
+  const [file, setFile] = useState(null);
+  const [batchId, setBatchId] = useState('');
+  const [result, setResult] = useState(null);
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const submit = async (callback) => {
+    setLoading(true);
+    setError('');
+    setResult(null);
+    try {
+      setResult(await callback());
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
-    <div className="p-8">
-      <div className="max-w-6xl mx-auto">
-        <h1 className="text-4xl font-bold text-banker-navy mb-2">
-          Pagos Masivos
-        </h1>
-        <p className="text-banker-gray mb-8">
-          Gestiona tus pagos masivos de forma eficiente
-        </p>
-
-        <div className="bg-white rounded-lg shadow p-8">
-          <div className="grid md:grid-cols-2 gap-6">
-            <button className="p-6 border-2 border-dashed border-banker-blue rounded-lg hover:bg-banker-light transition-colors text-left">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-banker-blue rounded-lg flex items-center justify-center">
-                  <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clipRule="evenodd" />
-                  </svg>
-                </div>
-                <div>
-                  <h3 className="font-semibold text-banker-navy">Cargar archivo</h3>
-                  <p className="text-sm text-banker-gray">CSV o Excel</p>
-                </div>
-              </div>
-            </button>
-
-            <button className="p-6 border-2 border-dashed border-banker-blue rounded-lg hover:bg-banker-light transition-colors text-left">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-banker-blue rounded-lg flex items-center justify-center">
-                  <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
-                    <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" />
-                    <path fillRule="evenodd" d="M4 5a2 2 0 012-2 1 1 0 000 2H3h12a1 1 0 100-2 2 2 0 012 2v10a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm9 6a1 1 0 11-2 0 1 1 0 012 0z" clipRule="evenodd" />
-                  </svg>
-                </div>
-                <div>
-                  <h3 className="font-semibold text-banker-navy">Ver historial</h3>
-                  <p className="text-sm text-banker-gray">Pagos procesados</p>
-                </div>
-              </div>
+    <PageShell
+      title="Pagos masivos"
+      description="Supervisión de lotes recibidos por Portal Web o SFTP, con validación RF-02 y procesamiento por batch."
+    >
+      <div className="grid gap-6 xl:grid-cols-2">
+        <Panel title="Carga por Portal Web">
+          <div className="rounded-lg border border-dashed border-slate-300 p-5">
+            <Field label="Archivo CSV">
+              <input className={inputClass} type="file" accept=".csv,text/csv" onChange={(event) => setFile(event.target.files?.[0] || null)} />
+            </Field>
+            <p className="mt-3 text-sm text-slate-600">
+              Formato esperado: cabecera con RUC, tipo de servicio, fecha, cuenta origen, total de registros y monto total; detalle línea por línea.
+            </p>
+            <button className={`${primaryButtonClass} mt-5`} disabled={loading || !file} onClick={() => submit(() => uploadPaymentBatch(file, 'PORTAL'))}>
+              Validar y cargar
             </button>
           </div>
-        </div>
+        </Panel>
+
+        <Panel title="Operación de lotes">
+          <div className="grid gap-4 md:grid-cols-[1fr_auto]">
+            <Field label="ID lote">
+              <input className={inputClass} value={batchId} onChange={(event) => setBatchId(event.target.value)} />
+            </Field>
+            <div className="flex items-end">
+              <button className={primaryButtonClass} disabled={loading || !batchId} onClick={() => submit(() => processPaymentBatch(batchId))}>
+                Procesar
+              </button>
+            </div>
+          </div>
+          <div className="mt-5">
+            <button className={secondaryButtonClass} disabled={loading} onClick={() => submit(fetchPaymentBatches)}>
+              Consultar lotes recibidos
+            </button>
+          </div>
+          <div className="mt-5 grid gap-3 text-sm text-slate-700">
+            <span>Estados del lote: Recibido, Validado, En Proceso, Procesado, Rechazado, Encolado.</span>
+            <span>Estados del detalle: Pendiente, Exitoso, Rechazado.</span>
+            <span>Canales del Switch: Portal Web y SFTP Seguro.</span>
+          </div>
+        </Panel>
       </div>
-    </div>
+      <ResultBox result={result} error={error} />
+    </PageShell>
   );
 }
