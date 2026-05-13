@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useBatchDetails } from '../hooks/useBatchDetails';
 
 export function BatchDetailsModal({ batchId, isOpen, onClose }) {
@@ -11,7 +12,16 @@ export function BatchDetailsModal({ batchId, isOpen, onClose }) {
     downloadComprobante,
     downloadNovedades,
     clearError,
+    reset,
   } = useBatchDetails();
+
+  useEffect(() => {
+    if (isOpen && batchId) {
+      fetchBatchDetails(batchId);
+    } else {
+      reset();
+    }
+  }, [isOpen, batchId, fetchBatchDetails, reset]);
 
   const handleOpen = async () => {
     clearError();
@@ -20,6 +30,11 @@ export function BatchDetailsModal({ batchId, isOpen, onClose }) {
     } catch (err) {
       console.error('Error loading batch details:', err);
     }
+  };
+
+  const handleClose = () => {
+    reset();
+    onClose();
   };
 
   const handleDownloadComprobante = async () => {
@@ -47,7 +62,7 @@ export function BatchDetailsModal({ batchId, isOpen, onClose }) {
         <div className="sticky top-0 bg-banker-navy text-white p-6 flex justify-between items-center border-b">
           <h2 className="text-2xl font-bold">Detalle del Lote #{batchId}</h2>
           <button
-            onClick={onClose}
+            onClick={handleClose}
             className="text-white hover:bg-banker-navy/80 rounded p-2 transition-colors"
           >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -143,7 +158,7 @@ export function BatchDetailsModal({ batchId, isOpen, onClose }) {
                       </p>
                     </div>
                     <div className="border-r border-gray-200">
-                      <p className="text-sm text-banker-gray mb-2">IVA (12%)</p>
+                      <p className="text-sm text-banker-gray mb-2">IVA (15%)</p>
                       <p className="text-xl font-bold text-banker-navy">
                         ${batchDetails.vatAmount?.toFixed(2) || '0.00'}
                       </p>

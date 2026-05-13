@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import {
   getBatchDetails,
   downloadComprobanteLiquidacion,
@@ -12,57 +12,99 @@ export function useBatchDetails() {
   const [isDownloadingNovedades, setIsDownloadingNovedades] = useState(false);
   const [error, setError] = useState(null);
 
-  const fetchBatchDetails = async (batchId) => {
+  const isMountedRef = useRef(true);
+
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
+
+  const fetchBatchDetails = useCallback(async (batchId) => {
+    if (!isMountedRef.current) return null;
+
     setIsLoadingDetails(true);
     setError(null);
 
     try {
       const details = await getBatchDetails(batchId);
-      setBatchDetails(details);
+      if (isMountedRef.current) {
+        setBatchDetails(details);
+      }
       return details;
     } catch (err) {
-      const errorMsg = err.message || 'Error al cargar los detalles del lote';
-      setError(errorMsg);
-      console.error('Error fetching batch details:', err);
+      if (isMountedRef.current) {
+        const errorMsg = err.message || 'Error al cargar los detalles del lote';
+        setError(errorMsg);
+        console.error('Error fetching batch details:', err);
+      }
       throw err;
     } finally {
-      setIsLoadingDetails(false);
+      if (isMountedRef.current) {
+        setIsLoadingDetails(false);
+      }
     }
-  };
+  }, []);
 
-  const downloadComprobante = async (batchId) => {
+  const downloadComprobante = useCallback(async (batchId) => {
+    if (!isMountedRef.current) return;
+
     setIsDownloadingComprobante(true);
     setError(null);
 
     try {
       await downloadComprobanteLiquidacion(batchId);
     } catch (err) {
-      const errorMsg = err.message || 'Error al descargar el comprobante';
-      setError(errorMsg);
-      console.error('Error downloading comprobante:', err);
+      if (isMountedRef.current) {
+        const errorMsg = err.message || 'Error al descargar el comprobante';
+        setError(errorMsg);
+        console.error('Error downloading comprobante:', err);
+      }
       throw err;
     } finally {
-      setIsDownloadingComprobante(false);
+      if (isMountedRef.current) {
+        setIsDownloadingComprobante(false);
+      }
     }
-  };
+  }, []);
 
-  const downloadNovedades = async (batchId) => {
+  const downloadNovedades = useCallback(async (batchId) => {
+    if (!isMountedRef.current) return;
+
     setIsDownloadingNovedades(true);
     setError(null);
 
     try {
       await downloadReporteNovedades(batchId);
     } catch (err) {
-      const errorMsg = err.message || 'Error al descargar el reporte de novedades';
-      setError(errorMsg);
-      console.error('Error downloading novedades:', err);
+      if (isMountedRef.current) {
+        const errorMsg = err.message || 'Error al descargar el reporte de novedades';
+        setError(errorMsg);
+        console.error('Error downloading novedades:', err);
+      }
       throw err;
     } finally {
+      if (isMountedRef.current) {
+        setIsDownloadingNovedades(false);
+      }
+    }
+  }, []);
+
+  const clearError = useCallback(() => {
+    if (isMountedRef.current) {
+      setError(null);
+    }
+  }, []);
+
+  const reset = useCallback(() => {
+    if (isMountedRef.current) {
+      setBatchDetails(null);
+      setError(null);
+      setIsLoadingDetails(false);
+      setIsDownloadingComprobante(false);
       setIsDownloadingNovedades(false);
     }
-  };
-
-  const clearError = () => setError(null);
+  }, []);
 
   return {
     batchDetails,
@@ -74,5 +116,6 @@ export function useBatchDetails() {
     downloadComprobante,
     downloadNovedades,
     clearError,
+    reset,
   };
 }

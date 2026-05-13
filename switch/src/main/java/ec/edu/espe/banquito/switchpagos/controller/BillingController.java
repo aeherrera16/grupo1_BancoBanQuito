@@ -316,7 +316,7 @@ public class BillingController {
             comprobante.append(String.format("Registros Rechazados: %d%n", resumen.getRejectedRecords()));
             comprobante.append(String.format("Monto Total Dispersado: $%.2f%n", resumen.getTotalAmount()));
             comprobante.append(String.format("Comisión (Subtotal): $%.2f%n", resumen.getCommissionSubtotal()));
-            comprobante.append(String.format("IVA Retenido (12%%): $%.2f%n", resumen.getVatAmount()));
+            comprobante.append(String.format("IVA Retenido (15%%): $%.2f%n", resumen.getVatAmount()));
             comprobante.append(String.format("Total Comisión: $%.2f%n", resumen.getTotalCharge()));
             comprobante.append("\n");
 

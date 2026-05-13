@@ -15,19 +15,44 @@ export function PagosMasivosPage() {
   const [showDetailsModal, setShowDetailsModal] = useState(false);
 
   useEffect(() => {
-    loadBatches();
+    let isMounted = true;
+
+    const initializePage = async () => {
+      try {
+        if (isMounted) {
+          await loadBatches();
+        }
+      } catch (err) {
+        if (isMounted) {
+          console.error('Error initializing page:', err);
+        }
+      }
+    };
+
+    initializePage();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
-  const loadBatches = async () => {
+  const loadBatches = async (isMounted = true) => {
+    if (!isMounted) return;
     setIsLoadingBatches(true);
     try {
       const data = await getAllBatches();
-      setBatches(Array.isArray(data) ? data : []);
+      if (isMounted) {
+        setBatches(Array.isArray(data) ? data : []);
+      }
     } catch (err) {
-      console.error('Error loading batches:', err);
-      setBatches([]);
+      if (isMounted) {
+        console.error('Error loading batches:', err);
+        setBatches([]);
+      }
     } finally {
-      setIsLoadingBatches(false);
+      if (isMounted) {
+        setIsLoadingBatches(false);
+      }
     }
   };
 
@@ -43,6 +68,13 @@ export function PagosMasivosPage() {
   const handleSelectBatch = (batchId) => {
     setSelectedBatchId(batchId);
     setShowDetailsModal(true);
+  };
+
+  const handleCloseDetailsModal = () => {
+    setShowDetailsModal(false);
+    setTimeout(() => {
+      setSelectedBatchId(null);
+    }, 300);
   };
 
   return (
@@ -258,10 +290,7 @@ export function PagosMasivosPage() {
         <BatchDetailsModal
           batchId={selectedBatchId}
           isOpen={showDetailsModal}
-          onClose={() => {
-            setShowDetailsModal(false);
-            setSelectedBatchId(null);
-          }}
+          onClose={handleCloseDetailsModal}
         />
       )}
     </div>
