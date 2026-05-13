@@ -5,19 +5,38 @@ import { coreRequest, fetchBalance, fetchAccountHistory } from '../services/apiC
 
 export function CustomerAccountsPage({ cashierMode = false }) {
   const { user, portal } = useAuth();
-  const [accountNumber, setAccountNumber] = useState(portal === 'personaNatural' ? (user?.username === 'ana123' ? '001-00005678' : '001-00001234') : (portal === 'empresa' ? '0050000202' : ''));
+  const [accountNumber, setAccountNumber] = useState(portal === 'personaNatural' ? (user?.email === 'ana123' ? '001-00005678' : '001-00001234') : (portal === 'empresa' ? '0050000202' : ''));
   const [result, setResult] = useState(null);
   const [history, setHistory] = useState(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showToast, setShowToast] = useState(false);
+  const [showDetails, setShowDetails] = useState(false);
   const needsCoreUser = portal === 'operador' || portal === 'cajero';
 
   // Autocargar para Persona Natural para simular el "Resumen" directo
   useEffect(() => {
     if (!needsCoreUser) {
       fetchAccount();
+      
+      // Polling para refrescar datos automáticamente
+      const interval = setInterval(async () => {
+        try {
+          const accNum = portal === 'personaNatural' ? (user?.email === 'ana123' ? '001-00005678' : '001-00001234') : (portal === 'empresa' ? '0050000202' : '');
+          if (accNum) {
+            const bal = await fetchBalance(accNum);
+            setResult(bal);
+            try {
+              const hist = await fetchAccountHistory(accNum);
+              setHistory(hist);
+            } catch (e) {}
+          }
+        } catch (err) {}
+      }, 5000);
+      
+      return () => clearInterval(interval);
     }
-  }, []);
+  }, [user, portal, needsCoreUser]);
 
   const fetchAccount = async () => {
     setLoading(true);
@@ -49,13 +68,14 @@ export function CustomerAccountsPage({ cashierMode = false }) {
   const handleShare = () => {
     if (result?.accountNumber) {
       navigator.clipboard.writeText(result.accountNumber);
-      alert(`¡Número de cuenta ${result.accountNumber} copiado al portapapeles!`);
+      setShowToast(true);
+      setTimeout(() => setShowToast(false), 3000);
     }
   };
 
   const handleDetails = () => {
     if (result) {
-      alert(`Detalles de la Cuenta:\n\nTitular: ${user?.name}\nNúmero de Cuenta: ${result.accountNumber}\nTipo: ${result.accountSubtype || 'Cuenta Digital'}\nEstado: ${result.status || 'ACTIVA'}\n\nSaldo Contable: $${result.accountingBalance?.toFixed(2)}\nSaldo Disponible: $${result.availableBalance?.toFixed(2)}`);
+      setShowDetails(true);
     }
   };
 
@@ -113,7 +133,7 @@ export function CustomerAccountsPage({ cashierMode = false }) {
             </div>
 
             <div className="text-right">
-              <p className="text-xs text-gray-500 uppercase tracking-wide">Saldo Contable (RF-05)</p>
+              <p className="text-xs text-gray-500 uppercase tracking-wide">Saldo Contable</p>
               <p className="text-xl font-semibold text-gray-500">${result.accountingBalance?.toFixed(2) || '0.00'}</p>
             </div>
           </div>
@@ -133,7 +153,54 @@ export function CustomerAccountsPage({ cashierMode = false }) {
 
       {history && history.length > 0 && (
          <div className="mt-8">
-            <h2 className="mb-4 text-lg font-semibold text-gray-800">Historial de Movimientos (RF-07)</h2>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold text-gray-800">Historial de Movimientos</h2>
+              <button
+                onClick={() => {
+                  const w = window.open('', '_blank');
+                  w.document.write(`
+                    <html><head><title>Reporte de Movimientos</title>
+                    <style>
+                      body{font-family:sans-serif;padding:24px;color:#111}
+                      h1{color:#006644;margin-bottom:4px}p{color:#666;font-size:13px;margin-bottom:20px}
+                      table{width:100%;border-collapse:collapse}
+                      th{background:#006644;color:white;padding:10px 12px;text-align:left;font-size:12px}
+                      td{padding:10px 12px;border-bottom:1px solid #eee;font-size:13px}
+                      .cr{color:#16a34a;font-weight:600}.db{color:#dc2626;font-weight:600}
+                      .badge{display:inline-block;padding:2px 8px;border-radius:99px;font-size:11px;font-weight:700}
+                      .badge-cr{background:#dcfce7;color:#16a34a}.badge-db{background:#fee2e2;color:#dc2626}
+                      footer{margin-top:24px;font-size:11px;color:#999;text-align:center}
+                    </style></head><body>
+                    <h1>BancoBanQuito EN LÍNEA</h1>
+                    <p>Reporte de Movimientos &mdash; Cuenta: ${result?.accountNumber} &mdash; ${new Date().toLocaleString()}</p>
+                    <table>
+                      <thead><tr><th>Fecha</th><th>Tipo</th><th>Detalle</th><th style="text-align:right">Monto</th><th style="text-align:right">Saldo</th></tr></thead>
+                      <tbody>
+                        ${history.map(tx => `
+                          <tr>
+                            <td>${new Date(tx.transactionDate).toLocaleString()}</td>
+                            <td><span class="badge ${tx.movementType === 'CREDITO' ? 'badge-cr' : 'badge-db'}">${tx.movementType}</span></td>
+                            <td>${tx.message || tx.subtypeCode || 'Transacción'}</td>
+                            <td style="text-align:right;font-weight:600">$${tx.amount?.toFixed(2)}</td>
+                            <td style="text-align:right;color:#555">$${tx.resultingBalance?.toFixed(2)}</td>
+                          </tr>
+                        `).join('')}
+                      </tbody>
+                    </table>
+                    <footer>Documento generado digitalmente &mdash; BancoBanQuito &mdash; Información confidencial</footer>
+                    </body></html>
+                  `);
+                  w.document.close();
+                  w.print();
+                }}
+                className="flex items-center gap-1.5 text-sm font-medium text-[#006644] hover:text-[#004d33] border border-[#006644] rounded-lg px-3 py-1.5 hover:bg-green-50 transition-colors"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                Generar Reporte
+              </button>
+            </div>
             <div className="overflow-x-auto border border-gray-200 rounded-lg">
               <table className="w-full text-sm text-left">
                 <thead className="bg-gray-50 text-gray-600">
@@ -165,6 +232,62 @@ export function CustomerAccountsPage({ cashierMode = false }) {
               </table>
             </div>
          </div>
+      )}
+
+      {/* Toast Notification */}
+      {showToast && (
+        <div className="fixed bottom-6 right-6 bg-gray-900 text-white px-6 py-4 rounded-xl shadow-2xl flex items-center gap-3 z-50 animate-fade-in-up">
+          <svg className="w-6 h-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+          <span className="font-medium">Número de cuenta copiado al portapapeles</span>
+        </div>
+      )}
+
+      {/* Detalles Modal */}
+      {showDetails && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity" onClick={() => setShowDetails(false)}></div>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden relative z-10">
+            <div className="bg-[#006644] px-6 py-4 flex justify-between items-center">
+               <h3 className="text-lg font-bold text-white">Detalles de la Cuenta</h3>
+               <button onClick={() => setShowDetails(false)} className="text-green-100 hover:text-white transition-colors focus:outline-none">
+                 <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" /></svg>
+               </button>
+            </div>
+            <div className="p-6 space-y-4">
+               <div className="flex justify-between items-center border-b border-gray-100 pb-3">
+                 <span className="text-gray-500 text-sm">Titular</span>
+                 <span className="font-semibold text-gray-800 uppercase">{user?.name}</span>
+               </div>
+               <div className="flex justify-between items-center border-b border-gray-100 pb-3">
+                 <span className="text-gray-500 text-sm">Número de Cuenta</span>
+                 <span className="font-semibold text-gray-800">{result.accountNumber}</span>
+               </div>
+               <div className="flex justify-between items-center border-b border-gray-100 pb-3">
+                 <span className="text-gray-500 text-sm">Tipo</span>
+                 <span className="font-semibold text-gray-800">{result.accountSubtype || 'Cuenta Digital'}</span>
+               </div>
+               <div className="flex justify-between items-center border-b border-gray-100 pb-3">
+                 <span className="text-gray-500 text-sm">Estado</span>
+                 <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-green-100 text-green-800">
+                   {result.status || 'ACTIVA'}
+                 </span>
+               </div>
+               <div className="flex justify-between items-center border-b border-gray-100 pb-3">
+                 <span className="text-gray-500 text-sm">Saldo Contable</span>
+                 <span className="font-bold text-gray-600">${result.accountingBalance?.toFixed(2)}</span>
+               </div>
+               <div className="flex justify-between items-center pb-1">
+                 <span className="text-gray-500 text-sm">Saldo Disponible</span>
+                 <span className="font-black text-[#006644] text-xl">${result.availableBalance?.toFixed(2)}</span>
+               </div>
+            </div>
+            <div className="px-6 py-4 bg-gray-50 border-t border-gray-100 flex justify-end">
+               <button onClick={() => setShowDetails(false)} className={`${primaryButtonClass} w-auto px-6`}>
+                 Entendido
+               </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
