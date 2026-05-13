@@ -1,8 +1,11 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { menuByPortal, portals } from '../config/portals';
 
-export default function Sidebar({ logout }) {
+export default function Sidebar({ logout, portal, user }) {
   const location = useLocation();
   const navigate = useNavigate();
+  const menu = menuByPortal[portal] || [];
+  const portalInfo = portals[portal];
 
   const handleLogout = () => {
     logout();
@@ -12,66 +15,54 @@ export default function Sidebar({ logout }) {
   const isActive = (path) => location.pathname === path;
 
   return (
-    <div className="w-64 bg-banker-navy text-white shadow-lg flex flex-col h-screen">
-      {/* Logo */}
-      <div className="p-6 border-b border-banker-blue/30">
+    <aside className="flex w-72 shrink-0 flex-col border-r border-slate-200 bg-white text-banker-dark">
+      <div className="border-b border-slate-200 p-6">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-banker-gold rounded-lg flex items-center justify-center flex-shrink-0">
-            <span className="text-lg font-bold text-banker-navy">₡</span>
+          <div className="flex h-10 w-10 items-center justify-center rounded-sm bg-banker-navy">
+            <span className="text-sm font-black text-white">BQ</span>
           </div>
-          <span className="text-lg font-bold truncate">BancoBanQuito</span>
+          <div>
+            <span className="block text-lg font-black text-banker-navy">BancoBanQuito</span>
+            <span className="text-xs font-semibold uppercase tracking-[0.16em] text-banker-gray">En línea</span>
+          </div>
         </div>
       </div>
 
-      {/* Navigation */}
-      <nav className="flex-1 p-4">
-        <div className="space-y-1">
-          <Link
-            to="/dashboard"
-            className={`block px-4 py-3 rounded-lg transition-colors ${
-              isActive('/dashboard')
-                ? 'bg-banker-blue text-white shadow-md'
-                : 'text-banker-light hover:bg-banker-blue/30'
-            }`}
-          >
-            <span className="flex items-center gap-3">
-              <svg className="w-5 h-5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z" />
-              </svg>
-              <span>Dashboard</span>
-            </span>
-          </Link>
+      <div className="border-b border-slate-200 p-6">
+        <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[#eef5f7] text-xl font-black text-banker-blue">
+          {user?.name?.slice(0, 1)}
+        </div>
+        <p className="text-center text-sm font-black text-banker-navy">{user?.name}</p>
+        <p className="mt-1 text-center text-xs text-slate-500">{portalInfo?.label}</p>
+      </div>
 
-          <Link
-            to="/pagos-masivos"
-            className={`block px-4 py-3 rounded-lg transition-colors ${
-              isActive('/pagos-masivos')
-                ? 'bg-banker-blue text-white shadow-md'
-                : 'text-banker-light hover:bg-banker-blue/30'
-            }`}
-          >
-            <span className="flex items-center gap-3">
-              <svg className="w-5 h-5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                <path d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zm2 6a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2v-4zm6 4a2 2 0 100-4 2 2 0 000 4z" />
-              </svg>
-              <span>Pagos Masivos</span>
-            </span>
-          </Link>
+      <nav className="flex-1 overflow-auto p-5">
+        <p className="mb-3 px-3 text-xs font-black uppercase tracking-[0.18em] text-slate-400">Menú</p>
+        <div className="space-y-1">
+          {menu.map((item) => (
+            <Link
+              key={item.path}
+              to={item.path}
+              className={`block border-l-4 px-4 py-3 text-sm font-semibold transition-colors ${
+                isActive(item.path)
+                  ? 'border-banker-gold bg-[#f5f8fa] text-banker-navy'
+                  : 'border-transparent text-slate-600 hover:border-banker-blue/40 hover:bg-[#f8fbfc] hover:text-banker-navy'
+              }`}
+            >
+              {item.label}
+            </Link>
+          ))}
         </div>
       </nav>
 
-      {/* Logout Button */}
-      <div className="p-4 border-t border-banker-blue/30">
+      <div className="border-t border-slate-200 p-5">
         <button
           onClick={handleLogout}
-          className="w-full px-4 py-3 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold transition-colors flex items-center justify-center gap-2"
+          className="flex w-full items-center justify-center rounded-sm border border-slate-300 bg-white px-4 py-3 text-sm font-black text-banker-navy transition-colors hover:bg-slate-50"
         >
-          <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-            <path fillRule="evenodd" d="M3 4a1 1 0 00-1 1v10a1 1 0 001 1h12a1 1 0 001-1V5a1 1 0 00-1-1H3zm0 12a1 1 0 001 1h12a1 1 0 001-1V5a1 1 0 00-1-1H3a1 1 0 00-1 1v11z" clipRule="evenodd" />
-          </svg>
           Salir
         </button>
       </div>
-    </div>
+    </aside>
   );
 }
