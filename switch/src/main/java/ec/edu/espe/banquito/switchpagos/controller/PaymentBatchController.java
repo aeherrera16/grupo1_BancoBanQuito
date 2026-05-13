@@ -16,17 +16,16 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import ec.edu.espe.banquito.switchpagos.config.CsvBatchParser;
+import ec.edu.espe.banquito.switchpagos.config.CsvBatchParser.CsvParseResult;
 import ec.edu.espe.banquito.switchpagos.enums.BatchStatusEnum;
 import ec.edu.espe.banquito.switchpagos.enums.ChannelEnum;
 import ec.edu.espe.banquito.switchpagos.model.FileValidation;
 import ec.edu.espe.banquito.switchpagos.model.PaymentBatch;
 import ec.edu.espe.banquito.switchpagos.repository.PaymentBatchRepository;
-import ec.edu.espe.banquito.switchpagos.service.FileValidationService;
-import ec.edu.espe.banquito.switchpagos.service.PaymentBatchProcessingService;
-import ec.edu.espe.banquito.switchpagos.service.CutoffTimeService;
-import ec.edu.espe.banquito.switchpagos.util.CsvBatchParser;
-import ec.edu.espe.banquito.switchpagos.util.CsvBatchParser.CsvParseResult;
-import ec.edu.espe.banquito.switchpagos.util.EnumUtils;
+import ec.edu.espe.banquito.switchpagos.service.impl.CutoffTimeService;
+import ec.edu.espe.banquito.switchpagos.service.impl.FileValidationService;
+import ec.edu.espe.banquito.switchpagos.service.impl.PaymentBatchProcessingService;
 
 @RestController
 @CrossOrigin(origins = {"http://localhost:5173", "http://127.0.0.1:5173"})
@@ -79,25 +78,21 @@ public class PaymentBatchController {
             // Parsear archivo CSV
             logger.info("🔄 Parseando archivo CSV...");
             CsvParseResult parseResult = CsvBatchParser.parseCsvFile(file.getInputStream(), file.getOriginalFilename(), file.getSize());
-            if (!parseResult.success) {
-                logger.error("❌ ERROR PARSEANDO CSV: {}", parseResult.errorMessage);
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", parseResult.errorMessage));
-            }
-            logger.info("✅ CSV parseado exitosamente - {} detalles", parseResult.details.size());
+            logger.info("✅ CSV parseado exitosamente - {} detalles", parseResult.getDetails().size());
 
             // Crear PaymentBatch y detalles
-            PaymentBatch batch = parseResult.batch;
+            PaymentBatch batch = parseResult.getBatch();
             batch.setChannel(channel);
             batch.setReceivedAt(LocalDateTime.now());
             batch.setStatus(BatchStatusEnum.RECEIVED);
-            
+
             logger.info("Lote creado - RUC: {}, Hash: {}, Total: {}", 
                        batch.getRuc(), batch.getFileHash(), batch.getHeaderTotalAmount());
 
             // RF-02: Validación temprana antes de guardar en base de datos
             logger.info("🔍 Iniciando validación temprana RF-02...");
             try {
-                fileValidationService.validateEarlyRejection(batch, parseResult.details);
+                fileValidationService.validateEarlyRejection(batch, parseResult.getDetails());
                 logger.info("✅ Validación temprana exitosa");
             } catch (IllegalArgumentException e) {
                 logger.error("❌ RECHAZO TEMPRANO RF-02: {}", e.getMessage());
@@ -113,9 +108,9 @@ public class PaymentBatchController {
 
             // Validar y guardar
             logger.info("💾 Iniciando validación completa y guardado...");
-            FileValidation validation = fileValidationService.validateBatch(batch, parseResult.details);
-            if (EnumUtils.isValidationSuccess(validation.getValidationResult())) {
-                batch = paymentBatchProcessingService.process(validation.getPaymentBatch(), parseResult.details);
+            FileValidation validation = fileValidationService.validateBatch(batch, parseResult.getDetails());
+            if ("SUCCESS".equals(validation.getValidationResult())) {
+                batch = paymentBatchProcessingService.process(validation.getPaymentBatch(), parseResult.getDetails());
             }
             
             logger.info("✅ PROCESO COMPLETADO - Resultado: {}, Status: {}", 
@@ -123,7 +118,7 @@ public class PaymentBatchController {
             
             return ResponseEntity.ok(Map.of(
                     "validationResult", validation.getValidationResult(),
-                    "isSuccess", EnumUtils.isValidationSuccess(validation.getValidationResult()),
+                    "isSuccess", "SUCCESS".equals(validation.getValidationResult()),
                     "batchStatus", batch.getStatus().getDisplayName(),
                     "fileValidation", validation
             ));
