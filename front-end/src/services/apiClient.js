@@ -61,12 +61,12 @@ export async function fetchPaymentBatches() {
   return parseResponse(await fetch(`${switchBaseUrl}/api/payment-batch`));
 }
 
-export async function processPaymentBatch(batchId) {
-  return parseResponse(
-    await fetch(`${switchBaseUrl}/api/payment-processor/process/${batchId}`, {
-      method: 'POST',
-    }),
-  );
+export async function downloadComprobante(batchId) {
+  window.open(`${switchBaseUrl}/api/billing/batches/${batchId}/download/comprobante`, '_blank');
+}
+
+export async function downloadNovedades(batchId) {
+  window.open(`${switchBaseUrl}/api/billing/batches/${batchId}/download/novedades`, '_blank');
 }
 
 export async function uploadSftpMailboxFile(file) {

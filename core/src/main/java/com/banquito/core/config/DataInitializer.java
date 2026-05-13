@@ -31,10 +31,10 @@ public class DataInitializer implements CommandLineRunner {
     private final InstitutionalAccountRepository institutionalAccountRepository;
     private final CoreUserRepository coreUserRepository;
     private final PasswordEncoder passwordEncoder;
+    private final WebCredentialRepository webCredentialRepository;
 
-    @Override
     public void run(String... args) {
-        if (customerSubtypeRepository.count() == 0) initCustomerSubtypes();
+        initCustomerSubtypes();
         if (branchRepository.count() == 0) initBranches();
         if (accountSubtypeRepository.count() == 0) initAccountSubtypes();
         initTransactionSubtypes();
@@ -42,24 +42,29 @@ public class DataInitializer implements CommandLineRunner {
         if (coreUserRepository.count() == 0) initCoreUsers();
         initCustomers();
         initAccounts();
+        initCredentials();
         log.info("Datos de prueba cargados correctamente");
     }
 
     private void initCustomerSubtypes() {
-        CustomerSubtype personal = new CustomerSubtype();
-        personal.setCustomerType("NATURAL");
-        personal.setName("PERSONAL");
-        personal.setDescription("Clientes personas naturales");
-        personal.setStatus(CustomerSubtypeStatusEnum.ACTIVO);
-        customerSubtypeRepository.save(personal);
+        if (customerSubtypeRepository.findAll().stream().noneMatch(s -> "PERSONAL".equals(s.getName()))) {
+            CustomerSubtype personal = new CustomerSubtype();
+            personal.setCustomerType("NATURAL");
+            personal.setName("PERSONAL");
+            personal.setDescription("Clientes personas naturales");
+            personal.setStatus(CustomerSubtypeStatusEnum.ACTIVO);
+            customerSubtypeRepository.save(personal);
+        }
 
-        CustomerSubtype empresaPagosMasivos = new CustomerSubtype();
-        empresaPagosMasivos.setCustomerType("JURIDICO");
-        empresaPagosMasivos.setName("EMPRESA_PAGOS_MASIVOS");
-        empresaPagosMasivos.setDescription("Empresa con servicio Pagos Masivos Switch activo");
-        empresaPagosMasivos.setStatus(CustomerSubtypeStatusEnum.ACTIVO);
-        customerSubtypeRepository.save(empresaPagosMasivos);
-        log.info("CustomerSubtypes creados");
+        if (customerSubtypeRepository.findAll().stream().noneMatch(s -> "EMPRESA_PAGOS_MASIVOS".equals(s.getName()))) {
+            CustomerSubtype empresaPagosMasivos = new CustomerSubtype();
+            empresaPagosMasivos.setCustomerType("JURIDICO");
+            empresaPagosMasivos.setName("EMPRESA_PAGOS_MASIVOS");
+            empresaPagosMasivos.setDescription("Empresa con servicio Pagos Masivos Switch activo");
+            empresaPagosMasivos.setStatus(CustomerSubtypeStatusEnum.ACTIVO);
+            customerSubtypeRepository.save(empresaPagosMasivos);
+        }
+        log.info("CustomerSubtypes inicializados");
     }
 
     private void initBranches() {
@@ -272,5 +277,34 @@ public class DataInitializer implements CommandLineRunner {
         }
 
         log.info("Accounts creadas");
+    }
+
+    private void initCredentials() {
+        Customer bryan = customerRepository.findByIdentificationTypeAndIdentification("CEDULA", "1234567890")
+                .orElseThrow(() -> new IllegalStateException("Cliente Bryan no existe en seed"));
+        
+        if (webCredentialRepository.findByUsername("user123").isEmpty()) {
+            WebCredential cred = new WebCredential();
+            cred.setCustomer(bryan);
+            cred.setUsername("user123");
+            cred.setPasswordHash(passwordEncoder.encode("1234"));
+            cred.setStatus(CommonStatusEnum.ACTIVO);
+            cred.setCreationDate(LocalDateTime.now());
+            webCredentialRepository.save(cred);
+        }
+
+        Customer empresaPm = customerRepository.findByIdentificationTypeAndIdentification("RUC", "1790012345001")
+                .orElseThrow(() -> new IllegalStateException("Cliente empresa PM no existe en seed"));
+
+        if (webCredentialRepository.findByUsername("empresa123").isEmpty()) {
+            WebCredential credEmp = new WebCredential();
+            credEmp.setCustomer(empresaPm);
+            credEmp.setUsername("empresa123");
+            credEmp.setPasswordHash(passwordEncoder.encode("1234"));
+            credEmp.setStatus(CommonStatusEnum.ACTIVO);
+            credEmp.setCreationDate(LocalDateTime.now());
+            webCredentialRepository.save(credEmp);
+        }
+        log.info("Credenciales web creadas para 'user123' (Natural) y 'empresa123' (Juridica)");
     }
 }

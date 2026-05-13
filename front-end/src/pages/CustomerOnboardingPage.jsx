@@ -9,7 +9,9 @@ const emptyCustomer = {
   customerType: 'NATURAL',
   firstName: '',
   lastName: '',
+  birthDate: '',
   legalName: '',
+  constitutionDate: '',
   email: '',
   mobilePhone: '',
   address: '',
@@ -104,15 +106,33 @@ export function CustomerOnboardingPage() {
             <Field label="Identificación">
               <input className={inputClass} value={customer.identification} onChange={(event) => setCustomer({ ...customer, identification: event.target.value })} />
             </Field>
-            <Field label="Nombre">
-              <input className={inputClass} value={customer.firstName} onChange={(event) => setCustomer({ ...customer, firstName: event.target.value })} />
-            </Field>
-            <Field label="Apellido">
-              <input className={inputClass} value={customer.lastName} onChange={(event) => setCustomer({ ...customer, lastName: event.target.value })} />
-            </Field>
-            <Field label="Razón social">
-              <input className={inputClass} value={customer.legalName} onChange={(event) => setCustomer({ ...customer, legalName: event.target.value })} />
-            </Field>
+            
+            {customer.customerType === 'NATURAL' ? (
+              <>
+                <Field label="Nombres">
+                  <input className={inputClass} value={customer.firstName} onChange={(event) => setCustomer({ ...customer, firstName: event.target.value })} />
+                </Field>
+                <Field label="Apellidos">
+                  <input className={inputClass} value={customer.lastName} onChange={(event) => setCustomer({ ...customer, lastName: event.target.value })} />
+                </Field>
+                <Field label="Fecha de nacimiento">
+                  <input className={inputClass} type="date" value={customer.birthDate} onChange={(event) => setCustomer({ ...customer, birthDate: event.target.value })} />
+                </Field>
+              </>
+            ) : (
+              <>
+                <Field label="Razón social">
+                  <input className={inputClass} value={customer.legalName} onChange={(event) => setCustomer({ ...customer, legalName: event.target.value })} />
+                </Field>
+                <Field label="Fecha de constitución">
+                  <input className={inputClass} type="date" value={customer.constitutionDate} onChange={(event) => setCustomer({ ...customer, constitutionDate: event.target.value })} />
+                </Field>
+                <Field label="Representante legal">
+                  <input className={inputClass} value={customer.legalRepresentativeId} onChange={(event) => setCustomer({ ...customer, legalRepresentativeId: event.target.value })} />
+                </Field>
+              </>
+            )}
+
             <Field label="Correo">
               <input className={inputClass} type="email" value={customer.email} onChange={(event) => setCustomer({ ...customer, email: event.target.value })} />
             </Field>
@@ -121,9 +141,6 @@ export function CustomerOnboardingPage() {
             </Field>
             <Field label="Subtipo de cliente">
               <input className={inputClass} value={customer.customerSubtypeId} onChange={(event) => setCustomer({ ...customer, customerSubtypeId: event.target.value })} />
-            </Field>
-            <Field label="Representante legal">
-              <input className={inputClass} value={customer.legalRepresentativeId} onChange={(event) => setCustomer({ ...customer, legalRepresentativeId: event.target.value })} />
             </Field>
             <Field label="Dirección">
               <input className={inputClass} value={customer.address} onChange={(event) => setCustomer({ ...customer, address: event.target.value })} />

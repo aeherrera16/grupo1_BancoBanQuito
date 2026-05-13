@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Field, inputClass, PageShell, Panel, primaryButtonClass, ResultBox, secondaryButtonClass } from '../components/PageShell';
-import { fetchPaymentBatches, processPaymentBatch, uploadPaymentBatch } from '../services/apiClient';
+import { fetchPaymentBatches, uploadPaymentBatch, downloadComprobante, downloadNovedades } from '../services/apiClient';
 
 export function PagosMasivosPage() {
   const [file, setFile] = useState(null);
@@ -47,15 +47,18 @@ export function PagosMasivosPage() {
             <Field label="ID lote">
               <input className={inputClass} value={batchId} onChange={(event) => setBatchId(event.target.value)} />
             </Field>
-            <div className="flex items-end">
-              <button className={primaryButtonClass} disabled={loading || !batchId} onClick={() => submit(() => processPaymentBatch(batchId))}>
-                Procesar
+            <div className="flex flex-col gap-2 items-end">
+              <button className={primaryButtonClass} disabled={!batchId} onClick={() => downloadComprobante(batchId)}>
+                Descargar Comprobante
+              </button>
+              <button className={secondaryButtonClass} disabled={!batchId} onClick={() => downloadNovedades(batchId)}>
+                Descargar Novedades
               </button>
             </div>
           </div>
           <div className="mt-5">
             <button className={secondaryButtonClass} disabled={loading} onClick={() => submit(fetchPaymentBatches)}>
-              Consultar lotes recibidos
+              Consultar historial de lotes
             </button>
           </div>
           <div className="mt-5 grid gap-3 text-sm text-slate-700">

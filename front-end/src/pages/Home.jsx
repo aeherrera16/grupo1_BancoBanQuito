@@ -98,7 +98,9 @@ export function Home() {
       <header className="bg-white shadow-sm">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6 text-sm font-semibold text-slate-700">
           <div className="flex items-center gap-2 text-base font-black tracking-[0.2em] text-banker-navy">
-            <span className="inline-flex h-6 w-6 items-center justify-center rounded-sm bg-banker-gold text-xs text-white">BQ</span>
+            <span className="inline-flex h-6 w-6 items-center justify-center rounded-sm bg-banker-gold text-xs text-white">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="3" x2="21" y1="22" y2="22"/><line x1="6" x2="6" y1="18" y2="11"/><line x1="10" x2="10" y1="18" y2="11"/><line x1="14" x2="14" y1="18" y2="11"/><line x1="18" x2="18" y1="18" y2="11"/><polygon points="12 2 20 7 4 7"/></svg>
+            </span>
             BancoBanQuito
           </div>
           <div className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-400">Banca digital</div>
@@ -171,14 +173,15 @@ export function Home() {
             className="absolute inset-0 bg-cover bg-center transition-opacity duration-700"
             style={{ backgroundImage: `url(${slides[slideIndex].image})` }}
           />
-          <div className="absolute inset-0 bg-gradient-to-r from-emerald-900/90 via-emerald-900/40 to-transparent" />
+          <div className="absolute inset-0 bg-[#102f3f]/50" />
+          <div className="absolute inset-0 bg-gradient-to-r from-[#102f3f]/95 via-[#102f3f]/80 to-[#102f3f]/40" />
           <div className="relative grid gap-6 lg:grid-cols-[320px_1fr]">
-            <aside className="login-panel flex flex-col bg-emerald-900/95 px-6 py-6 text-white">
-              <div className="rounded-2xl border border-emerald-700/60 bg-emerald-950/50 px-4 py-3 text-sm font-semibold uppercase tracking-[0.2em] text-emerald-200">
+            <aside className="login-panel flex flex-col bg-[#102f3f]/95 px-6 py-6 text-white shadow-xl">
+              <div className="rounded-2xl border border-[#1f6173]/60 bg-[#1f6173]/30 px-4 py-3 text-sm font-semibold uppercase tracking-[0.2em] text-[#f4f7fb]">
                 BancoBanQuito en linea
               </div>
               <h2 className="mt-5 text-2xl font-black">Accesos disponibles</h2>
-              <p className="mt-2 text-sm text-emerald-100/80">
+              <p className="mt-2 text-sm text-[#f4f7fb]/80">
                 Selecciona tu portal para continuar con operaciones y consultas.
               </p>
 
@@ -188,14 +191,14 @@ export function Home() {
                     <button
                       key={key}
                       onClick={() => handlePortalSelect(key)}
-                      className="fade-up flex w-full items-center justify-between rounded-xl bg-white px-4 py-3 text-left text-sm font-semibold text-emerald-900 transition hover:-translate-y-0.5 hover:bg-emerald-50"
+                      className="fade-up flex w-full items-center justify-between rounded-xl bg-white px-4 py-3 text-left text-sm font-semibold text-[#102f3f] transition hover:-translate-y-0.5 hover:bg-slate-50"
                     >
                       <span>{portals[key].label}</span>
                       <span className="text-lg">›</span>
                     </button>
                   ))}
                 </div>
-                <div className="space-y-2 border-t border-emerald-700/50 pt-4">
+                <div className="space-y-2 border-t border-white/10 pt-4">
                   <div className="relative">
                     <button
                       onClick={() => setShowIntranet((prev) => !prev)}
@@ -206,12 +209,12 @@ export function Home() {
                       <span className="text-lg">▾</span>
                     </button>
                     {showIntranet ? (
-                      <div className="absolute left-0 right-0 mt-2 rounded-xl border border-emerald-700/50 bg-emerald-950/90 p-2 text-sm text-emerald-100">
+                      <div className="absolute left-0 right-0 mt-2 rounded-xl border border-white/10 bg-[#102f3f] p-2 text-sm text-[#f4f7fb]">
                         {staffPortals.map((key) => (
                           <button
                             key={key}
                             onClick={() => handlePortalSelect(key)}
-                            className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-left font-semibold transition hover:bg-emerald-900"
+                            className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-left font-semibold transition hover:bg-[#1f6173]"
                             type="button"
                           >
                             <span>{portals[key].label}</span>
@@ -224,17 +227,17 @@ export function Home() {
                 </div>
               </div>
 
-              <div className="mt-6 rounded-xl border border-emerald-700/50 bg-emerald-950/60 p-4 text-xs text-emerald-100/80">
+              <div className="mt-6 rounded-xl border border-white/10 bg-black/20 p-4 text-xs text-[#f4f7fb]/80">
                 Selecciona un portal para iniciar sesion. El formulario aparece en pantalla completa.
               </div>
 
-              <div className="mt-auto rounded-xl border border-emerald-700/50 bg-emerald-950/70 px-4 py-3 text-xs leading-5 text-emerald-100/80">
+              <div className="mt-auto rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-xs leading-5 text-[#f4f7fb]/80">
                 Clientes: usa credencial web. Personal banco: usuario Core con permisos aprobados.
               </div>
             </aside>
 
-            <div className="relative flex flex-col justify-center px-8 py-10 text-white">
-              <span className="fade-up inline-flex w-fit items-center gap-2 rounded-full bg-white/15 px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-emerald-100">
+            <div className="relative flex flex-col justify-center px-8 py-10 text-white drop-shadow-md">
+              <span className="fade-up inline-flex w-fit items-center gap-2 rounded-full bg-white/15 px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-[#f4f7fb] backdrop-blur-sm">
                 Experiencia digital
               </span>
               <h1 className="fade-up-delay mt-6 text-4xl font-black leading-tight md:text-5xl">
