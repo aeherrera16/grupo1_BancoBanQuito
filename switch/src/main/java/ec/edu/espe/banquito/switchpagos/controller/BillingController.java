@@ -20,7 +20,7 @@ import ec.edu.espe.banquito.switchpagos.model.PaymentBatch;
 import ec.edu.espe.banquito.switchpagos.model.PaymentDetail;
 import ec.edu.espe.banquito.switchpagos.model.ServiceCharge;
 import ec.edu.espe.banquito.switchpagos.repository.PaymentBatchRepository;
-import ec.edu.espe.banquito.switchpagos.service.Imp.BillingService;
+import ec.edu.espe.banquito.switchpagos.service.impl.BillingService;
 
 /**
  * RF-06: Controller REST para reportes y gestión de comisiones.
