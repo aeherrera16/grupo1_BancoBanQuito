@@ -31,22 +31,22 @@ public class SftpClientService implements ISftpClientService {
     
     private static final Logger LOG = LoggerFactory.getLogger(SftpClientService.class);
     
-    @Value("${sftp.host:localhost}")
+    @Value("${sftp.host}")
     private String sftpHost;
     
-    @Value("${sftp.port:22}")
+    @Value("${sftp.port}")
     private int sftpPort;
     
-    @Value("${sftp.username:sftpuser}")
+    @Value("${sftp.username}")
     private String sftpUsername;
     
-    @Value("${sftp.password:sftppass}")
+    @Value("${sftp.password}")
     private String sftpPassword;
     
-    @Value("${sftp.remote.directory:/upload}")
+    @Value("${sftp.remote.directory}")
     private String sftpRemoteDirectory;
     
-    @Value("${sftp.local.directory:./sftp-downloads}")
+    @Value("${sftp.local.directory}")
     private String sftpLocalDirectory;
     
     private Session session;
@@ -68,11 +68,11 @@ public class SftpClientService implements ISftpClientService {
             channelSftp = (ChannelSftp) session.openChannel("sftp");
             channelSftp.connect();
             
-            LOG.info("✅ Conectado exitosamente al servidor SFTP: {}:{}", sftpHost, sftpPort);
+            LOG.info("Conectado exitosamente al servidor SFTP: {}:{}", sftpHost, sftpPort);
             return true;
             
         } catch (JSchException e) {
-            LOG.error("❌ Error conectando al servidor SFTP: {}", e.getMessage());
+            LOG.error("Error conectando al servidor SFTP: {}", e.getMessage());
             return false;
         }
     }
@@ -98,7 +98,7 @@ public class SftpClientService implements ISftpClientService {
         List<String> csvFiles = new ArrayList<>();
         
         if (!isConnected()) {
-            LOG.warn("❌ No hay conexión SFTP activa");
+            LOG.warn("No hay conexión SFTP activa");
             return csvFiles;
         }
         
@@ -113,10 +113,10 @@ public class SftpClientService implements ISftpClientService {
                 }
             }
             
-            LOG.info("📁 Encontrados {} archivos CSV en {}", csvFiles.size(), remoteDirectory);
+            LOG.info("Encontrados {} archivos CSV en {}", csvFiles.size(), remoteDirectory);
             
         } catch (SftpException e) {
-            LOG.error("❌ Error listando archivos en {}: {}", remoteDirectory, e.getMessage());
+            LOG.error("Error listando archivos en {}: {}", remoteDirectory, e.getMessage());
         }
         
         return csvFiles;
@@ -125,7 +125,7 @@ public class SftpClientService implements ISftpClientService {
     @Override
     public boolean downloadFile(String remoteFilePath, String localFilePath) {
         if (!isConnected()) {
-            LOG.warn("❌ No hay conexión SFTP activa");
+            LOG.warn("No hay conexión SFTP activa");
             return false;
         }
         
@@ -145,11 +145,11 @@ public class SftpClientService implements ISftpClientService {
                 }
             }
             
-            LOG.info("✅ Archivo descargado exitosamente: {} -> {}", remoteFilePath, localFilePath);
+            LOG.info("Archivo descargado exitosamente: {} -> {}", remoteFilePath, localFilePath);
             return true;
             
         } catch (Exception e) {
-            LOG.error("❌ Error descargando archivo {}: {}", remoteFilePath, e.getMessage());
+            LOG.error("Error descargando archivo {}: {}", remoteFilePath, e.getMessage());
             return false;
         }
     }
@@ -157,17 +157,17 @@ public class SftpClientService implements ISftpClientService {
     @Override
     public boolean deleteRemoteFile(String remoteFilePath) {
         if (!isConnected()) {
-            LOG.warn("❌ No hay conexión SFTP activa");
+            LOG.warn("No hay conexión SFTP activa");
             return false;
         }
         
         try {
             channelSftp.rm(remoteFilePath);
-            LOG.info("🗑️ Archivo remoto eliminado: {}", remoteFilePath);
+            LOG.info("Archivo remoto eliminado: {}", remoteFilePath);
             return true;
             
         } catch (SftpException e) {
-            LOG.error("❌ Error eliminando archivo remoto {}: {}", remoteFilePath, e.getMessage());
+            LOG.error("Error eliminando archivo remoto {}: {}", remoteFilePath, e.getMessage());
             return false;
         }
     }
@@ -219,10 +219,10 @@ public class SftpClientService implements ISftpClientService {
                 }
             }
             
-            LOG.info("📊 Descargados {} archivos CSV exitosamente", downloadedFiles.size());
+            LOG.info("Descargados {} archivos CSV exitosamente", downloadedFiles.size());
             
         } catch (Exception e) {
-            LOG.error("❌ Error en descarga masiva de archivos: {}", e.getMessage());
+            LOG.error("Error en descarga masiva de archivos: {}", e.getMessage());
         }
         
         return downloadedFiles;

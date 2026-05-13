@@ -14,15 +14,24 @@ public class ServiceFeeRule {
     @Column(name = "id", nullable = false)
     private Integer id;
 
-    @Column(name = "min_successful_transactions", nullable = false)
-    private Integer minSuccessfulTransactions;
+    @Column(name = "service_type", nullable = false, length = 50)
+    private String serviceType;
 
-    @Column(name = "max_successful_transactions")
-    private Integer maxSuccessfulTransactions; // Puede ser null si es "en adelante"
+    @Column(name = "fee_type", nullable = false, length = 50)
+    private String feeType;
+
+    @Column(name = "min_amount", nullable = false, precision = 18, scale = 2)
+    private BigDecimal minAmount;
+
+    @Column(name = "max_amount", precision = 18, scale = 2)
+    private BigDecimal maxAmount; // Puede ser null si es "en adelante"
 
     // Regla 3: Dinero y tarifas en BigDecimal
     @Column(name = "unit_fee", nullable = false, precision = 18, scale = 2)
     private BigDecimal unitFee;
+
+    @Column(name = "fee_amount", nullable = false, precision = 18, scale = 2)
+    private BigDecimal feeAmount;
 
     // Regla 6: Constructor vacío mandatorio para JPA
     public ServiceFeeRule() {
@@ -43,20 +52,36 @@ public class ServiceFeeRule {
         this.id = id;
     }
 
-    public Integer getMinSuccessfulTransactions() {
-        return minSuccessfulTransactions;
+    public String getServiceType() {
+        return serviceType;
     }
 
-    public void setMinSuccessfulTransactions(Integer minSuccessfulTransactions) {
-        this.minSuccessfulTransactions = minSuccessfulTransactions;
+    public void setServiceType(String serviceType) {
+        this.serviceType = serviceType;
     }
 
-    public Integer getMaxSuccessfulTransactions() {
-        return maxSuccessfulTransactions;
+    public String getFeeType() {
+        return feeType;
     }
 
-    public void setMaxSuccessfulTransactions(Integer maxSuccessfulTransactions) {
-        this.maxSuccessfulTransactions = maxSuccessfulTransactions;
+    public void setFeeType(String feeType) {
+        this.feeType = feeType;
+    }
+
+    public BigDecimal getMinAmount() {
+        return minAmount;
+    }
+
+    public void setMinAmount(BigDecimal minAmount) {
+        this.minAmount = minAmount;
+    }
+
+    public BigDecimal getMaxAmount() {
+        return maxAmount;
+    }
+
+    public void setMaxAmount(BigDecimal maxAmount) {
+        this.maxAmount = maxAmount;
     }
 
     public BigDecimal getUnitFee() {
@@ -65,6 +90,14 @@ public class ServiceFeeRule {
 
     public void setUnitFee(BigDecimal unitFee) {
         this.unitFee = unitFee;
+    }
+
+    public BigDecimal getFeeAmount() {
+        return feeAmount;
+    }
+
+    public void setFeeAmount(BigDecimal feeAmount) {
+        this.feeAmount = feeAmount;
     }
 
     // Regla 5: equals() y hashCode() SOLO de la PK
@@ -86,9 +119,12 @@ public class ServiceFeeRule {
     public String toString() {
         return "ServiceFeeRule{" +
                 "id=" + id +
-                ", minSuccessfulTransactions=" + minSuccessfulTransactions +
-                ", maxSuccessfulTransactions=" + maxSuccessfulTransactions +
+                ", serviceType='" + serviceType + '\'' +
+                ", feeType='" + feeType + '\'' +
+                ", minAmount=" + minAmount +
+                ", maxAmount=" + maxAmount +
                 ", unitFee=" + unitFee +
+                ", feeAmount=" + feeAmount +
                 '}';
     }
 }

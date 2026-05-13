@@ -11,6 +11,7 @@ public class TransferRequestDTO {
 
     private String originAccountNumber;
     private String destinationAccountNumber;
+    private String beneficiaryIdentification;
     private BigDecimal amount;
     private String transactionUuid;
     private String subtypeCode;

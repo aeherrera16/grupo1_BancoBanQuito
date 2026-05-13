@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 package ec.edu.espe.banquito.switchpagos.controller;
 
 import java.time.LocalDateTime;
@@ -192,3 +193,175 @@ public class PaymentBatchController {
         }
     }
 }
+=======
+package ec.edu.espe.banquito.switchpagos.controller;
+
+import java.io.IOException;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.Map;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
+
+import ec.edu.espe.banquito.switchpagos.config.CsvBatchParser;
+import ec.edu.espe.banquito.switchpagos.config.CsvBatchParser.CsvParseResult;
+import ec.edu.espe.banquito.switchpagos.enums.BatchStatusEnum;
+import ec.edu.espe.banquito.switchpagos.enums.ChannelEnum;
+import ec.edu.espe.banquito.switchpagos.model.FileValidation;
+import ec.edu.espe.banquito.switchpagos.model.PaymentBatch;
+import ec.edu.espe.banquito.switchpagos.repository.PaymentBatchRepository;
+import ec.edu.espe.banquito.switchpagos.repository.PaymentDetailRepository;
+import ec.edu.espe.banquito.switchpagos.service.impl.BusinessDayService;
+import ec.edu.espe.banquito.switchpagos.service.impl.CutoffTimeService;
+import ec.edu.espe.banquito.switchpagos.service.impl.FileValidationService;
+import ec.edu.espe.banquito.switchpagos.service.impl.PaymentBatchProcessingService;
+
+@RestController
+@RequestMapping("/api/payment-batch")
+public class PaymentBatchController {
+
+    private static final Logger logger = LoggerFactory.getLogger(PaymentBatchController.class);
+
+    private final FileValidationService fileValidationService;
+    private final CutoffTimeService cutoffTimeService;
+    private final BusinessDayService businessDayService;
+    private final PaymentBatchRepository paymentBatchRepository;
+    private final PaymentDetailRepository paymentDetailRepository;
+    private final PaymentBatchProcessingService paymentBatchProcessingService;
+
+    @Autowired
+    public PaymentBatchController(FileValidationService fileValidationService,
+                                  CutoffTimeService cutoffTimeService,
+                                  BusinessDayService businessDayService,
+                                  PaymentBatchRepository paymentBatchRepository,
+                                  PaymentDetailRepository paymentDetailRepository,
+                                  PaymentBatchProcessingService paymentBatchProcessingService) {
+        this.fileValidationService = fileValidationService;
+        this.cutoffTimeService = cutoffTimeService;
+        this.businessDayService = businessDayService;
+        this.paymentBatchRepository = paymentBatchRepository;
+        this.paymentDetailRepository = paymentDetailRepository;
+        this.paymentBatchProcessingService = paymentBatchProcessingService;
+    }
+
+    @GetMapping
+    public ResponseEntity<?> findAll() {
+        return ResponseEntity.ok(paymentBatchRepository.findAll());
+    }
+
+    /**
+     * Carga manual/portal: recibe CSV y decide:
+     * - Antes de las 18:00 y día hábil (según core/HOLIDAY): procesa inmediato
+     * - Fuera de horario / fin de semana / feriado: guarda ENCOLADO y procesa a las 00:01 del próximo día hábil
+     */
+    @PostMapping("/upload-csv")
+    public ResponseEntity<?> uploadCsv(@RequestParam("file") MultipartFile file,
+                                       @RequestParam("channel") ChannelEnum channel) {
+        logger.info("Nueva solicitud de carga CSV");
+        logger.info("Archivo: {}, Tamaño: {} bytes, Canal: {}",
+                file.getOriginalFilename(), file.getSize(), channel);
+
+        try {
+            logger.info("Parseando archivo CSV");
+            final CsvParseResult parseResult;
+            try {
+                parseResult = CsvBatchParser.parseCsvFile(
+                        file.getInputStream(),
+                        file.getOriginalFilename(),
+                        file.getSize());
+            } catch (IllegalArgumentException e) {
+                logger.warn("Archivo rechazado (parse / estructura): {}", e.getMessage());
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of(
+                        "error", e.getMessage(),
+                        "rejectedEarly", true));
+            } catch (IOException e) {
+                logger.warn("No se pudo leer el archivo: {}", e.getMessage());
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of(
+                        "error", "No se pudo leer el archivo: " + e.getMessage(),
+                        "rejectedEarly", true));
+            }
+            logger.info("CSV parseado exitosamente - {} detalles", parseResult.getDetails().size());
+
+            PaymentBatch batch = parseResult.getBatch();
+            batch.setChannel(channel);
+            batch.setReceivedAt(LocalDateTime.now());
+
+            boolean isBusinessDay = businessDayService.isBusinessDay(LocalDate.now());
+            boolean withinIngestionWindow = cutoffTimeService.isWithinIngestionWindow();
+            boolean shouldEnqueue = !isBusinessDay || !withinIngestionWindow;
+
+            if (shouldEnqueue) {
+                batch.setStatus(BatchStatusEnum.ENCOLADO);
+                logger.warn("Batch encolado por fuera de horario o día no hábil. Corte: {}", cutoffTimeService.getCutoffTime());
+            } else {
+                batch.setStatus(BatchStatusEnum.RECEIVED);
+                logger.info("Dentro del horario y día hábil. Procesamiento inmediato.");
+            }
+
+            // RF-02: validación temprana
+            logger.info("Iniciando validación temprana RF-02");
+            try {
+                fileValidationService.validateEarlyRejection(parseResult);
+                logger.info("Validación temprana exitosa");
+            } catch (IllegalArgumentException e) {
+                logger.error("Rechazo temprano RF-02: {}", e.getMessage());
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of(
+                        "error", "RF-02 Validación rechazada: " + e.getMessage(),
+                        "rejectedEarly", true
+                ));
+            }
+
+            // Persistir lote + detalles (para auditoría y para procesamiento diferido)
+            PaymentBatch persistedBatch = paymentBatchRepository.save(batch);
+            for (var detail : parseResult.getDetails()) {
+                detail.setPaymentBatch(persistedBatch);
+            }
+            paymentDetailRepository.saveAll(parseResult.getDetails());
+
+            // Validación completa (guarda FILE_VALIDATION)
+            logger.info("Iniciando validación completa");
+            FileValidation validation = fileValidationService.validateBatch(persistedBatch, parseResult.getDetails());
+
+            // Procesar solo si NO está encolado
+            PaymentBatch finalBatch = persistedBatch;
+            if (!BatchStatusEnum.ENCOLADO.equals(batch.getStatus()) && "SUCCESS".equals(validation.getValidationResult())) {
+                finalBatch = paymentBatchProcessingService.process(persistedBatch, parseResult.getDetails());
+            }
+
+                logger.info("Proceso completado - Resultado: {}, Status: {}",
+                    validation.getValidationResult(), finalBatch.getStatus());
+
+            return ResponseEntity.ok(Map.of(
+                    "validationResult", validation.getValidationResult(),
+                    "isSuccess", "SUCCESS".equals(validation.getValidationResult()),
+                    "encolado", BatchStatusEnum.ENCOLADO.equals(finalBatch.getStatus()),
+                    "batchStatus", finalBatch.getStatus().getDisplayName(),
+                    "fileValidation", validation
+            ));
+        } catch (Exception e) {
+            logger.error("Error interno del servidor: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    /**
+     * Endpoint para carga de archivos provenientes del buzón (switch-email-service).
+     * Mantiene el canal como SFTP.
+     */
+    @PostMapping("/upload-from-sftp-buzon")
+    public ResponseEntity<?> uploadFromSftpBuzon(@RequestParam("file") MultipartFile file) {
+        return uploadCsv(file, ChannelEnum.SFTP);
+    }
+}
+
+>>>>>>> a3271e9 (feat: Refactor core banking integration and add business day validation)
