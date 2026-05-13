@@ -6,7 +6,9 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -272,6 +274,159 @@ public class BillingController {
             logger.error("Error al obtener cuenta empresa por defecto: {}", e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("error", "Error interno al obtener la cuenta empresa"));
+        }
+    }
+
+    /**
+     * GET /api/billing/batches/{batchId}/download/comprobante
+     * Descarga el comprobante de liquidación del lote en formato PDF/TXT.
+     *
+     * @param batchId ID del lote
+     * @return Archivo con el comprobante de liquidación
+     */
+    @GetMapping("/batches/{batchId}/download/comprobante")
+    public ResponseEntity<?> descargarComprobanteLiquidacion(@PathVariable Integer batchId) {
+        logger.info("GET /api/billing/batches/{}/download/comprobante", batchId);
+
+        try {
+            PaymentBatch batch = paymentBatchRepository.findById(batchId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Lote no encontrado: " + batchId));
+
+            BatchSummaryDTO resumen = billingService.obtenerResumenBatch(batchId);
+            List<PaymentDetail> detalles = billingService.obtenerDetallesBatch(batchId);
+
+            StringBuilder comprobante = new StringBuilder();
+            comprobante.append("=".repeat(80)).append("\n");
+            comprobante.append("COMPROBANTE DE LIQUIDACIÓN - PAGOS MASIVOS\n");
+            comprobante.append("=".repeat(80)).append("\n\n");
+
+            comprobante.append("INFORMACIÓN DEL LOTE\n");
+            comprobante.append("-".repeat(80)).append("\n");
+            comprobante.append(String.format("ID Lote: %d%n", batchId));
+            comprobante.append(String.format("Archivo: %s%n", resumen.getFileName()));
+            comprobante.append(String.format("RUC: %s%n", resumen.getRuc()));
+            comprobante.append(String.format("Estado: %s%n", resumen.getStatus()));
+            comprobante.append(String.format("Recibido: %s%n", resumen.getReceivedAt()));
+            comprobante.append("\n");
+
+            comprobante.append("RESUMEN FINANCIERO\n");
+            comprobante.append("-".repeat(80)).append("\n");
+            comprobante.append(String.format("Total Registros: %d%n", resumen.getTotalRecords()));
+            comprobante.append(String.format("Registros Exitosos: %d%n", resumen.getSuccessfulRecords()));
+            comprobante.append(String.format("Registros Rechazados: %d%n", resumen.getRejectedRecords()));
+            comprobante.append(String.format("Monto Total Dispersado: $%.2f%n", resumen.getTotalAmount()));
+            comprobante.append(String.format("Comisión (Subtotal): $%.2f%n", resumen.getCommissionSubtotal()));
+            comprobante.append(String.format("IVA Retenido (12%%): $%.2f%n", resumen.getVatAmount()));
+            comprobante.append(String.format("Total Comisión: $%.2f%n", resumen.getTotalCharge()));
+            comprobante.append("\n");
+
+            comprobante.append("DETALLE DE PAGOS\n");
+            comprobante.append("-".repeat(80)).append("\n");
+            comprobante.append(String.format("%-4s | %-15s | %-15s | %-10s%n",
+                    "No.", "Beneficiario", "Monto", "Estado"));
+            comprobante.append("-".repeat(80)).append("\n");
+
+            for (int i = 0; i < detalles.size(); i++) {
+                PaymentDetail det = detalles.get(i);
+                comprobante.append(String.format("%4d | %-15s | $%13.2f | %-10s%n",
+                        i + 1,
+                        det.getBeneficiaryIdentification().substring(0, Math.min(15, det.getBeneficiaryIdentification().length())),
+                        det.getAmount(),
+                        det.getStatus() != null ? det.getStatus().toString() : "PENDIENTE"));
+            }
+
+            comprobante.append("\n");
+            comprobante.append("=".repeat(80)).append("\n");
+            comprobante.append("Documento generado automáticamente por el Sistema de Pagos Masivos\n");
+            comprobante.append("=".repeat(80)).append("\n");
+
+            byte[] content = comprobante.toString().getBytes();
+
+            return ResponseEntity.ok()
+                    .contentType(MediaType.TEXT_PLAIN)
+                    .header(HttpHeaders.CONTENT_DISPOSITION,
+                            "attachment; filename=\"comprobante_" + batchId + ".txt\"")
+                    .body(content);
+
+        } catch (ResourceNotFoundException e) {
+            logger.warn("Recurso no encontrado: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("error", e.getMessage()));
+
+        } catch (Exception e) {
+            logger.error("Error al descargar comprobante del lote {}: {}", batchId, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Error interno al descargar el comprobante"));
+        }
+    }
+
+    /**
+     * GET /api/billing/batches/{batchId}/download/novedades
+     * Descarga el reporte de novedades (rechazos) del lote.
+     *
+     * @param batchId ID del lote
+     * @return Archivo con el reporte de novedades en formato CSV
+     */
+    @GetMapping("/batches/{batchId}/download/novedades")
+    public ResponseEntity<?> descargarReporteNovedades(@PathVariable Integer batchId) {
+        logger.info("GET /api/billing/batches/{}/download/novedades", batchId);
+
+        try {
+            PaymentBatch batch = paymentBatchRepository.findById(batchId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Lote no encontrado: " + batchId));
+
+            BatchSummaryDTO resumen = billingService.obtenerResumenBatch(batchId);
+            List<PaymentDetail> detalles = billingService.obtenerDetallesBatch(batchId);
+
+            StringBuilder reporte = new StringBuilder();
+            reporte.append("REPORTE DE NOVEDADES - PAGOS MASIVOS\n");
+            reporte.append(String.format("Lote ID: %d%n", batchId));
+            reporte.append(String.format("Archivo: %s%n", resumen.getFileName()));
+            reporte.append(String.format("RUC: %s%n", resumen.getRuc()));
+            reporte.append(String.format("Fecha Generación: %s%n", resumen.getReceivedAt()));
+            reporte.append("\n");
+
+            reporte.append("RESUMEN\n");
+            reporte.append(String.format("Total Rechazos: %d%n", resumen.getRejectedRecords()));
+            reporte.append("\n");
+
+            reporte.append("DETALLE DE RECHAZOS\n");
+            reporte.append("No.,Beneficiario,Cédula,Monto,Motivo Rechazo\n");
+
+            int rechazoNum = 1;
+            for (PaymentDetail det : detalles) {
+                if (det.getStatus() != null && det.getStatus().toString().equals("REJECTED")) {
+                    String motivo = det.getRejectionReason() != null ? det.getRejectionReason() : "Sin especificar";
+                    reporte.append(String.format("%d,%s,%s,%.2f,%s%n",
+                            rechazoNum++,
+                            det.getBeneficiaryName(),
+                            det.getBeneficiaryIdentification(),
+                            det.getAmount(),
+                            motivo));
+                }
+            }
+
+            if (resumen.getRejectedRecords() == 0) {
+                reporte.append("0,Sin rechazos en este lote,,,%n");
+            }
+
+            byte[] content = reporte.toString().getBytes();
+
+            return ResponseEntity.ok()
+                    .contentType(MediaType.TEXT_PLAIN)
+                    .header(HttpHeaders.CONTENT_DISPOSITION,
+                            "attachment; filename=\"novedades_" + batchId + ".csv\"")
+                    .body(content);
+
+        } catch (ResourceNotFoundException e) {
+            logger.warn("Recurso no encontrado: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("error", e.getMessage()));
+
+        } catch (Exception e) {
+            logger.error("Error al descargar reporte de novedades del lote {}: {}", batchId, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Error interno al descargar el reporte de novedades"));
         }
     }
 }

@@ -1,19 +1,48 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { useMassivePayments } from '../hooks/useMassivePayments';
 import { FileUpload } from '../components/FileUpload';
+import { BatchDetailsModal } from '../components/BatchDetailsModal';
+import { getAllBatches } from '../api/switchService';
 
 export function PagosMasivosPage() {
   const { user } = useAuth();
   const { selectedFile, isUploading, response, error, uploadFile, resetState } = useMassivePayments();
   const [showHistory, setShowHistory] = useState(false);
+  const [batches, setBatches] = useState([]);
+  const [isLoadingBatches, setIsLoadingBatches] = useState(false);
+  const [selectedBatchId, setSelectedBatchId] = useState(null);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
+
+  useEffect(() => {
+    loadBatches();
+  }, []);
+
+  const loadBatches = async () => {
+    setIsLoadingBatches(true);
+    try {
+      const data = await getAllBatches();
+      setBatches(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error('Error loading batches:', err);
+      setBatches([]);
+    } finally {
+      setIsLoadingBatches(false);
+    }
+  };
 
   const handleUpload = async (file) => {
     try {
       await uploadFile(file);
+      await loadBatches();
     } catch (err) {
       console.error('Upload failed:', err);
     }
+  };
+
+  const handleSelectBatch = (batchId) => {
+    setSelectedBatchId(batchId);
+    setShowDetailsModal(true);
   };
 
   return (
@@ -152,50 +181,57 @@ export function PagosMasivosPage() {
               Historial de pagos
             </h2>
             <div className="space-y-4">
-              <div className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors cursor-pointer">
-                <div className="flex justify-between items-start mb-2">
-                  <h4 className="font-semibold text-banker-navy">Pago 001 - Nomina Diciembre</h4>
-                  <span className="px-3 py-1 bg-green-100 text-green-800 text-xs rounded-full font-semibold">
-                    Procesado
-                  </span>
+              {isLoadingBatches ? (
+                <div className="flex justify-center items-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-4 border-banker-blue border-t-transparent"></div>
                 </div>
-                <p className="text-sm text-banker-gray mb-2">
-                  Archivo: nomina_dic_2024.csv
-                </p>
-                <p className="text-xs text-banker-gray">
-                  Procesado: 10 Dic, 2024 - 14:32
-                </p>
-              </div>
+              ) : batches.length === 0 ? (
+                <div className="text-center py-8 text-banker-gray">
+                  <p>No hay lotes procesados aún</p>
+                </div>
+              ) : (
+                batches.slice().reverse().map((batch) => {
+                  const getStatusBadgeColor = (status) => {
+                    if (status === 'PROCESSED') return 'bg-green-100 text-green-800';
+                    if (status === 'QUEUED') return 'bg-yellow-100 text-yellow-800';
+                    if (status === 'REJECTED') return 'bg-red-100 text-red-800';
+                    return 'bg-gray-100 text-gray-800';
+                  };
 
-              <div className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors cursor-pointer">
-                <div className="flex justify-between items-start mb-2">
-                  <h4 className="font-semibold text-banker-navy">Pago 002 - Proveedores</h4>
-                  <span className="px-3 py-1 bg-yellow-100 text-yellow-800 text-xs rounded-full font-semibold">
-                    Encolado
-                  </span>
-                </div>
-                <p className="text-sm text-banker-gray mb-2">
-                  Archivo: proveedores_dic.csv
-                </p>
-                <p className="text-xs text-banker-gray">
-                  Encolado: 11 Dic, 2024 - 19:15
-                </p>
-              </div>
+                  const getStatusDisplayName = (status) => {
+                    if (status === 'PROCESSED') return 'Procesado';
+                    if (status === 'QUEUED') return 'Encolado';
+                    if (status === 'REJECTED') return 'Rechazado';
+                    return status;
+                  };
 
-              <div className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors cursor-pointer">
-                <div className="flex justify-between items-start mb-2">
-                  <h4 className="font-semibold text-banker-navy">Pago 003 - Beneficios</h4>
-                  <span className="px-3 py-1 bg-red-100 text-red-800 text-xs rounded-full font-semibold">
-                    Rechazado
-                  </span>
-                </div>
-                <p className="text-sm text-banker-gray mb-2">
-                  Archivo: beneficios_dic.csv
-                </p>
-                <p className="text-xs text-banker-gray">
-                  Motivo: Sumatoria incorrecta
-                </p>
-              </div>
+                  return (
+                    <div
+                      key={batch.id}
+                      onClick={() => handleSelectBatch(batch.id)}
+                      className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors cursor-pointer hover:border-banker-blue"
+                    >
+                      <div className="flex justify-between items-start mb-2">
+                        <div>
+                          <h4 className="font-semibold text-banker-navy">Lote #{batch.id}</h4>
+                          <p className="text-sm text-banker-gray">
+                            RUC: {batch.ruc}
+                          </p>
+                        </div>
+                        <span className={`px-3 py-1 text-xs rounded-full font-semibold ${getStatusBadgeColor(batch.status)}`}>
+                          {getStatusDisplayName(batch.status)}
+                        </span>
+                      </div>
+                      <p className="text-sm text-banker-gray mb-2">
+                        Archivo: {batch.fileName}
+                      </p>
+                      <p className="text-xs text-banker-gray">
+                        Recibido: {new Date(batch.receivedAt).toLocaleString('es-EC')}
+                      </p>
+                    </div>
+                  );
+                })
+              )}
             </div>
           </div>
         </div>
@@ -216,6 +252,18 @@ export function PagosMasivosPage() {
           </ul>
         </div>
       </div>
+
+      {/* Batch Details Modal */}
+      {selectedBatchId && (
+        <BatchDetailsModal
+          batchId={selectedBatchId}
+          isOpen={showDetailsModal}
+          onClose={() => {
+            setShowDetailsModal(false);
+            setSelectedBatchId(null);
+          }}
+        />
+      )}
     </div>
   );
 }
