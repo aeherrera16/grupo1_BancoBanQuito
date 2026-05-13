@@ -1,9 +1,9 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import {
   getBatchDetails,
-  downloadComprobanteLiquidacion,
-  downloadReporteNovedades,
-} from '../api/switchService';
+  downloadComprobante,
+  downloadNovedades,
+} from '../services/apiClient';
 
 export function useBatchDetails() {
   const [batchDetails, setBatchDetails] = useState(null);
@@ -53,7 +53,7 @@ export function useBatchDetails() {
     setError(null);
 
     try {
-      await downloadComprobanteLiquidacion(batchId);
+      await downloadComprobante(batchId);
     } catch (err) {
       if (isMountedRef.current) {
         const errorMsg = err.message || 'Error al descargar el comprobante';
@@ -75,7 +75,7 @@ export function useBatchDetails() {
     setError(null);
 
     try {
-      await downloadReporteNovedades(batchId);
+      await downloadNovedades(batchId);
     } catch (err) {
       if (isMountedRef.current) {
         const errorMsg = err.message || 'Error al descargar el reporte de novedades';

@@ -26,28 +26,120 @@ export async function coreRequest(path, options = {}) {
   return parseResponse(await fetch(`${coreBaseUrl}${path}`, { ...options, headers }));
 }
 
-export async function authCustomer(username, password) {
-  return coreRequest('/core/v1/auth/customers/login', {
+// === CUSTOMER ENDPOINTS ===
+
+export async function getCustomerByIdentification(type, number) {
+  return coreRequest(`/core/v1/customers/identification/${type}/${number}`);
+}
+
+export async function getCustomerById(id) {
+  return coreRequest(`/core/v1/customers/${id}`);
+}
+
+export async function createCustomer(data) {
+  return coreRequest('/core/v1/customers', {
     method: 'POST',
-    body: JSON.stringify({ username, password }),
+    body: JSON.stringify(data),
   });
 }
 
-export async function authCoreUser(username, password) {
-  return coreRequest('/core/v1/auth/core-users/login', {
+// === BRANCH & ACCOUNT SUBTYPE ENDPOINTS ===
+
+export async function getBranches() {
+  return coreRequest('/core/v1/branches');
+}
+
+export async function getAccountSubtypes() {
+  return coreRequest('/core/v1/account-subtypes');
+}
+
+// === ACCOUNT ENDPOINTS ===
+
+export async function getAccountsByCustomerId(customerId) {
+  return coreRequest(`/core/v1/accounts/customer/${customerId}`);
+}
+
+export async function getAccountByNumber(accountNumber) {
+  return coreRequest(`/core/v1/accounts/${accountNumber}`);
+}
+
+export async function createAccount(data) {
+  return coreRequest('/core/v1/accounts', {
     method: 'POST',
-    body: JSON.stringify({ username, password }),
+    body: JSON.stringify(data),
   });
 }
 
-export const fetchBalance = async (accountNumber) => {
-  // Se usa el endpoint de accounts con un coreUserId simulado porque el integration controller no tiene CORS habilitado
-  return await coreRequest(`/core/v1/accounts/${accountNumber}`, { coreUserId: 1 });
-};
+export async function changeAccountStatus(accountNumber, action) {
+  return coreRequest(`/core/v1/accounts/${accountNumber}/${action}`, {
+    method: 'PATCH',
+  });
+}
 
-export const fetchAccountHistory = async (accountNumber) => {
-  return await coreRequest(`/core/v1/accounts/${accountNumber}/transactions`);
-};
+export async function getTransactions(accountNumber) {
+  return coreRequest(`/core/v1/accounts/${accountNumber}/transactions`);
+}
+
+// Legacy alias for backwards compatibility
+export const fetchBalance = getAccountByNumber;
+export const fetchAccountHistory = getTransactions;
+
+// === TRANSACTION ENDPOINTS ===
+
+export async function debit(accountNumber, amount) {
+  return coreRequest('/core/v1/transactions/debits', {
+    method: 'POST',
+    body: JSON.stringify({ accountNumber, amount }),
+  });
+}
+
+export async function credit(accountNumber, amount) {
+  return coreRequest('/core/v1/transactions/credits', {
+    method: 'POST',
+    body: JSON.stringify({ accountNumber, amount }),
+  });
+}
+
+export async function transfer(origin, destination, amount, uuid) {
+  return coreRequest('/core/v1/transactions/transfers', {
+    method: 'POST',
+    body: JSON.stringify({ origin, destination, amount, uuid }),
+  });
+}
+
+// === CREDENTIALS ENDPOINTS ===
+
+export async function createWebCredential(data) {
+  return coreRequest('/core/v1/auth/customers/credentials', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+
+// === HOLIDAY ENDPOINTS ===
+
+export async function getHolidays() {
+  return coreRequest('/core/v1/holidays');
+}
+
+export async function createHoliday(data) {
+  return coreRequest('/core/v1/holidays', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+
+export async function deleteHoliday(date) {
+  return coreRequest(`/core/v1/holidays/${date}`, {
+    method: 'DELETE',
+  });
+}
+
+export async function isBusinessDay(date) {
+  return coreRequest(`/core/v1/holidays/business-day?date=${date}`);
+}
+
+// === PAYMENT BATCH ENDPOINTS (SWITCH) ===
 
 export async function uploadPaymentBatch(file, channel = 'PORTAL') {
   const body = new FormData();
@@ -62,17 +154,43 @@ export async function uploadPaymentBatch(file, channel = 'PORTAL') {
   );
 }
 
-export async function fetchPaymentBatches() {
+export async function getPaymentBatches() {
   return parseResponse(await fetch(`${switchBaseUrl}/api/payment-batch`));
 }
 
+export async function getBatchDetails(batchId) {
+  return parseResponse(await fetch(`${switchBaseUrl}/api/billing/batches/${batchId}/summary`));
+}
+
+async function downloadBlobFile(url, filename) {
+  const response = await fetch(url);
+  if (!response.ok) throw new Error(`Error descargando archivo: ${response.statusText}`);
+
+  const blob = await response.blob();
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(link.href);
+}
+
 export async function downloadComprobante(batchId) {
-  window.open(`${switchBaseUrl}/api/billing/batches/${batchId}/download/comprobante`, '_blank');
+  await downloadBlobFile(
+    `${switchBaseUrl}/api/billing/batches/${batchId}/download/comprobante`,
+    `comprobante-${batchId}.pdf`
+  );
 }
 
 export async function downloadNovedades(batchId) {
-  window.open(`${switchBaseUrl}/api/billing/batches/${batchId}/download/novedades`, '_blank');
+  await downloadBlobFile(
+    `${switchBaseUrl}/api/billing/batches/${batchId}/download/novedades`,
+    `novedades-${batchId}.xlsx`
+  );
 }
+
+// === SFTP ENDPOINTS ===
 
 export async function uploadSftpMailboxFile(file) {
   const body = new FormData();
@@ -89,7 +207,7 @@ export async function uploadSftpMailboxFile(file) {
 export async function checkSftpStatus() {
   return parseResponse(
     await fetch(`${sftpBaseUrl}/api/sftp/status`, {
-      method: 'POST',
+      method: 'GET',
     }),
   );
 }

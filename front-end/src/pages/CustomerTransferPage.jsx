@@ -1,41 +1,68 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Field, inputClass, PageShell, Panel, primaryButtonClass } from '../components/PageShell';
-import { coreRequest, fetchBalance } from '../services/apiClient';
+import { transfer, getAccountByNumber, getAccountsByCustomerId, getCustomerByIdentification } from '../services/apiClient';
 import { useAuth } from '../hooks/useAuth';
 
 const emptyForm = (origin) => ({
   originAccountNumber: origin,
   destinationAccountNumber: '',
   amount: '',
-  subtypeCode: 'TRANSFER',
-  description: '',
 });
 
 export function CustomerTransferPage() {
-  const { portal, user } = useAuth();
-  const defaultOrigin = user?.email === 'ana123' ? '001-00005678' : '001-00001234';
+  const { user } = useAuth();
 
-  const [form, setForm] = useState(emptyForm(portal === 'personaNatural' ? defaultOrigin : ''));
+  const [customerAccounts, setCustomerAccounts] = useState([]);
+  const [loadingAccounts, setLoadingAccounts] = useState(true);
+
+  const [form, setForm] = useState(emptyForm(''));
   const [result, setResult] = useState(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [destinationInfo, setDestinationInfo] = useState(null);
-  // UUID fijo por sesión de transferencia – garantiza idempotencia
   const txUuidRef = useRef(crypto.randomUUID());
 
+  // Cargar cuentas del cliente al montar
+  useEffect(() => {
+    const loadAccounts = async () => {
+      setLoadingAccounts(true);
+      try {
+        const customer = await getCustomerByIdentification(
+          user.identificationType || 'CEDULA',
+          user.identificacion
+        );
+        const accounts = await getAccountsByCustomerId(customer.id);
+        setCustomerAccounts(accounts);
+        if (accounts.length > 0) {
+          setForm(emptyForm(accounts[0].accountNumber));
+        }
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoadingAccounts(false);
+      }
+    };
+
+    loadAccounts();
+  }, [user]);
+
   const resetForm = () => {
-    setForm(emptyForm(portal === 'personaNatural' ? defaultOrigin : ''));
+    if (customerAccounts.length > 0) {
+      setForm(emptyForm(customerAccounts[0].accountNumber));
+    } else {
+      setForm(emptyForm(''));
+    }
     setResult(null);
     setError('');
     setDestinationInfo(null);
-    txUuidRef.current = crypto.randomUUID(); // nuevo UUID para la próxima operación
+    txUuidRef.current = crypto.randomUUID();
   };
 
   const validateDestination = async () => {
     if (!form.destinationAccountNumber) return;
     try {
-      const data = await fetchBalance(form.destinationAccountNumber);
-      setDestinationInfo(data.customerFullName || 'Titular encontrado');
+      const data = await getAccountByNumber(form.destinationAccountNumber);
+      setDestinationInfo(data.customerName || 'Titular encontrado');
       setError('');
     } catch {
       setDestinationInfo(null);
@@ -44,18 +71,16 @@ export function CustomerTransferPage() {
   };
 
   const submitTransfer = async () => {
-    if (loading || result) return; // bloqueo doble-clic
+    if (loading || result) return;
     setLoading(true);
     setError('');
     try {
-      const res = await coreRequest('/core/v1/transactions/transfers', {
-        method: 'POST',
-        body: JSON.stringify({
-          ...form,
-          amount: Number(form.amount),
-          transactionUuid: txUuidRef.current,
-        }),
-      });
+      const res = await transfer(
+        form.originAccountNumber,
+        form.destinationAccountNumber,
+        Number(form.amount),
+        txUuidRef.current
+      );
       setResult(res);
     } catch (err) {
       setError(err.message);
@@ -120,6 +145,28 @@ export function CustomerTransferPage() {
     Number(form.amount) > 0 &&
     destinationInfo;
 
+  if (loadingAccounts) {
+    return (
+      <PageShell title="Transferencias" description="">
+        <Panel title="Cargando cuentas...">
+          <p className="text-slate-600">Por favor espera mientras cargamos tus cuentas...</p>
+        </Panel>
+      </PageShell>
+    );
+  }
+
+  if (customerAccounts.length === 0) {
+    return (
+      <PageShell title="Transferencias" description="">
+        <Panel title="Sin cuentas disponibles">
+          <p className="text-slate-600">
+            No se encontraron cuentas asociadas a tu identificación.
+          </p>
+        </Panel>
+      </PageShell>
+    );
+  }
+
   return (
     <PageShell
       title="Transferencias"
@@ -134,10 +181,14 @@ export function CustomerTransferPage() {
                 <select
                   className={inputClass}
                   value={form.originAccountNumber}
-                  disabled={true}
+                  disabled={customerAccounts.length === 1}
                   onChange={(e) => setForm({ ...form, originAccountNumber: e.target.value })}
                 >
-                  <option value={defaultOrigin}>Cuenta Digital — {defaultOrigin}</option>
+                  {customerAccounts.map((acc) => (
+                    <option key={acc.accountNumber} value={acc.accountNumber}>
+                      {acc.description} — {acc.accountNumber}
+                    </option>
+                  ))}
                 </select>
               </Field>
               <Field label="Cuenta destino">

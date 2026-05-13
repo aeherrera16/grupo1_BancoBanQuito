@@ -4,52 +4,6 @@ import { portals } from '../config/portals';
 import { useAuth } from '../hooks/useAuth';
 import Sidebar from './Sidebar';
 
-function NotificationBell() {
-  const [open, setOpen] = useState(false);
-  const notifications = [
-    { id: 1, type: 'CREDITO', msg: 'Has recibido una transferencia de saldo a tu favor', date: 'Hace 5 min', unread: true },
-    { id: 2, type: 'DEBITO', msg: 'Débito procesado exitosamente mediante el portal', date: 'Hace 2 horas', unread: true },
-    { id: 3, type: 'INFO', msg: 'Reporte del Switch: El archivo lote fue validado por SFTP', date: 'Ayer', unread: false }
-  ];
-
-  return (
-    <div className="relative mr-4">
-      <button 
-        onClick={() => setOpen(!open)}
-        className="relative p-2 text-gray-500 hover:text-[#006644] transition-colors rounded-full hover:bg-gray-100 focus:outline-none"
-      >
-        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
-        <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white"></span>
-      </button>
-
-      {open && (
-        <div className="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-2xl border border-gray-100 z-50 overflow-hidden">
-          <div className="px-4 py-3 border-b border-gray-100 bg-[#006644]">
-            <h3 className="font-semibold text-white">Centro de Notificaciones</h3>
-            <p className="text-xs text-green-100">Eventos de Cuentas y Buzón SFTP</p>
-          </div>
-          <div className="max-h-96 overflow-y-auto">
-            {notifications.map(n => (
-              <div key={n.id} className={`p-4 border-b border-gray-50 hover:bg-gray-50 transition-colors cursor-pointer ${n.unread ? 'bg-green-50/10' : ''}`}>
-                <div className="flex items-start gap-3">
-                  <div className={`mt-1.5 w-2 h-2 rounded-full flex-shrink-0 ${n.type === 'CREDITO' ? 'bg-green-500' : n.type === 'DEBITO' ? 'bg-red-500' : 'bg-blue-500'}`}></div>
-                  <div className="flex-1">
-                    <p className={`text-sm ${n.unread ? 'text-gray-900 font-medium' : 'text-gray-600'}`}>{n.msg}</p>
-                    <p className="text-xs text-gray-400 mt-1">{n.date}</p>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-          <div className="px-4 py-3 text-center border-t border-gray-100 bg-gray-50">
-            <button className="text-sm text-[#006644] font-semibold hover:underline">Marcar todas como leídas</button>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
 export function LayoutEmpresas({ children, allowedPortal }) {
   const { isAuthenticated, portal, logout, user } = useAuth();
   const portalInfo = portals[portal];
@@ -75,13 +29,14 @@ export function LayoutEmpresas({ children, allowedPortal }) {
               <p className="text-xs font-black uppercase tracking-[0.2em] text-banker-gold">{portalInfo?.label}</p>
               <p className="mt-1 text-sm text-slate-500">Operación segura BancoBanQuito</p>
             </div>
-            <div className="flex items-center text-right">
-              <NotificationBell />
-              <div className="ml-4 mr-4 text-right flex flex-col justify-center">
+            <div className="flex items-center text-right gap-4">
+              <div className="text-right flex flex-col justify-center">
                 <p className="text-xl font-medium uppercase text-[#006644]">{user?.name || "USUARIO BANQUITO"}</p>
-                <p className="mt-0.5 text-[13px] font-medium text-gray-500">Último Ingreso: 05-13-2026 14:05:44</p>
+                {user?.identificacion && (
+                  <p className="mt-0.5 text-[13px] font-medium text-gray-500">{user.identificacion}</p>
+                )}
               </div>
-              <button 
+              <button
                 onClick={() => setIsProfileOpen(true)}
                 className="w-12 h-12 rounded-full overflow-hidden border-2 border-transparent hover:border-[#006644] transition-colors focus:outline-none flex-shrink-0 bg-gray-100 flex items-center justify-center"
               >

@@ -33,13 +33,14 @@ export function LoginPage() {
   const { portal } = useParams();
   const navigate = useNavigate();
   const { login } = useAuth();
-  const [credentials, setCredentials] = useState({ username: '', password: '' });
+  const [form, setForm] = useState({ name: '', identificacion: '' });
   const [authError, setAuthError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
 
   const config = useMemo(() => portalConfig[portal], [portal]);
   const portalInfo = portal ? portals[portal] : null;
+  const isStaff = portal === 'operador' || portal === 'cajero';
+  const isPersonaNatural = portal === 'personaNatural';
 
   if (!portal || !config || !portalInfo) {
     return <Navigate to="/" replace />;
@@ -49,14 +50,28 @@ export function LoginPage() {
     document.title = `${portalInfo.label} | BancoBanQuito`;
   }, [portalInfo.label]);
 
-  const handleSubmit = async () => {
+  const isFormValid = () => {
+    if (!form.name.trim()) return false;
+    if (!isStaff && !form.identificacion.trim()) return false;
+    return true;
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
     setIsSubmitting(true);
     setAuthError('');
+
     try {
-      await login(portal, credentials.username, credentials.password);
+      if (isStaff) {
+        login(portal, form.name);
+      } else if (isPersonaNatural) {
+        login(portal, form.name, form.identificacion, 'CEDULA');
+      } else {
+        login(portal, form.name, form.identificacion, 'RUC');
+      }
       navigate(portalInfo.startPath);
     } catch (err) {
-      setAuthError(err.message);
+      setAuthError(err.message || 'Error al iniciar sesión');
     } finally {
       setIsSubmitting(false);
     }
@@ -91,44 +106,42 @@ export function LoginPage() {
               <h1 className="mt-4 text-3xl font-black text-banker-navy">{config.intro}</h1>
               <p className="mt-2 text-sm text-slate-600">{config.subtitle}</p>
 
-              <div className="mt-6 grid gap-4">
+              <form className="mt-6 grid gap-4" onSubmit={handleSubmit}>
                 <label className="text-xs font-semibold text-slate-600">
-                  Usuario
+                  {isStaff ? 'Nombre del empleado' : 'Nombre'}
                   <input
                     className="mt-2 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none transition focus:border-banker-blue"
-                    value={credentials.username}
-                    onChange={(event) => setCredentials({ ...credentials, username: event.target.value })}
+                    type="text"
+                    placeholder={isStaff ? 'Ej: Juan García' : 'Ej: Juan Pérez'}
+                    value={form.name}
+                    onChange={(e) => setForm({ ...form, name: e.target.value })}
+                    required
                   />
                 </label>
-                <label className="text-xs font-semibold text-slate-600">
-                  Clave
-                  <div className="relative mt-2">
+
+                {!isStaff && (
+                  <label className="text-xs font-semibold text-slate-600">
+                    {isPersonaNatural ? 'Número de cédula' : 'RUC'}
                     <input
-                      className="w-full rounded-lg border border-slate-300 px-3 py-2 pr-12 text-sm outline-none transition focus:border-banker-blue"
-                      type={showPassword ? 'text' : 'password'}
-                      value={credentials.password}
-                      onChange={(event) => setCredentials({ ...credentials, password: event.target.value })}
+                      className="mt-2 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none transition focus:border-banker-blue"
+                      type="text"
+                      placeholder={isPersonaNatural ? 'Ej: 0912345678' : 'Ej: 1791111111001'}
+                      value={form.identificacion}
+                      onChange={(e) => setForm({ ...form, identificacion: e.target.value })}
+                      required
                     />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword((prev) => !prev)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-slate-500 transition hover:text-banker-navy"
-                      aria-label={showPassword ? 'Ocultar clave' : 'Mostrar clave'}
-                    >
-                      {showPassword ? 'Ocultar' : 'Ver'}
-                    </button>
-                  </div>
-                </label>
-              </div>
+                  </label>
+                )}
+              </form>
 
               {authError ? <p className="mt-3 text-xs text-rose-600">{authError}</p> : null}
 
               <button
                 className="mt-6 w-full rounded-lg bg-banker-blue px-4 py-2 text-sm font-semibold text-white transition hover:bg-banker-navy disabled:cursor-not-allowed disabled:bg-slate-400"
-                disabled={isSubmitting || !credentials.username || !credentials.password}
+                disabled={isSubmitting || !isFormValid()}
                 onClick={handleSubmit}
               >
-                {isSubmitting ? 'Validando...' : 'Continuar'}
+                {isSubmitting ? 'Ingresando...' : 'Ingresar'}
               </button>
 
               <div className="mt-6 rounded-xl border border-slate-200 bg-slate-50 p-4 text-xs text-slate-600">
