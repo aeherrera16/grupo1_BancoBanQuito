@@ -1,251 +1,288 @@
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../hooks/useAuth';
+import heroCity from '../assets/banquito.jpg';
+import heroTower from '../assets/banquito2.jpg';
+import heroGlass from '../assets/banquito3.webp';
+import { portals } from '../config/portals';
 
 export function Home() {
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const clientPortals = ['personaNatural', 'empresa'];
+  const staffPortals = ['operador', 'cajero'];
+  const [slideIndex, setSlideIndex] = useState(0);
+  const [infoModal, setInfoModal] = useState(null);
+  const [showIntranet, setShowIntranet] = useState(false);
+  const [openDropdown, setOpenDropdown] = useState(null);
+  const dropdownTimerRef = useRef(null);
+
+  const slides = useMemo(
+    () => [
+      {
+        title: 'Soluciones en linea para clientes y empresas.',
+        description: 'Gestiona cuentas, pagos masivos y consultas desde un portal confiable con roles claramente definidos.',
+        image: heroCity,
+      },
+      {
+        title: 'Pagos masivos con control de validaciones.',
+        description: 'Carga y seguimiento en tiempo real, con corte horario y confirmaciones detalladas por lote.',
+        image: heroTower,
+      },
+      {
+        title: 'Banca digital con procesos seguros.',
+        description: 'Operaciones guiadas, trazabilidad e historial para clientes y equipos internos.',
+        image: heroGlass,
+      },
+    ],
+    [],
+  );
+
+  const navItems = useMemo(
+    () => [
+      {
+        label: 'Quienes somos',
+        items: [
+          { title: 'Banco BanQuito', body: 'Institucion financiera ecuatoriana enfocada en banca digital y atencion personalizada.' },
+          { title: 'Valores', body: 'Transparencia, seguridad operativa y servicio responsable con nuestros clientes.' },
+          { title: 'Sostenibilidad', body: 'Programas de inclusion financiera y apoyo a comunidades locales.' },
+        ],
+      },
+      {
+        label: 'Personas',
+        items: [
+          { title: 'Cuentas', body: 'Cuentas de ahorro y transaccionales con control de saldos y movimientos.' },
+          { title: 'Transferencias', body: 'Envio de transferencias con validaciones y confirmaciones.' },
+          { title: 'Seguridad', body: 'Buenas practicas y verificacion de acceso.' },
+        ],
+      },
+      {
+        label: 'Empresas',
+        items: [
+          { title: 'Banca empresas', body: 'Herramientas para pagos masivos y administracion de tesoreria.' },
+          { title: 'Cash management', body: 'Control de flujos y autorizaciones empresariales.' },
+          { title: 'Pagos masivos', body: 'Carga de lotes con validacion y reportes detallados.' },
+        ],
+      },
+      {
+        label: 'Canales de atencion',
+        items: [
+          { title: 'Banca digital', body: 'Acceso en linea seguro para clientes y equipos internos.' },
+          { title: 'Sucursales', body: 'Atencion presencial con personal autorizado.' },
+          { title: 'Soporte', body: 'Canales de ayuda y seguimiento de solicitudes.' },
+        ],
+      },
+      {
+        label: 'Transparencia',
+        items: [
+          { title: 'Tasas y tarifas', body: 'Informacion actualizada de costos operativos y comisiones.' },
+          { title: 'Politicas', body: 'Lineamientos de seguridad, privacidad y proteccion de datos.' },
+          { title: 'Informes', body: 'Reportes institucionales y cumplimiento normativo.' },
+        ],
+      },
+    ],
+    [],
+  );
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setSlideIndex((current) => (current + 1) % slides.length);
+    }, 7000);
+    return () => clearInterval(interval);
+  }, [slides.length]);
 
   const handlePortalSelect = (portal) => {
-    login(portal);
-    if (portal === 'empresa') {
-      navigate('/dashboard');
-    } else if (portal === 'personal') {
-      navigate('/personal');
-    } else if (portal === 'asesores') {
-      navigate('/asesores');
-    }
+    navigate(`/login/${portal}`);
   };
 
   return (
-    <div style={{
-      minHeight: '100vh',
-      background: 'linear-gradient(135deg, #1a365d, #2c5aa0, #2d3748)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: '2rem',
-    }}>
-      <div style={{ maxWidth: '1280px', width: '100%' }}>
-        {/* Header */}
-        <div style={{ textAlign: 'center', marginBottom: '5rem' }}>
-          <div style={{ display: 'inline-block', marginBottom: '2rem' }}>
-            <div style={{
-              width: '80px',
-              height: '80px',
-              backgroundColor: '#d4a574',
-              borderRadius: '12px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              boxShadow: '0 20px 25px rgba(0,0,0,0.1)',
-            }}>
-              <span style={{ fontSize: '48px', fontWeight: 'bold', color: '#1a365d' }}>₡</span>
-            </div>
+    <div className="min-h-screen bg-slate-100 text-banker-dark">
+      <header className="bg-white shadow-sm">
+        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6 text-sm font-semibold text-slate-700">
+          <div className="flex items-center gap-2 text-base font-black tracking-[0.2em] text-banker-navy">
+            <span className="inline-flex h-6 w-6 items-center justify-center rounded-sm bg-banker-gold text-xs text-white">BQ</span>
+            BancoBanQuito
           </div>
-          <h1 style={{ fontSize: '48px', fontWeight: 'bold', color: 'white', marginBottom: '1rem' }}>BancoBanQuito</h1>
-          <p style={{ color: '#f8f9fa', fontSize: '20px' }}>Soluciones financieras confiables para tu negocio</p>
+          <div className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-400">Banca digital</div>
         </div>
+        <nav className="border-t border-slate-200 bg-white/80">
+          <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-6 px-6 py-3 text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
+            {navItems.map((item) => (
+              <div
+                key={item.label}
+                className="relative"
+                onMouseEnter={() => {
+                  if (dropdownTimerRef.current) {
+                    clearTimeout(dropdownTimerRef.current);
+                  }
+                  setOpenDropdown(item.label);
+                }}
+                onMouseLeave={() => {
+                  dropdownTimerRef.current = setTimeout(() => {
+                    setOpenDropdown(null);
+                  }, 200);
+                }}
+              >
+                <button
+                  className="flex items-center gap-2 text-slate-600 transition hover:text-banker-navy"
+                  type="button"
+                  onClick={() => setOpenDropdown((current) => (current === item.label ? null : item.label))}
+                >
+                  {item.label}
+                  <span className="text-[10px]">▾</span>
+                </button>
+                {openDropdown === item.label ? (
+                  <div
+                    className="absolute left-0 top-full z-20 mt-3 w-64 rounded-2xl border border-slate-200 bg-white p-3 text-xs font-semibold uppercase text-slate-600 shadow-xl"
+                    onMouseEnter={() => {
+                      if (dropdownTimerRef.current) {
+                        clearTimeout(dropdownTimerRef.current);
+                      }
+                      setOpenDropdown(item.label);
+                    }}
+                    onMouseLeave={() => {
+                      dropdownTimerRef.current = setTimeout(() => {
+                        setOpenDropdown(null);
+                      }, 200);
+                    }}
+                  >
+                    <div className="space-y-2">
+                      {item.items.map((entry) => (
+                        <button
+                          key={entry.title}
+                          onMouseDown={() => setInfoModal({ ...entry, section: item.label })}
+                          onClick={() => setInfoModal({ ...entry, section: item.label })}
+                          className="w-full rounded-lg px-3 py-2 text-left text-[11px] tracking-[0.2em] text-slate-600 transition hover:bg-slate-100 hover:text-banker-navy"
+                          type="button"
+                        >
+                          {entry.title}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
+              </div>
+            ))}
+          </div>
+        </nav>
+      </header>
 
-        {/* Portal Selection Cards */}
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-          gap: '2rem',
-          marginBottom: '4rem',
-        }}>
-          {/* Banca Empresas */}
+      <main className="mx-auto max-w-7xl px-6 py-10">
+        <section className="login-hero relative overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl">
           <div
-            onClick={() => handlePortalSelect('empresa')}
-            style={{
-              backgroundColor: 'white',
-              borderRadius: '16px',
-              padding: '2rem',
-              cursor: 'pointer',
-              boxShadow: '0 20px 25px rgba(0,0,0,0.1)',
-              transition: 'all 0.3s ease',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.transform = 'translateY(-8px) scale(1.02)';
-              e.currentTarget.style.boxShadow = '0 30px 40px rgba(212, 165, 116, 0.4)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = 'translateY(0) scale(1)';
-              e.currentTarget.style.boxShadow = '0 20px 25px rgba(0,0,0,0.1)';
-            }}
-          >
-            <div style={{ marginBottom: '2rem', textAlign: 'center' }}>
-              <div style={{
-                width: '64px',
-                height: '64px',
-                background: 'linear-gradient(135deg, #2c5aa0, #1a365d)',
-                borderRadius: '12px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                margin: '0 auto',
-              }}>
-                <svg style={{ width: '32px', height: '32px', color: 'white' }} fill="currentColor" viewBox="0 0 20 20">
-                  <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" />
-                </svg>
+            className="absolute inset-0 bg-cover bg-center transition-opacity duration-700"
+            style={{ backgroundImage: `url(${slides[slideIndex].image})` }}
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-emerald-900/90 via-emerald-900/40 to-transparent" />
+          <div className="relative grid gap-6 lg:grid-cols-[320px_1fr]">
+            <aside className="login-panel flex flex-col bg-emerald-900/95 px-6 py-6 text-white">
+              <div className="rounded-2xl border border-emerald-700/60 bg-emerald-950/50 px-4 py-3 text-sm font-semibold uppercase tracking-[0.2em] text-emerald-200">
+                BancoBanQuito en linea
+              </div>
+              <h2 className="mt-5 text-2xl font-black">Accesos disponibles</h2>
+              <p className="mt-2 text-sm text-emerald-100/80">
+                Selecciona tu portal para continuar con operaciones y consultas.
+              </p>
+
+              <div className="mt-5 space-y-4">
+                <div className="space-y-2">
+                  {clientPortals.map((key) => (
+                    <button
+                      key={key}
+                      onClick={() => handlePortalSelect(key)}
+                      className="fade-up flex w-full items-center justify-between rounded-xl bg-white px-4 py-3 text-left text-sm font-semibold text-emerald-900 transition hover:-translate-y-0.5 hover:bg-emerald-50"
+                    >
+                      <span>{portals[key].label}</span>
+                      <span className="text-lg">›</span>
+                    </button>
+                  ))}
+                </div>
+                <div className="space-y-2 border-t border-emerald-700/50 pt-4">
+                  <div className="relative">
+                    <button
+                      onClick={() => setShowIntranet((prev) => !prev)}
+                      className="fade-up-delay flex w-full items-center justify-between rounded-xl border border-white/20 bg-white/5 px-4 py-3 text-left text-sm font-semibold text-white transition hover:-translate-y-0.5 hover:bg-white/10"
+                      type="button"
+                    >
+                      <span>Intranet</span>
+                      <span className="text-lg">▾</span>
+                    </button>
+                    {showIntranet ? (
+                      <div className="absolute left-0 right-0 mt-2 rounded-xl border border-emerald-700/50 bg-emerald-950/90 p-2 text-sm text-emerald-100">
+                        {staffPortals.map((key) => (
+                          <button
+                            key={key}
+                            onClick={() => handlePortalSelect(key)}
+                            className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-left font-semibold transition hover:bg-emerald-900"
+                            type="button"
+                          >
+                            <span>{portals[key].label}</span>
+                            <span className="text-lg">›</span>
+                          </button>
+                        ))}
+                      </div>
+                    ) : null}
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-6 rounded-xl border border-emerald-700/50 bg-emerald-950/60 p-4 text-xs text-emerald-100/80">
+                Selecciona un portal para iniciar sesion. El formulario aparece en pantalla completa.
+              </div>
+
+              <div className="mt-auto rounded-xl border border-emerald-700/50 bg-emerald-950/70 px-4 py-3 text-xs leading-5 text-emerald-100/80">
+                Clientes: usa credencial web. Personal banco: usuario Core con permisos aprobados.
+              </div>
+            </aside>
+
+            <div className="relative flex flex-col justify-center px-8 py-10 text-white">
+              <span className="fade-up inline-flex w-fit items-center gap-2 rounded-full bg-white/15 px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-emerald-100">
+                Experiencia digital
+              </span>
+              <h1 className="fade-up-delay mt-6 text-4xl font-black leading-tight md:text-5xl">
+                {slides[slideIndex].title}
+              </h1>
+              <p className="mt-4 max-w-2xl text-base leading-7 text-white/85">
+                {slides[slideIndex].description}
+              </p>
+
+              <div className="mt-10 flex items-center gap-2 text-white/70">
+                {slides.map((_, index) => (
+                  <button
+                    key={index}
+                    className={`h-2 w-2 rounded-full transition ${
+                      slideIndex === index ? 'bg-white' : 'bg-white/40'
+                    }`}
+                    onClick={() => setSlideIndex(index)}
+                    aria-label={`Slide ${index + 1}`}
+                    type="button"
+                  />
+                ))}
               </div>
             </div>
-            <h3 style={{ fontSize: '24px', fontWeight: 'bold', color: '#1a365d', marginBottom: '1rem', textAlign: 'center' }}>
-              Banca Empresas
-            </h3>
-            <p style={{ color: '#718096', textAlign: 'center', marginBottom: '2rem', fontSize: '14px', lineHeight: '1.6' }}>
-              Gestiona pagos masivos, consulta tus cuentas y administra tu liquidez empresarial de forma segura.
-            </p>
-            <button style={{
-              width: '100%',
-              background: 'linear-gradient(90deg, #2c5aa0, #1a365d)',
-              color: 'white',
-              padding: '12px 16px',
-              borderRadius: '8px',
-              fontWeight: '600',
-              border: 'none',
-              cursor: 'pointer',
-              transition: 'box-shadow 0.3s ease',
-            }}
-            onMouseEnter={(e) => e.currentTarget.style.boxShadow = '0 10px 20px rgba(0,0,0,0.15)'}
-            onMouseLeave={(e) => e.currentTarget.style.boxShadow = 'none'}
-            >
-              Acceder
-            </button>
           </div>
+        </section>
 
-          {/* Banca Personal */}
-          <div
-            onClick={() => handlePortalSelect('personal')}
-            style={{
-              backgroundColor: 'white',
-              borderRadius: '16px',
-              padding: '2rem',
-              cursor: 'pointer',
-              boxShadow: '0 20px 25px rgba(0,0,0,0.1)',
-              transition: 'all 0.3s ease',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.transform = 'translateY(-8px) scale(1.02)';
-              e.currentTarget.style.boxShadow = '0 30px 40px rgba(212, 165, 116, 0.4)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = 'translateY(0) scale(1)';
-              e.currentTarget.style.boxShadow = '0 20px 25px rgba(0,0,0,0.1)';
-            }}
-          >
-            <div style={{ marginBottom: '2rem', textAlign: 'center' }}>
-              <div style={{
-                width: '64px',
-                height: '64px',
-                background: 'linear-gradient(135deg, #2c5aa0, #1a365d)',
-                borderRadius: '12px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                margin: '0 auto',
-              }}>
-                <svg style={{ width: '32px', height: '32px', color: 'white' }} fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
-                </svg>
-              </div>
-            </div>
-            <h3 style={{ fontSize: '24px', fontWeight: 'bold', color: '#1a365d', marginBottom: '1rem', textAlign: 'center' }}>
-              Banca Personal
-            </h3>
-            <p style={{ color: '#718096', textAlign: 'center', marginBottom: '2rem', fontSize: '14px', lineHeight: '1.6' }}>
-              Accede a tus cuentas, realiza transferencias y gestiona tus finanzas personales.
-            </p>
-            <button style={{
-              width: '100%',
-              background: 'linear-gradient(90deg, #2c5aa0, #1a365d)',
-              color: 'white',
-              padding: '12px 16px',
-              borderRadius: '8px',
-              fontWeight: '600',
-              border: 'none',
-              cursor: 'pointer',
-              transition: 'box-shadow 0.3s ease',
-            }}
-            onMouseEnter={(e) => e.currentTarget.style.boxShadow = '0 10px 20px rgba(0,0,0,0.15)'}
-            onMouseLeave={(e) => e.currentTarget.style.boxShadow = 'none'}
-            >
-              Acceder
-            </button>
-          </div>
+      </main>
 
-          {/* Intranet Asesores */}
-          <div
-            onClick={() => handlePortalSelect('asesores')}
-            style={{
-              backgroundColor: 'white',
-              borderRadius: '16px',
-              padding: '2rem',
-              cursor: 'pointer',
-              boxShadow: '0 20px 25px rgba(0,0,0,0.1)',
-              transition: 'all 0.3s ease',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.transform = 'translateY(-8px) scale(1.02)';
-              e.currentTarget.style.boxShadow = '0 30px 40px rgba(212, 165, 116, 0.4)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = 'translateY(0) scale(1)';
-              e.currentTarget.style.boxShadow = '0 20px 25px rgba(0,0,0,0.1)';
-            }}
-          >
-            <div style={{ marginBottom: '2rem', textAlign: 'center' }}>
-              <div style={{
-                width: '64px',
-                height: '64px',
-                background: 'linear-gradient(135deg, #2c5aa0, #1a365d)',
-                borderRadius: '12px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                margin: '0 auto',
-              }}>
-                <svg style={{ width: '32px', height: '32px', color: 'white' }} fill="currentColor" viewBox="0 0 20 20">
-                  <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3zM6 8a2 2 0 11-4 0 2 2 0 014 0zM16 18v-3a5.972 5.972 0 00-.75-2.906A3.005 3.005 0 0119 15v3h-3zM4.75 12.094A5.973 5.973 0 004 15v3H1v-3a3 3 0 013.75-2.906z" />
-                </svg>
+      {infoModal ? (
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-slate-900/50 px-6">
+          <div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl">
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-400">{infoModal.section}</p>
+                <h3 className="mt-2 text-2xl font-black text-banker-navy">{infoModal.title}</h3>
               </div>
+              <button
+                className="rounded-full border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-500"
+                onClick={() => setInfoModal(null)}
+                type="button"
+              >
+                Cerrar
+              </button>
             </div>
-            <h3 style={{ fontSize: '24px', fontWeight: 'bold', color: '#1a365d', marginBottom: '1rem', textAlign: 'center' }}>
-              Intranet Asesores
-            </h3>
-            <p style={{ color: '#718096', textAlign: 'center', marginBottom: '2rem', fontSize: '14px', lineHeight: '1.6' }}>
-              Herramientas y recursos para asesores financieros del banco.
-            </p>
-            <button style={{
-              width: '100%',
-              background: 'linear-gradient(90deg, #2c5aa0, #1a365d)',
-              color: 'white',
-              padding: '12px 16px',
-              borderRadius: '8px',
-              fontWeight: '600',
-              border: 'none',
-              cursor: 'pointer',
-              transition: 'box-shadow 0.3s ease',
-            }}
-            onMouseEnter={(e) => e.currentTarget.style.boxShadow = '0 10px 20px rgba(0,0,0,0.15)'}
-            onMouseLeave={(e) => e.currentTarget.style.boxShadow = 'none'}
-            >
-              Acceder
-            </button>
+            <p className="mt-4 text-sm leading-6 text-slate-600">{infoModal.body}</p>
           </div>
         </div>
-
-        {/* Footer */}
-        <div style={{
-          marginTop: '5rem',
-          paddingTop: '2rem',
-          borderTop: '1px solid rgba(255,255,255,0.1)',
-          textAlign: 'center',
-          color: '#f8f9fa',
-        }}>
-          <p style={{ fontSize: '14px' }}>© 2026 BancoBanQuito. Todos los derechos reservados.</p>
-          <p style={{ fontSize: '12px', marginTop: '0.5rem', opacity: 0.75 }}>Seguridad · Privacidad · Términos de Servicio</p>
-        </div>
-      </div>
+      ) : null}
     </div>
   );
 }

@@ -1,37 +1,20 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { Home } from './pages/Home';
-import { DashboardPage } from './pages/DashboardPage';
+import { AccountOperationsPage } from './pages/AccountOperationsPage';
+import { CashierPage } from './pages/CashierPage';
+import { CredentialsPage } from './pages/CredentialsPage';
+import { CustomerAccountsPage } from './pages/CustomerAccountsPage';
+import { CustomerOnboardingPage } from './pages/CustomerOnboardingPage';
+import { CustomerTransferPage } from './pages/CustomerTransferPage';
 import { PagosMasivosPage } from './pages/PagosMasivosPage';
+import { SftpMailboxPage } from './pages/SftpMailboxPage';
+import { LoginPage } from './pages/LoginPage';
 import { LayoutEmpresas } from './components/LayoutEmpresas';
 import './index.css';
 
-function ComingSoon() {
-  return (
-    <div style={{
-      minHeight: '100vh',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      background: 'linear-gradient(135deg, #1a365d, #2c5aa0)',
-    }}>
-      <div style={{ textAlign: 'center', color: 'white' }}>
-        <h1 style={{ fontSize: '48px', marginBottom: '1rem' }}>En Construcción</h1>
-        <p style={{ fontSize: '18px', marginBottom: '2rem' }}>Esta sección estará disponible próximamente</p>
-        <a href="/" style={{
-          display: 'inline-block',
-          padding: '12px 32px',
-          backgroundColor: '#d4a574',
-          color: '#1a365d',
-          textDecoration: 'none',
-          borderRadius: '8px',
-          fontWeight: '600',
-        }}>
-          Volver al inicio
-        </a>
-      </div>
-    </div>
-  );
+function Protected({ portal, children }) {
+  return <LayoutEmpresas allowedPortal={portal}>{children}</LayoutEmpresas>;
 }
 
 export default function App() {
@@ -39,34 +22,82 @@ export default function App() {
     <AuthProvider>
       <BrowserRouter>
         <Routes>
-          {/* Public routes */}
           <Route path="/" element={<Home />} />
+          <Route path="/login/:portal" element={<LoginPage />} />
 
-          {/* Protected Banca Empresas routes */}
           <Route
-            path="/dashboard"
+            path="/operador"
             element={
-              <LayoutEmpresas>
-                <DashboardPage />
-              </LayoutEmpresas>
+              <Protected portal="operador">
+                <CustomerOnboardingPage />
+              </Protected>
             }
           />
           <Route
-            path="/pagos-masivos"
+            path="/operador/credenciales"
             element={
-              <LayoutEmpresas>
+              <Protected portal="operador">
+                <CredentialsPage />
+              </Protected>
+            }
+          />
+          <Route
+            path="/operador/cuentas"
+            element={
+              <Protected portal="operador">
+                <AccountOperationsPage />
+              </Protected>
+            }
+          />
+          <Route
+            path="/empresa/pagos-masivos"
+            element={
+              <Protected portal="empresa">
                 <PagosMasivosPage />
-              </LayoutEmpresas>
+              </Protected>
+            }
+          />
+          <Route
+            path="/empresa/sftp"
+            element={
+              <Protected portal="empresa">
+                <SftpMailboxPage />
+              </Protected>
+            }
+          />
+          <Route
+            path="/persona-natural"
+            element={
+              <Protected portal="personaNatural">
+                <CustomerAccountsPage />
+              </Protected>
+            }
+          />
+          <Route
+            path="/persona-natural/transferencias"
+            element={
+              <Protected portal="personaNatural">
+                <CustomerTransferPage />
+              </Protected>
+            }
+          />
+          <Route
+            path="/cajero"
+            element={
+              <Protected portal="cajero">
+                <CashierPage />
+              </Protected>
+            }
+          />
+          <Route
+            path="/cajero/consulta"
+            element={
+              <Protected portal="cajero">
+                <CustomerAccountsPage cashierMode />
+              </Protected>
             }
           />
 
-          {/* Banca Personal */}
-          <Route path="/personal" element={<ComingSoon />} />
-
-          {/* Intranet Asesores */}
-          <Route path="/asesores" element={<ComingSoon />} />
-
-          {/* Fallback */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </BrowserRouter>

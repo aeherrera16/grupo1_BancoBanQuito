@@ -1,62 +1,55 @@
-import { createContext, useState, useEffect } from 'react';
+import { useState } from 'react';
+import { authCoreUser, authCustomer } from '../services/apiClient';
+import { AuthContext } from './authContextObject';
 
-export const AuthContext = createContext();
+const staffPortals = new Set(['operador', 'cajero']);
 
 export function AuthProvider({ children }) {
   const [auth, setAuth] = useState({
     isAuthenticated: false,
     portal: null,
     user: null,
-    coreUserId: null,
-    testData: null,
   });
 
-  useEffect(() => {
-    const loadTestData = async () => {
-      try {
-        const response = await fetch('http://localhost:8080/core/v1/auth/test-data');
-        if (response.ok) {
-          const data = await response.json();
-          setAuth(prev => ({
-            ...prev,
-            testData: data,
-            coreUserId: data.coreUserId,
-          }));
+  const login = async (portal, username, password) => {
+    const isStaff = staffPortals.has(portal);
+    const response = isStaff
+      ? await authCoreUser(username, password)
+      : await authCustomer(username, password);
+
+    const user = isStaff
+      ? {
+          id: String(response.coreUserId),
+          name: response.fullName,
+          email: response.username,
+          role: response.role,
+          coreUserId: response.coreUserId,
+          lastLogin: response.lastLogin,
         }
-      } catch (error) {
-        console.error('Error loading test data:', error);
-      }
-    };
+      : {
+          id: String(response.customerId),
+          name: response.customerName,
+          email: response.username,
+          role: 'CUSTOMER',
+          customerId: response.customerId,
+          lastLogin: response.lastLogin,
+        };
 
-    loadTestData();
-  }, []);
-
-  const login = (portal) => {
-    let selectedUser = null;
-
-    if (auth.testData && auth.testData.customers.length > 0) {
-      selectedUser = auth.testData.customers[0];
-    }
-
-    setAuth(prev => ({
-      ...prev,
+    setAuth({
       isAuthenticated: true,
       portal,
-      user: selectedUser || {
-        id: '1',
-        name: 'Usuario Corporativo',
-        email: 'user@empresa.ec',
-      },
-    }));
+      user,
+    });
+
+    return user;
   };
 
   const logout = () => {
-    setAuth(prev => ({
-      ...prev,
+    setAuth({
       isAuthenticated: false,
       portal: null,
       user: null,
-    }));
+    });
   };
 
   return (
