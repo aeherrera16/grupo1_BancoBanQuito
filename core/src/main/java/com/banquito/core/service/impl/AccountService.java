@@ -81,7 +81,11 @@ public class AccountService implements IAccountService {
 
         LocalDateTime now = LocalDateTime.now();
         Account account = new Account();
-        account.setAccountNumber(request.getAccountNumber());
+        
+        // RF-02: Generación automática de número de cuenta basado en Sucursal
+        String generatedNumber = generateAccountNumber(branch, subtype);
+        account.setAccountNumber(generatedNumber);
+        
         account.setCustomer(customer);
         account.setBranch(branch);
         account.setAccountSubtype(subtype);
@@ -92,8 +96,14 @@ public class AccountService implements IAccountService {
         account.setOpeningDate(now);
         account.setLastUpdate(now);
 
-        log.info("CoreUser {} crea cuenta {}", coreUserId, account.getAccountNumber());
+        log.info("CoreUser {} crea cuenta {} para cliente {}", coreUserId, generatedNumber, customer.getId());
         return toResponse(accountRepository.save(account));
+    }
+
+    private String generateAccountNumber(Branch branch, AccountSubtype subtype) {
+        long count = accountRepository.countByBranch_Id(branch.getId());
+        // Formato: [Sucursal]-[Subtipo]-[Secuencial]
+        return branch.getBranchCode() + "-" + subtype.getCode() + "-" + String.format("%08d", count + 1);
     }
 
     @Transactional

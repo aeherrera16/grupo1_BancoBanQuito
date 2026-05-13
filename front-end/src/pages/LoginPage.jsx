@@ -113,7 +113,7 @@ export function LoginPage() {
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-black text-slate-400 uppercase tracking-widest mb-2">Contraseña Segura</label>
+                  <label className="block text-[11px] font-black text-slate-400 uppercase tracking-widest mb-2">Contraseña</label>
                   <input
                     className="w-full bg-slate-50 rounded-2xl border border-slate-100 px-5 py-4 text-sm font-bold text-slate-900 outline-none transition-all focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500"
                     type="password"
@@ -141,7 +141,7 @@ export function LoginPage() {
               <div className="mt-10 flex items-center gap-4 p-5 bg-slate-50 rounded-2xl border border-slate-100">
                 <svg className="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
                 <p className="text-[11px] text-slate-500 font-medium leading-relaxed">
-                  Estás en una zona segura. Tus datos están protegidos por encriptación de grado bancario.
+                  Tus datos están protegidos por encriptación de grado bancario.
                 </p>
               </div>
             </div>
