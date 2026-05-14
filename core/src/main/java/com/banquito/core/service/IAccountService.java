@@ -16,6 +16,8 @@ public interface IAccountService {
 
     AccountResponseDTO create(AccountRequestDTO request, Integer coreUserId);
 
+    AccountResponseDTO activate(String accountNumber, Integer coreUserId);
+
     AccountResponseDTO inactivate(String accountNumber, Integer coreUserId);
 
     AccountResponseDTO block(String accountNumber, Integer coreUserId);

@@ -52,6 +52,12 @@ public class AccountController {
         return ResponseEntity.status(HttpStatus.CREATED).body(accountService.create(request, null));
     }
 
+    @PatchMapping("/{accountNumber}/activate")
+    public ResponseEntity<AccountResponseDTO> activate(
+            @PathVariable String accountNumber) {
+        return ResponseEntity.ok(accountService.activate(accountNumber, null));
+    }
+
     @PatchMapping("/{accountNumber}/inactivate")
     public ResponseEntity<AccountResponseDTO> inactivate(
             @PathVariable String accountNumber) {

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Field, inputClass, PageShell, Panel, primaryButtonClass } from '../components/PageShell';
 import { useAuth } from '../hooks/useAuth';
-import { getAccountByNumber, getAccountsByCustomerId, getCustomerByIdentification, getTransactions, setFavoriteAccount } from '../services/apiClient';
+import { getAccountByNumber, getAccountsByCustomerId, getCustomerByIdentification, getTransactions, setFavoriteAccount, changeAccountStatus } from '../services/apiClient';
 
 export function CustomerAccountsPage() {
   const { user, portal } = useAuth();
@@ -104,6 +104,21 @@ export function CustomerAccountsPage() {
     await fetchAccountDetails(accNumber);
   };
 
+  const handleStatusChange = async (action) => {
+    if (!result?.accountNumber) return;
+    setSearching(true);
+    setError('');
+    try {
+      await changeAccountStatus(result.accountNumber, action);
+      await fetchAccountDetails(result.accountNumber);
+      showToastNotification(`Cuenta actualizada a estado: ${action.toUpperCase()}`);
+    } catch (err) {
+      setError("Error al cambiar estado: " + err.message);
+    } finally {
+      setSearching(false);
+    }
+  };
+
   const handleSetFavorite = async () => {
     if (!result?.accountNumber) return;
     try {
@@ -187,6 +202,22 @@ export function CustomerAccountsPage() {
                       <span className={`inline-block px-3 py-1 rounded-full text-[11px] font-black ${
                         result.status === 'ACTIVO' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
                       }`}>{result.status}</span>
+                   </div>
+                </div>
+
+                <div className="mt-8 pt-8 border-t border-slate-100">
+                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Acciones de Gestión Operativa</p>
+                   <div className="flex flex-wrap gap-4">
+                      {result.status !== 'ACTIVO' && (
+                        <button onClick={() => handleStatusChange('ACTIVO')} className="px-6 py-3 bg-green-600 text-white text-[11px] font-black uppercase rounded-xl hover:bg-green-700 transition-all shadow-lg shadow-green-900/10">Reactivar Cuenta</button>
+                      )}
+                      {result.status === 'ACTIVO' && (
+                        <>
+                          <button onClick={() => handleStatusChange('inactivate')} className="px-6 py-3 bg-slate-100 text-slate-600 text-[11px] font-black uppercase rounded-xl hover:bg-slate-200 transition-all">Inactivar</button>
+                          <button onClick={() => handleStatusChange('block')} className="px-6 py-3 bg-red-50 text-red-600 text-[11px] font-black uppercase rounded-xl hover:bg-red-100 transition-all">Bloquear</button>
+                          <button onClick={() => handleStatusChange('suspend')} className="px-6 py-3 bg-orange-50 text-orange-600 text-[11px] font-black uppercase rounded-xl hover:bg-orange-100 transition-all">Suspender</button>
+                        </>
+                      )}
                    </div>
                 </div>
              </Panel>
