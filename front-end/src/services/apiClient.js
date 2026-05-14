@@ -26,8 +26,6 @@ export async function coreRequest(path, options = {}) {
   return parseResponse(await fetch(`${coreBaseUrl}${path}`, { ...options, headers }));
 }
 
-// === CUSTOMER ENDPOINTS ===
-
 export async function getCustomerByIdentification(type, number) {
   return coreRequest(`/core/v1/customers/identification/${type}/${number}`);
 }
@@ -47,8 +45,6 @@ export async function getCustomerSubtypes() {
   return coreRequest('/core/v1/customers/subtypes');
 }
 
-// === BRANCH & ACCOUNT SUBTYPE ENDPOINTS ===
-
 export async function getBranches() {
   return coreRequest('/core/v1/branches');
 }
@@ -56,8 +52,6 @@ export async function getBranches() {
 export async function getAccountSubtypes() {
   return coreRequest('/core/v1/accounts/subtypes');
 }
-
-// === ACCOUNT ENDPOINTS ===
 
 export async function getAccountsByCustomerId(customerId) {
   return coreRequest(`/core/v1/accounts/customer/${customerId}`);
@@ -93,8 +87,6 @@ export async function setFavoriteAccount(accountNumber) {
     method: 'PATCH',
   });
 }
-
-// === TRANSACTION ENDPOINTS (Consolidated) ===
 
 export async function debit(accountNumber, amount, description = 'Retiro en ventanilla') {
   return coreRequest('/core/v1/transactions/debits', {
@@ -136,8 +128,6 @@ export async function transfer(origin, destination, amount, uuid, description = 
   });
 }
 
-// === NOTIFICATION ENDPOINTS ===
-
 export async function getNotifications(userId) {
   return coreRequest(`/core/v1/notifications/user/${userId}`);
 }
@@ -147,8 +137,6 @@ export async function markNotificationAsRead(id) {
     method: 'PUT',
   });
 }
-
-// === AUTH & CREDENTIALS ENDPOINTS ===
 
 export async function loginStaff(username, password) {
   return coreRequest('/core/v1/auth/login/staff', {
@@ -171,8 +159,6 @@ export async function createWebCredential(data) {
   });
 }
 
-// === HOLIDAY ENDPOINTS ===
-
 export async function getHolidays() {
   return coreRequest('/core/v1/holidays');
 }
@@ -193,8 +179,6 @@ export async function deleteHoliday(date) {
 export async function isBusinessDay(date) {
   return coreRequest(`/core/v1/holidays/business-day?date=${date}`);
 }
-
-// === PAYMENT BATCH ENDPOINTS (SWITCH) ===
 
 export async function uploadPaymentBatch(file, channel = 'PORTAL') {
   const body = new FormData();
@@ -244,8 +228,6 @@ export async function downloadNovedades(batchId) {
     `novedades-${batchId}.xlsx`
   );
 }
-
-// === SFTP ENDPOINTS ===
 
 export async function uploadSftpMailboxFile(file) {
   const body = new FormData();

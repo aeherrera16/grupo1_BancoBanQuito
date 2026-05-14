@@ -7,16 +7,16 @@ export function CustomerAccountsPage() {
   const { user, portal } = useAuth();
   const isStaff = portal === 'operador' || portal === 'cajero';
 
-  // Estado para staff (búsqueda manual)
+  
   const [accountNumber, setAccountNumber] = useState('');
   const [searching, setSearching] = useState(false);
 
-  // Estado para clientes (búsqueda automática por identificación)
+  
   const [customerAccounts, setCustomerAccounts] = useState([]);
   const [selectedAccountNumber, setSelectedAccountNumber] = useState('');
   const [loadingAccounts, setLoadingAccounts] = useState(true);
 
-  // Estado compartido
+  
   const [result, setResult] = useState(null);
   const [history, setHistory] = useState(null);
   const [error, setError] = useState('');
@@ -46,7 +46,7 @@ export function CustomerAccountsPage() {
         setCustomerAccounts(accounts);
 
         if (accounts.length > 0) {
-          // Priorizar la cuenta favorita para mostrarla primero
+          
           const favorite = accounts.find(a => a.isFavorite);
           const initialAcc = favorite ? favorite.accountNumber : accounts[0].accountNumber;
           setSelectedAccountNumber(initialAcc);
@@ -63,7 +63,7 @@ export function CustomerAccountsPage() {
     loadCustomerAccounts();
   }, [user, portal, isStaff]);
 
-  // Polling para refrescar saldos cada 10 segundos
+  
   useEffect(() => {
     const activeAcc = isStaff ? (result?.accountNumber) : selectedAccountNumber;
     if (!activeAcc) return;
@@ -123,9 +123,9 @@ export function CustomerAccountsPage() {
     if (!result?.accountNumber) return;
     try {
       await setFavoriteAccount(result.accountNumber);
-      // Refrescar datos
+      
       await fetchAccountDetails(result.accountNumber);
-      // Actualizar lista local de cuentas para reflejar el cambio de favorita
+      
       setCustomerAccounts(prev => prev.map(acc => ({
         ...acc,
         isFavorite: acc.accountNumber === result.accountNumber
@@ -149,7 +149,7 @@ export function CustomerAccountsPage() {
     }
   };
 
-  // ====== VISTA STAFF (CAJEROS / OPERADORES) ======
+  
   if (isStaff) {
     return (
       <PageShell title="Consulta de Cuenta" description="Módulo de consulta rápida para atención en ventanilla.">
@@ -227,7 +227,7 @@ export function CustomerAccountsPage() {
     );
   }
 
-  // ====== VISTA CLIENTE (BANCA EN LÍNEA) ======
+  
   if (loadingAccounts) {
     return (
       <PageShell title="Cargando tus productos..." description="">
@@ -365,7 +365,7 @@ export function CustomerAccountsPage() {
         </div>
       )}
 
-      {/* Detalles Modal */}
+      {}
       {showDetails && result && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setShowDetails(false)} />

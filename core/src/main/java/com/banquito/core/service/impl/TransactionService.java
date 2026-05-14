@@ -176,7 +176,7 @@ public class TransactionService implements ITransactionService {
     }
 
     private AccountTransaction registerMovement(Account account, BigDecimal amount, MovementTypeEnum type,
-                                                 String uuid, String subtypeCode, String description) {
+                                                  String uuid, String subtypeCode, String description) {
         TransactionSubtype subtype = subtypeRepository.findByCode(subtypeCode)
                 .orElseThrow(() -> new RuntimeException("Subtipo de transaccion no configurado: " + subtypeCode));
         if (subtype.getStatus() != CommonStatusEnum.ACTIVO) {
