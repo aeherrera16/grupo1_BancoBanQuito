@@ -1,0 +1,269 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>BanQuito Banca Web</title>
+  </head>
+  <body>
+    <main id="app" class="app-shell">
+      <section class="login-view" data-view="login">
+        <div class="brand-panel">
+          <p class="eyebrow">BanQuito Empresas</p>
+          <h1>Portal financiero para gestionar tus operaciones</h1>
+          <p class="brand-copy">
+            Consulta saldos, revisa movimientos y administra pagos corporativos
+            desde una experiencia digital simple, ordenada y confiable.
+          </p>
+          <div class="status-strip">
+            <span id="coreStatus">Servicios bancarios</span>
+            <span id="switchStatus">Pagos empresariales</span>
+          </div>
+        </div>
+
+        <form id="loginForm" class="login-card">
+          <div class="login-heading">
+            <p class="eyebrow">Acceso privado</p>
+            <h2>Ingresa a tu banca web</h2>
+            <span>Usa tus credenciales registradas</span>
+          </div>
+
+          <label class="field">
+            <span>Usuario</span>
+            <input id="username" name="username" autocomplete="username" required />
+          </label>
+          <label class="field">
+            <span>Clave</span>
+            <input id="password" name="password" type="password" autocomplete="current-password" required />
+          </label>
+          <button class="primary-button" type="submit">Ingresar</button>
+          <p id="loginMessage" class="message" role="status"></p>
+        </form>
+      </section>
+
+      <section class="dashboard is-hidden" data-view="dashboard">
+        <aside class="sidebar">
+          <div class="bank-mark">
+            <span>BQ</span>
+            <div>
+              <p class="eyebrow">Banco BanQuito</p>
+              <h2>Banca Web</h2>
+            </div>
+          </div>
+          <div class="sidebar-greeting">
+            <span id="sessionType">Cliente</span>
+            <strong id="sessionName">Bienvenido</strong>
+            <small id="sessionMeta">Banca web BanQuito</small>
+          </div>
+          <div class="sidebar-tools">
+            <label class="search-box">
+              <span>Buscar</span>
+              <input id="globalSearch" placeholder="Buscar operacion..." />
+            </label>
+            <div>
+              <span class="version-pill">V1</span>
+              <button id="refreshButton" class="secondary-button" type="button">Actualizar</button>
+            </div>
+          </div>
+          <nav class="nav-list" aria-label="Secciones">
+            <span class="nav-group-label">Portal</span>
+            <button class="nav-item is-active" data-section="overview"><span class="nav-icon">IN</span><span>Inicio</span></button>
+            <button class="nav-item" data-section="profile"><span class="nav-icon">CL</span><span>Cliente</span></button>
+            <span class="nav-group-label">Operaciones</span>
+            <button class="nav-item" data-section="accounts"><span class="nav-icon">CT</span><span>Cuentas</span></button>
+            <button class="nav-item" data-section="transactions"><span class="nav-icon">TR</span><span>Transacciones</span></button>
+            <button class="nav-item company-only" data-section="payments"><span class="nav-icon">PM</span><span>Pagos masivos</span></button>
+            <button class="nav-item company-only" data-section="reports"><span class="nav-icon">RP</span><span>Reportes</span></button>
+          </nav>
+          <div class="sidebar-foot">
+            <span id="sidebarType">Cliente</span>
+            <small>Sesion activa</small>
+          </div>
+          <button id="logoutButton" class="ghost-button" type="button">Cerrar sesion</button>
+        </aside>
+
+        <section class="content">
+          <section class="section-panel" data-section-panel="overview">
+            <div class="banking-dashboard">
+              <section class="balance-overview">
+                <div>
+                  <p class="eyebrow">Resumen financiero</p>
+                  <h2>Tu banca en linea</h2>
+                  <p>Consulta tus productos y accede a servicios bancarios desde un panel claro y directo.</p>
+                </div>
+                <div class="balance-amount">
+                  <span>Saldo disponible</span>
+                  <strong id="balanceMetric">$0.00</strong>
+                  <small id="accountsMetric">0</small>
+                </div>
+              </section>
+
+              <section class="dashboard-accounts">
+                <div class="panel-heading">
+                  <div>
+                    <p class="eyebrow">Productos</p>
+                    <h2>Cuentas destacadas</h2>
+                  </div>
+                  <button class="secondary-button" data-section-shortcut="accounts" type="button">Ver cuentas</button>
+                </div>
+                <div id="dashboardAccounts" class="dashboard-account-grid">
+                  <div class="empty-state">Cargando tus cuentas disponibles.</div>
+                </div>
+              </section>
+
+              <section class="module-panel banking-services">
+                <div class="panel-heading">
+                  <div>
+                    <p class="eyebrow">Operaciones frecuentes</p>
+                    <h2>Que quieres hacer hoy</h2>
+                  </div>
+                  <span id="portalCoreStatus">Servicios disponibles</span>
+                </div>
+                <div class="quick-actions service-grid">
+                  <button class="quick-card" data-feature-coming-soon type="button">
+                    <span>PS</span>
+                    <strong>Pago de servicios</strong>
+                    <small>Luz, agua, telefonia e internet desde tu banca.</small>
+                  </button>
+                  <button class="quick-card" data-feature-coming-soon type="button">
+                    <span>TF</span>
+                    <strong>Transferencias</strong>
+                    <small>Envios entre cuentas propias, terceros y otros bancos.</small>
+                  </button>
+                  <button class="quick-card" data-feature-coming-soon type="button">
+                    <span>TC</span>
+                    <strong>Tarjetas</strong>
+                    <small>Consulta consumos, cupos y pagos pendientes.</small>
+                  </button>
+                  <button class="quick-card" data-feature-coming-soon type="button">
+                    <span>RB</span>
+                    <strong>Referencia bancaria</strong>
+                    <small>Genera certificados y referencias de tus productos.</small>
+                  </button>
+                  <button class="quick-card" data-section-shortcut="transactions" type="button">
+                    <span>TR</span>
+                    <strong>Movimientos</strong>
+                    <small>Consulta el historial cuando lo necesites.</small>
+                  </button>
+                  <button class="quick-card company-only" data-section-shortcut="payments" type="button">
+                    <span>PM</span>
+                    <strong>Pagos masivos</strong>
+                    <small>Carga archivos corporativos desde el modulo empresarial.</small>
+                  </button>
+                </div>
+              </section>
+            </div>
+          </section>
+
+          <section class="section-panel is-hidden" data-section-panel="profile">
+            <div class="profile-panel">
+              <div class="profile-heading">
+                <p class="eyebrow">Perfil bancario</p>
+                <h2 id="profileName">Informacion personal</h2>
+                <span>Ficha del cliente y referencia de contacto</span>
+              </div>
+              <dl id="profileDetails" class="detail-grid"></dl>
+            </div>
+          </section>
+
+          <section class="section-panel is-hidden" data-section-panel="accounts">
+            <div class="panel-heading">
+              <h2>Cuentas y saldos</h2>
+              <span>Productos activos</span>
+            </div>
+            <div id="accountsList" class="card-grid"></div>
+          </section>
+
+          <section class="section-panel is-hidden" data-section-panel="transactions">
+            <div class="table-panel">
+              <div class="panel-heading">
+                <h2>Transacciones realizadas</h2>
+                <span>Historial de movimientos</span>
+              </div>
+              <div id="transactionsTable" class="table-wrap"></div>
+            </div>
+          </section>
+
+          <section class="section-panel is-hidden company-only" data-section-panel="payments">
+            <div class="business-hero">
+              <div>
+                <p class="eyebrow">Banca web empresas - pagos masivos</p>
+                <h2>Operacion empresarial BanQuito</h2>
+                <p>Carga archivos de pagos, revisa lotes procesados y consulta el resultado de cada operacion empresarial.</p>
+              </div>
+              <div class="hero-balance">
+                <span>Cuenta empresa</span>
+                <strong id="companyAccountHero">N/D</strong>
+                <small>Cuenta vinculada</small>
+              </div>
+            </div>
+
+            <form id="uploadForm" class="upload-panel">
+              <div>
+                <h2>Cargar archivo de pagos</h2>
+                <p>Archivo CSV para pagos corporativos desde banca web.</p>
+              </div>
+              <label class="file-picker">
+                <input id="csvFile" name="file" type="file" accept=".csv,text/csv" required />
+                <span id="fileName">Seleccionar CSV</span>
+              </label>
+              <button class="primary-button fit-button" type="submit">Procesar archivo</button>
+              <p id="uploadMessage" class="message" role="status"></p>
+            </form>
+
+            <div class="table-panel">
+              <div class="panel-heading">
+                <h2>Lotes de pago</h2>
+                <button id="loadBatchesButton" class="secondary-button" type="button">Ver lotes</button>
+              </div>
+              <div id="batchesTable" class="table-wrap"></div>
+            </div>
+          </section>
+
+          <section class="section-panel is-hidden company-only" data-section-panel="reports">
+            <div class="reports-workbench">
+              <div class="lookup-panel report-controls">
+                <div class="panel-heading">
+                  <div>
+                    <p class="eyebrow">Reporteria empresarial</p>
+                    <h2>Reportes del lote</h2>
+                    <p>Selecciona el lote por archivo, RUC, estado y fecha. El sistema usa la referencia interna correcta al consultar.</p>
+                  </div>
+                  <button class="secondary-button" data-refresh-reports type="button">Actualizar lotes</button>
+                </div>
+
+                <label class="field">
+                  <span>Lote disponible</span>
+                  <select id="batchSelector">
+                    <option value="">Carga o selecciona un lote</option>
+                  </select>
+                </label>
+
+                <div id="selectedBatchPreview" class="selected-batch empty-state">
+                  Carga los lotes disponibles para elegir una operacion.
+                </div>
+
+                <div class="button-row report-actions" aria-label="Acciones de reportes">
+                  <button class="secondary-button" data-report="summary" type="button">Resumen</button>
+                  <button class="secondary-button" data-report="detail" type="button">Detalle</button>
+                  <button class="secondary-button" data-report="charge" type="button">Cargo</button>
+                  <button class="secondary-button" data-report="receipt" type="button">Comprobante</button>
+                  <button class="secondary-button" data-download="receipt-pdf" type="button">PDF</button>
+                  <button class="secondary-button" data-download="billing-novelties" type="button">Novedades CSV</button>
+                </div>
+              </div>
+
+              <div id="reportOutput" class="report-output">
+                <div class="report-empty">
+                  <strong>Selecciona un lote para consultar.</strong>
+                  <span>Los resultados se mostraran aqui con formato de reporte bancario.</span>
+                </div>
+              </div>
+            </div>
+          </section>
+        </section>
+      </section>
+    </main>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
