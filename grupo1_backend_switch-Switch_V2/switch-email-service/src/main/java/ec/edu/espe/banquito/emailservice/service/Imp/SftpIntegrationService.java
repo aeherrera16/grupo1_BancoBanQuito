@@ -115,7 +115,7 @@ public class SftpIntegrationService implements ISftpIntegrationService {
             
             LOG.info("Processing downloaded file: {}", file.getName());
             
-            boolean success = switchApiClient.sendFileToSwitch(file);
+            boolean success = switchApiClient.sendFileToSwitch(file, null);
             
             if (success) {
                 moveToProcessed(file);

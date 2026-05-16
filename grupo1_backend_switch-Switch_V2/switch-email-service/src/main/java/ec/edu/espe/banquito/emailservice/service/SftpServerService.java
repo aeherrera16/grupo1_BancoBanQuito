@@ -47,19 +47,30 @@ public class SftpServerService {
             }
             
             Files.list(uploadPath)
-                .filter(path -> path.toString().toLowerCase().endsWith(".csv"))
-                .forEach(this::processFile);
+                .filter(Files::isDirectory)
+                .filter(path -> !path.getFileName().toString().equals("processed") && !path.getFileName().toString().equals("errors"))
+                .forEach(userDir -> {
+                    try {
+                        Files.list(userDir)
+                            .filter(path -> path.toString().toLowerCase().endsWith(".csv"))
+                            .forEach(file -> processFile(file, userDir.getFileName().toString()));
+                    } catch (IOException e) {
+                        LOG.error("Error processing files for user {}: {}", userDir.getFileName(), e.getMessage());
+                    }
+                });
+//                Files.list(uploadPath)
+                // .forEach(this::processFile);
                 
         } catch (IOException e) {
             LOG.error("Error processing uploaded files: {}", e.getMessage(), e);
         }
     }
     
-    private void processFile(Path filePath) {
+    private void processFile(Path filePath, String ruc) {
         try {
             LOG.info("Processing uploaded file: {}", filePath.getFileName());
             
-            boolean sentToSwitch = switchApiClient.sendFileToSwitch(filePath.toFile());
+            boolean sentToSwitch = switchApiClient.sendFileToSwitch(filePath.toFile(), ruc);
             
             if (sentToSwitch) {
                 Path processedDir = Paths.get(uploadDirectory, "processed");

@@ -71,7 +71,7 @@ public class SftpSchedulerService {
                 for (File file : files) {
                     try {
                         LOG.info("Processing file: {}", file.getName());
-                        boolean sentToSwitch = switchApiClient.sendFileToSwitch(file);
+                        boolean sentToSwitch = switchApiClient.sendFileToSwitch(file, null);
                         
                         if (sentToSwitch) {
                             processedFiles.add(file.getName());

@@ -27,14 +27,6 @@ public class AuthenticationController {
         return ResponseEntity.ok(authenticationService.authenticateCustomer(request));
     }
 
-    @PostMapping("/sftp/validate")
-    public ResponseEntity<Map<String, String>> validateSftpCredentials(@RequestBody LoginRequestDTO request) {
-        CustomerAuthResponseDTO auth = authenticationService.authenticateCustomer(request);
-        Map<String, String> response = new HashMap<>();
-        response.put("ruc", auth.getIdentification());
-        return ResponseEntity.ok(response);
-    }
-
     @PostMapping("/customers/change-password")
     public ResponseEntity<CustomerAuthResponseDTO> changeCustomerPassword(@RequestBody ChangePasswordRequestDTO request) {
         return ResponseEntity.ok(authenticationService.changePassword(request));

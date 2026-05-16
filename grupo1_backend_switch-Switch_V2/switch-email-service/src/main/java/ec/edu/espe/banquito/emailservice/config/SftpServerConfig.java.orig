@@ -56,8 +56,8 @@ public class SftpServerConfig {
         server.setPasswordAuthenticator(passwordAuthenticator());
         server.setSubsystemFactories(Collections.singletonList(new SftpSubsystemFactory.Builder().build()));
         VirtualFileSystemFactory fileSystemFactory = new VirtualFileSystemFactory(uploadPath) {
-
-            public Path getUserHomeDir(org.apache.sshd.server.session.ServerSession session) {
+            @Override
+            protected Path computeRootDir(org.apache.sshd.server.session.ServerSession session) {
                 Path userDir = uploadPath.resolve(session.getUsername());
                 try {
                     Files.createDirectories(userDir);

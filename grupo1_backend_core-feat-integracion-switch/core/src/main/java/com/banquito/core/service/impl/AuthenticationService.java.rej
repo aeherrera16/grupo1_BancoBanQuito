@@ -1,0 +1,23 @@
+--- grupo1_backend_core-feat-integracion-switch/core/src/main/java/com/banquito/core/service/impl/AuthenticationService.java
++++ grupo1_backend_core-feat-integracion-switch/core/src/main/java/com/banquito/core/service/impl/AuthenticationService.java
+@@ -108,18 +109,19 @@
+
+     private CustomerAuthResponseDTO toCustomerAuthResponse(WebCredential credential) {
+         Customer customer = credential.getCustomer();
+         return new CustomerAuthResponseDTO(
+                 credential.getId(),
+                 customer.getId(),
+                 customer.getCustomerType(),
+                 credential.getUsername(),
+                 resolveCustomerName(customer),
+                 customer.getIdentificationType(),
+                 customer.getIdentification(),
+                 customer.getEmail(),
+                 customer.getMobilePhone(),
+                 customer.getAddress(),
+                 credential.getStatus(),
+-                credential.getLastLogin()
++                credential.getLastLogin(),
++                credential.getPasswordChangeRequired()
+         );
+     }

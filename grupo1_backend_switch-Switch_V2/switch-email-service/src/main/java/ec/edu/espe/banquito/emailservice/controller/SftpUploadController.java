@@ -65,7 +65,7 @@ public class SftpUploadController {
 
             LOG.info("Sending file to the main Switch");
             File savedFile = filePath.toFile();
-            boolean sentToSwitch = switchApiClient.sendFileToSwitch(savedFile);
+            boolean sentToSwitch = switchApiClient.sendFileToSwitch(savedFile, null);
 
             Map<String, Object> response = new HashMap<>();
             response.put("fileName", fileName);

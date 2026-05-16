@@ -71,9 +71,6 @@ public class PaymentBatch {
     @Column(name = "rejected_records")
     private Integer rejectedRecords;
 
-    @Column(name = "scheduled_date")
-    private LocalDateTime scheduledDate;
-
     // JPA constructor.
     public PaymentBatch() {
     }
@@ -212,14 +209,6 @@ public class PaymentBatch {
         if (o == null || getClass() != o.getClass()) return false;
         PaymentBatch that = (PaymentBatch) o;
         return Objects.equals(id, that.id);
-    }
-
-    public LocalDateTime getScheduledDate() {
-        return scheduledDate;
-    }
-
-    public void setScheduledDate(LocalDateTime scheduledDate) {
-        this.scheduledDate = scheduledDate;
     }
 
     @Override

@@ -115,10 +115,6 @@ public class PaymentBatchController {
             PaymentBatch batch = parseResult.getBatch();
             batch.setChannel(channel);
             batch.setReceivedAt(dateTimeProvider.now());
-            batch.setScheduledDate(scheduledDate != null ? scheduledDate : java.time.LocalDateTime.now());
-            if (ruc != null && !ruc.isEmpty()) {
-                batch.setRuc(ruc);
-            }
 
             if (ChannelEnum.SFTP.equals(channel)) {
                 batch.setSourceAccountNumber(coreFacadeService.getFavoritePaymentAccountByRuc(batch.getRuc()));
@@ -126,15 +122,10 @@ public class PaymentBatchController {
 
             boolean isBusinessDay = businessDayService.isBusinessDay(dateTimeProvider.today());
             boolean withinIngestionWindow = cutoffTimeService.isWithinIngestionWindow();
-            boolean isFutureDate = batch.getScheduledDate() != null && batch.getScheduledDate().toLocalDate().isAfter(dateTimeProvider.today());
-            boolean shouldEnqueue = !isBusinessDay || !withinIngestionWindow || isFutureDate;
+            boolean shouldEnqueue = !isBusinessDay || !withinIngestionWindow;
 
             if (shouldEnqueue) {
-                if (isFutureDate) {
-                    batch.setStatus(BatchStatusEnum.PROGRAMADO);
-                } else {
-                    batch.setStatus(BatchStatusEnum.ENCOLADO);
-                }
+                batch.setStatus(BatchStatusEnum.ENCOLADO);
                 logger.warn("Batch queued due to cutoff/business-day rule. Cutoff: {}", cutoffTimeService.getCutoffTime());
             } else {
                 batch.setStatus(BatchStatusEnum.RECEIVED);
@@ -163,7 +154,7 @@ public class PaymentBatchController {
             FileValidation validation = fileValidationService.validateBatch(persistedBatch, parseResult.getDetails());
 
             PaymentBatch finalBatch = persistedBatch;
-            if (!BatchStatusEnum.ENCOLADO.equals(batch.getStatus()) && !BatchStatusEnum.PROGRAMADO.equals(batch.getStatus()) && "SUCCESS".equals(validation.getValidationResult())) {
+            if (!BatchStatusEnum.ENCOLADO.equals(batch.getStatus()) && "SUCCESS".equals(validation.getValidationResult())) {
                 finalBatch = paymentBatchProcessingService.process(persistedBatch, parseResult.getDetails());
             }
 

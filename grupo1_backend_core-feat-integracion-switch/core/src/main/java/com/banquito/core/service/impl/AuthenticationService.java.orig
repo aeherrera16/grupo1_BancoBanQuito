@@ -4,7 +4,6 @@ import com.banquito.core.dto.CoreUserAuthResponseDTO;
 import com.banquito.core.dto.CreateCoreUserRequestDTO;
 import com.banquito.core.dto.CreateWebCredentialRequestDTO;
 import com.banquito.core.dto.CustomerAuthResponseDTO;
-import com.banquito.core.dto.ChangePasswordRequestDTO;
 import com.banquito.core.dto.LoginRequestDTO;
 import com.banquito.core.enums.CommonStatusEnum;
 import com.banquito.core.exception.AutenticacionException;
@@ -42,22 +41,6 @@ public class AuthenticationService implements IAuthenticationService {
         }
 
         credential.setLastLogin(LocalDateTime.now());
-        return toCustomerAuthResponse(webCredentialRepository.save(credential));
-    }
-
-    @Override
-    @Transactional
-    public CustomerAuthResponseDTO changePassword(ChangePasswordRequestDTO request) {
-        WebCredential credential = webCredentialRepository.findByUsername(request.getUsername())
-                .orElseThrow(() -> new AutenticacionException("Credenciales invalidas"));
-
-        if (credential.getStatus() != CommonStatusEnum.ACTIVO ||
-                !passwordEncoder.matches(request.getCurrentPassword(), credential.getPasswordHash())) {
-            throw new AutenticacionException("Credenciales invalidas");
-        }
-
-        credential.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
-        credential.setPasswordChangeRequired(false);
         return toCustomerAuthResponse(webCredentialRepository.save(credential));
     }
 

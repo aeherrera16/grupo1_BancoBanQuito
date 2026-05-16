@@ -47,6 +47,18 @@ public class QueuedBatchSchedulerService {
         }
 
         List<PaymentBatch> queued = paymentBatchRepository.findByStatusOrderByReceivedAtAsc(BatchStatusEnum.ENCOLADO);
+        List<PaymentBatch> scheduled = paymentBatchRepository.findByStatusOrderByReceivedAtAsc(BatchStatusEnum.PROGRAMADO);
+
+        List<PaymentBatch> toProcess = new java.util.ArrayList<>(queued);
+
+        for (PaymentBatch s : scheduled) {
+            if (s.getScheduledDate() == null || !s.getScheduledDate().toLocalDate().isAfter(today)) {
+                toProcess.add(s);
+            }
+        }
+
+        queued = toProcess;
+
         if (queued.isEmpty()) {
             LOG.info("No queued batches to process.");
             return;

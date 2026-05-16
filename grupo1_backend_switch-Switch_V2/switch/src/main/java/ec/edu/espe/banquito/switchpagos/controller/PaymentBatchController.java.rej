@@ -1,0 +1,27 @@
+--- grupo1_backend_switch-Switch_V2/switch/src/main/java/ec/edu/espe/banquito/switchpagos/controller/PaymentBatchController.java
++++ grupo1_backend_switch-Switch_V2/switch/src/main/java/ec/edu/espe/banquito/switchpagos/controller/PaymentBatchController.java
+@@ -115,14 +115,22 @@
+             PaymentBatch batch = parseResult.getBatch();
+             batch.setChannel(channel);
+             batch.setReceivedAt(dateTimeProvider.now());
++            batch.setScheduledDate(scheduledDate != null ? scheduledDate : java.time.LocalDateTime.now());
++            if (ruc != null && !ruc.isEmpty()) {
++                batch.setRuc(ruc);
++            }
+
+             if (ChannelEnum.SFTP.equals(channel)) {
+                 batch.setSourceAccountNumber(coreFacadeService.getFavoritePaymentAccountByRuc(batch.getRuc()));
+             }
+
+             boolean isBusinessDay = businessDayService.isBusinessDay(dateTimeProvider.today());
+             boolean withinIngestionWindow = cutoffTimeService.isWithinIngestionWindow();
+-            boolean shouldEnqueue = !isBusinessDay || !withinIngestionWindow;
++            boolean isFutureDate = batch.getScheduledDate() != null && batch.getScheduledDate().toLocalDate().isAfter(dateTimeProvider.today());
++            boolean shouldEnqueue = !isBusinessDay || !withinIngestionWindow || isFutureDate;
+
+             if (shouldEnqueue) {
+-                batch.setStatus(BatchStatusEnum.ENCOLADO);
++                if (isFutureDate) {
++                    batch.setStatus(BatchStatusEnum.PROGRAMADO);
++                } else {
++                    batch.setStatus(BatchStatusEnum.ENCOLADO);
