@@ -32,7 +32,7 @@ async function download(path: string, fileName: string) {
 
 async function checkServices() {
   try {
-    await api('http://localhost:8080/health');
+    await api('/core/health');
     return { coreUserId: 1, coreStatus: 'Banca disponible', switchStatus: null };
   } catch (error) {
     return { coreUserId: 1, coreStatus: 'Banca no disponible', switchStatus: null };
@@ -49,7 +49,7 @@ async function checkSwitchService() {
 }
 
 async function login(username: string, password: string) {
-  return api('http://localhost:8080/core/v1/auth/customers/login', {
+  return api('/core/v1/auth/customers/login', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ username, password }),
