@@ -36,6 +36,5 @@ public interface IAccountService {
 
     AccountResponseDTO getFavoriteAccount(Integer customerId);
 
-
     AccountResponseDTO updateFavoriteAccount(String accountNumber, Integer customerId);
 }

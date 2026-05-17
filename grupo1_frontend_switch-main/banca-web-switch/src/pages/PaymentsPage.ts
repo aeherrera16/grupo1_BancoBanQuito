@@ -1,6 +1,6 @@
 import { loadBatches as loadBatchesApi, loadCharges as loadChargesApi, loadCompanyAccount as loadCompanyAccountApi, uploadCsv, processBatch } from '../services/api';
 import { getState, setState } from '../hooks/useState';
-import { formatMoney, statusClass, escapeHtml, setMessage, compactAccount, formatDate } from '../utils/formatters';
+import { formatMoney, statusClass, escapeHtml, setMessage, compactAccount, formatDate } from '../helpers/formatters';
 import { syncReportBatchOptions } from './ReportsPage';
 
 const $ = (selector: string): any => document.querySelector(selector);
@@ -25,7 +25,6 @@ async function loadBatches() {
 
   renderBatches();
 
-  // Scroll to the batches table so the user sees the result
   const table = document.getElementById('batchesTable');
   if (table) {
     table.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -94,7 +93,7 @@ function renderBatches() {
         <td>${escapeHtml(batch.headerTotalRecords || 0)}</td>
         <td>${formatMoney(batch.headerTotalAmount)}</td>
         <td>${formatDate(batch.receivedAt)}</td>
-        
+
       </tr>
     `)
     .join('');

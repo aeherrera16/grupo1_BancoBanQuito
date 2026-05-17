@@ -81,7 +81,7 @@ public class AuthenticationService implements IAuthenticationService {
     @Override
     @Transactional
     public void createInitialWebCredential(Customer customer) {
-        // Proper guard: return from the METHOD (not just a lambda) if credential exists
+
         if (webCredentialRepository.findByCustomer_Id(customer.getId()).isPresent()) {
             log.info("Cliente {} ya tiene credenciales web — sin cambios", customer.getIdentification());
             return;

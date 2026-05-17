@@ -61,7 +61,6 @@ public class PaymentBatch {
     @Column(name = "header_total_records")
     private Integer headerTotalRecords;
 
-    // Use BigDecimal for money.
     @Column(name = "header_total_amount", precision = 18, scale = 2)
     private BigDecimal headerTotalAmount;
 
@@ -74,16 +73,12 @@ public class PaymentBatch {
     @Column(name = "scheduled_date")
     private LocalDateTime scheduledDate;
 
-    // JPA constructor.
     public PaymentBatch() {
     }
 
-    // PK constructor.
     public PaymentBatch(Integer id) {
         this.id = id;
     }
-
-    // Accessors.
 
     public Integer getId() {
         return id;
@@ -205,7 +200,6 @@ public class PaymentBatch {
         this.rejectedRecords = rejectedRecords;
     }
 
-    // Equality by PK.
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -227,7 +221,6 @@ public class PaymentBatch {
         return Objects.hashCode(id);
     }
 
-    // Debug output.
     @Override
     public String toString() {
         return "PaymentBatch{" +

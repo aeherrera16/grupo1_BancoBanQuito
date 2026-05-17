@@ -9,6 +9,5 @@ import java.util.List;
 @Repository
 public interface BatchStatusLogRepository extends JpaRepository<BatchStatusLog, Integer> {
 
-    // Returns batch status history.
     List<BatchStatusLog> findByPaymentBatchIdOrderByChangedAtAsc(Integer paymentBatchId);
 }

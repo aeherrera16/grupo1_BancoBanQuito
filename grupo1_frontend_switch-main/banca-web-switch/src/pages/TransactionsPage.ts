@@ -1,6 +1,6 @@
 import { loadTransactions as loadTransactionsApi } from '../services/api';
 import { getState, setState } from '../hooks/useState';
-import { formatMoney, statusClass, movementClass, escapeHtml, formatDate } from '../utils/formatters';
+import { formatMoney, statusClass, movementClass, escapeHtml, formatDate } from '../helpers/formatters';
 
 const $ = (selector: string): any => document.querySelector(selector);
 

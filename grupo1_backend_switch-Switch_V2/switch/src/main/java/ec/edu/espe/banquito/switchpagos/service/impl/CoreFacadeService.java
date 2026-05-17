@@ -36,7 +36,6 @@ public class CoreFacadeService {
         return Boolean.TRUE.equals(response.getBody()) ? Boolean.TRUE : Boolean.FALSE;
     }
 
-    // RF-07: send service-charge settlement to Core.
     public Boolean chargeCommission(String companyAccount, BigDecimal subtotal, BigDecimal vat, BigDecimal total, String uuid) {
         logger.info("Charging commission to Core - Account: {}, Subtotal: {}, VAT: {}, Total: {}, UUID: {}",
                 companyAccount, subtotal, vat, total, uuid);

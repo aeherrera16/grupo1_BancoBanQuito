@@ -1,4 +1,4 @@
-package ec.edu.espe.banquito.switchpagos.util;
+package ec.edu.espe.banquito.switchpagos.provider;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -9,9 +9,6 @@ import java.time.ZonedDateTime;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-/**
- * Provides real or fixed Switch time.
- */
 @Component
 public class DateTimeProvider {
 
@@ -24,9 +21,6 @@ public class DateTimeProvider {
     @Value("${app.time.zone:America/Guayaquil}")
     private String timeZone;
 
-    /**
-     * Returns the current date and time.
-     */
     public LocalDateTime now() {
         if (isFixedTimeEnabled()) {
             return LocalDateTime.parse(fixedDateTime);
@@ -35,16 +29,10 @@ public class DateTimeProvider {
         return ZonedDateTime.now(ZoneId.of(timeZone)).toLocalDateTime();
     }
 
-    /**
-     * Returns the current date.
-     */
     public LocalDate today() {
         return now().toLocalDate();
     }
 
-    /**
-     * Returns the current time.
-     */
     public LocalTime currentTime() {
         return now().toLocalTime();
     }

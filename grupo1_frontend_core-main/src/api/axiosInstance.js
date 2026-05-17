@@ -19,7 +19,7 @@ instance.interceptors.request.use((config) => {
       }
     }
   } catch {
-    // ignore
+
   }
   return config;
 });

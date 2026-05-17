@@ -9,17 +9,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-/**
- * Maps exceptions to HTTP responses.
- */
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
     private static final Logger logger = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
-    /**
-     * Handles not found errors.
-     */
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<?> handleResourceNotFound(ResourceNotFoundException e) {
         logger.warn("ResourceNotFoundException: {}", e.getMessage());
@@ -30,9 +24,6 @@ public class GlobalExceptionHandler {
                 ));
     }
 
-    /**
-     * Handles invalid state errors.
-     */
     @ExceptionHandler(IllegalStateException.class)
     public ResponseEntity<?> handleIllegalState(IllegalStateException e) {
         logger.warn("IllegalStateException: {}", e.getMessage());
@@ -43,9 +34,6 @@ public class GlobalExceptionHandler {
                 ));
     }
 
-    /**
-     * Handles invalid request errors.
-     */
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<?> handleIllegalArgument(IllegalArgumentException e) {
         logger.warn("IllegalArgumentException: {}", e.getMessage());
@@ -56,9 +44,6 @@ public class GlobalExceptionHandler {
                 ));
     }
 
-    /**
-     * Handles unexpected errors.
-     */
     @ExceptionHandler(Exception.class)
     public ResponseEntity<?> handleGenericException(Exception e) {
         logger.error("Unexpected exception: {}", e.getMessage(), e);

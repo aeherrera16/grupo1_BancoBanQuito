@@ -1,6 +1,6 @@
 import { login as loginApi, changePassword as changePasswordApi } from '../services/api';
 import { getState, setState, saveSession } from '../hooks/useState';
-import { setMessage, escapeHtml, formatDate } from '../utils/formatters';
+import { setMessage, escapeHtml, formatDate } from '../helpers/formatters';
 import { loadAccounts } from './AccountsPage';
 
 const $ = (selector: string): any => document.querySelector(selector);
@@ -42,10 +42,10 @@ async function login(event: SubmitEvent) {
 function showPasswordChange(username: string, currentPassword: string) {
   $('[data-view="login"]').classList.add('is-hidden');
   $('[data-view="password-change"]').classList.remove('is-hidden');
-  
+
   const form = $('#passwordChangeForm');
   $('#currentPassword').value = currentPassword;
-  
+
   form.onsubmit = async (event: SubmitEvent) => {
     event.preventDefault();
     const message = $('#passwordChangeMessage');
@@ -65,11 +65,11 @@ function showPasswordChange(username: string, currentPassword: string) {
     setMessage(message, 'Actualizando contraseña...');
     try {
       const session = await changePasswordApi(username, currentPassword, newPassword);
-      
+
       const realType = session.customerType;
       setState({ session, customerType: realType });
       saveSession();
-      
+
       setMessage(message, 'Contraseña actualizada con éxito.', 'success');
       $('[data-view="password-change"]').classList.add('is-hidden');
       showDashboard();

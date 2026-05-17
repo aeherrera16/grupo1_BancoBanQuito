@@ -21,12 +21,10 @@ public class FileValidation {
     @Column(name = "id", nullable = false)
     private Integer id;
 
-    // Child-to-batch relation.
     @ManyToOne
     @JoinColumn(name = "payment_batch_id", referencedColumnName = "id", nullable = false)
     private PaymentBatch paymentBatch;
 
-    // Nullable validation flags.
     @Column(name = "totals_match")
     private Boolean totalsMatch;
 
@@ -45,16 +43,12 @@ public class FileValidation {
     @Column(name = "validated_at")
     private LocalDateTime validatedAt;
 
-    // JPA constructor.
     public FileValidation() {
     }
 
-    // PK constructor.
     public FileValidation(Integer id) {
         this.id = id;
     }
-
-    // Accessors.
 
     public Integer getId() {
         return id;
@@ -120,7 +114,6 @@ public class FileValidation {
         this.validatedAt = validatedAt;
     }
 
-    // Equality by PK.
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -134,7 +127,6 @@ public class FileValidation {
         return Objects.hashCode(id);
     }
 
-    // Debug output.
     @Override
     public String toString() {
         return "FileValidation{" +

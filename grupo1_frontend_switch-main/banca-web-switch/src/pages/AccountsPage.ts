@@ -1,6 +1,6 @@
 import { loadAccounts as loadAccountsApi } from '../services/api';
 import { getState, setState } from '../hooks/useState';
-import { formatMoney, statusClass, escapeHtml, setMessage } from '../utils/formatters';
+import { formatMoney, statusClass, escapeHtml, setMessage } from '../helpers/formatters';
 
 const $ = (selector: string): any => document.querySelector(selector);
 

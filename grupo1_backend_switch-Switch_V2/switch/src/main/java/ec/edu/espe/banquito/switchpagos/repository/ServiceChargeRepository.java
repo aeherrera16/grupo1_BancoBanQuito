@@ -9,6 +9,5 @@ import java.util.Optional;
 @Repository
 public interface ServiceChargeRepository extends JpaRepository<ServiceCharge, Integer> {
 
-    // Returns the batch charge.
     Optional<ServiceCharge> findByPaymentBatchId(Integer paymentBatchId);
 }

@@ -34,5 +34,4 @@ public interface ServiceFeeRuleRepository extends JpaRepository<ServiceFeeRule, 
             @Param("transactions") Integer transactions
     );
 
-
 }

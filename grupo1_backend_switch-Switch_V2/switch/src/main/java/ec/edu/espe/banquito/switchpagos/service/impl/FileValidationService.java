@@ -19,7 +19,7 @@ import ec.edu.espe.banquito.switchpagos.model.PaymentBatch;
 import ec.edu.espe.banquito.switchpagos.model.PaymentDetail;
 import ec.edu.espe.banquito.switchpagos.repository.FileValidationRepository;
 import ec.edu.espe.banquito.switchpagos.repository.PaymentBatchRepository;
-import ec.edu.espe.banquito.switchpagos.util.DateTimeProvider;
+import ec.edu.espe.banquito.switchpagos.provider.DateTimeProvider;
 
 @Service
 public class FileValidationService {
@@ -62,7 +62,6 @@ public class FileValidationService {
         return fileValidationRepository.save(validation);
     }
 
-    // RF-02: early file rejection before Core processing.
     public void validateEarlyRejection(CsvParseResult parseResult) {
         PaymentBatch batch = parseResult.getBatch();
         List<PaymentDetail> details = parseResult.getDetails();

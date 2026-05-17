@@ -95,7 +95,7 @@ public class BillingService {
     }
 
     @Transactional
-    // RF-06/RF-07: calculate service charge and send settlement to Core.
+
     public void generateCharge(PaymentBatch batch, List<PaymentDetail> details) {
         logger.info("Starting charge generation. Batch ID: {}, File: {}", batch.getId(), batch.getFileName());
 
@@ -127,8 +127,7 @@ public class BillingService {
                 .map(PaymentDetail::getAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add)
                 .setScale(2, RoundingMode.HALF_UP);
-        // RF-06: VAT remains reported at 15%, but it is not charged yet.
-        // Future implementation: subtotal.multiply(IVA_RATE).
+
         BigDecimal vatAmount = BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP);
         BigDecimal total = dispersedAmount.add(subtotal).setScale(2, RoundingMode.HALF_UP);
 

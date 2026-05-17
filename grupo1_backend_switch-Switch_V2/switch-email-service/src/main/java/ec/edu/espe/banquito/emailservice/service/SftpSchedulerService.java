@@ -17,9 +17,6 @@ import org.springframework.stereotype.Service;
 
 import ec.edu.espe.banquito.emailservice.client.SwitchApiClient;
 
-/**
- * Scheduler service for SFTP processing
- */
 @Service
 public class SftpSchedulerService {
 
@@ -41,9 +38,6 @@ public class SftpSchedulerService {
         this.switchApiClient = switchApiClient;
     }
 
-    /**
-     * Processes SFTP files on a schedule
-     */
     @Scheduled(fixedRateString = "${sftp.scheduler.interval:60000}")
     public void processSftpFiles() {
         if (!schedulerEnabled) {
@@ -101,16 +95,10 @@ public class SftpSchedulerService {
         }
     }
 
-    /**
-     * Checks SFTP integration health
-     */
     public boolean isHealthy() {
         return schedulerEnabled && switchApiClient.isSwitchAvailable();
     }
 
-    /**
-     * Returns scheduler information
-     */
     public String getSchedulerInfo() {
         return String.format("SftpScheduler[enabled=%s, interval=%s, directory=%s]",
                 schedulerEnabled, schedulerInterval, localDirectory);

@@ -24,6 +24,16 @@ export default defineConfig({
           });
         },
       },
+      '/api/buzon': {
+        target: 'http://127.0.0.1:8082',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api\/buzon/, ''),
+        configure: (proxy) => {
+          proxy.on('proxyReq', (proxyReq) => {
+            proxyReq.removeHeader('origin');
+          });
+        },
+      },
     },
   },
   build: {

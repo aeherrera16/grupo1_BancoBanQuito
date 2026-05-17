@@ -74,7 +74,6 @@ function bindEvents() {
     $('#fileName').textContent = event.target.files[0]?.name || 'Seleccionar CSV';
   });
 
-  // SFTP mailbox page events
   $('#sftpUploadForm').addEventListener('submit', uploadScheduledCsvHandler);
   $('#loadSftpBatchesButton').addEventListener('click', loadSftpBatches);
   $('#sftpCsvFile').addEventListener('change', (event: any) => {

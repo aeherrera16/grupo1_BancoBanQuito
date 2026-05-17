@@ -24,11 +24,11 @@ public class DatabaseConfig {
                                  @Value("${spring.datasource.username}") String username,
                                  @Value("${spring.datasource.password}") String password,
                                  @Value("${app.db.auto-create:false}") boolean autoCreate) {
-        
+
         if (autoCreate) {
             createDatabaseIfNotExists(url, username, password);
         }
-        
+
         return DataSourceBuilder.create()
                 .url(url)
                 .username(username)

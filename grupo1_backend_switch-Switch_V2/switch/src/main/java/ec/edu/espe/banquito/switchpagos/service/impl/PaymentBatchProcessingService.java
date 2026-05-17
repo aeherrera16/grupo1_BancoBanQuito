@@ -62,7 +62,7 @@ public class PaymentBatchProcessingService implements IPaymentBatchProcessingSer
 
     @Override
     @Transactional
-    // RF-03/RF-04: process lines sequentially and continue on line errors.
+
     public PaymentBatch process(PaymentBatch batch, List<PaymentDetail> details) {
         logger.info("Processing batch {} with {} details", batch.getId(), details.size());
 
@@ -88,7 +88,7 @@ public class PaymentBatchProcessingService implements IPaymentBatchProcessingSer
                 }
                 paymentDetailRepository.save(detail);
             }
-            
+
             billingService.generateCharge(batch, details);
 
             recordBatchStatusChange(batch, batch.getStatus(), BatchStatusEnum.PROCESSED);
@@ -130,7 +130,6 @@ public class PaymentBatchProcessingService implements IPaymentBatchProcessingSer
         detailStatusLogRepository.save(log);
     }
 
-    // RF-03: validate line limit and execute transfer in Core.
     private void processPaymentDetail(PaymentDetail detail) {
         if (detail.getAmount() == null || detail.getAmount().compareTo(BigDecimal.ZERO) <= 0) {
             throw new IllegalArgumentException("Invalid amount");
@@ -167,7 +166,6 @@ public class PaymentBatchProcessingService implements IPaymentBatchProcessingSer
         logger.info("Transfer completed successfully for detail {}", detail.getId());
     }
 
-    // RF-05: send beneficiary notification immediately after a successful line.
     private void notifySuccessfulPayment(PaymentBatch batch, PaymentDetail detail) {
         detail.setNotificationStatus("PENDING");
 

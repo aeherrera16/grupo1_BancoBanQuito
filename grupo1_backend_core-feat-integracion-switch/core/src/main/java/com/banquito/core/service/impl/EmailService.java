@@ -33,20 +33,20 @@ public class EmailService implements IEmailService {
             helper.setFrom(mailFrom, mailFromName);
             helper.setTo(to);
             helper.setSubject("Aviso de Seguridad: Cambio de Estado en su Cuenta BanQuito");
-            
+
             String maskedAccount = "***" + accountNumber.substring(Math.max(0, accountNumber.length() - 4));
-            
+
             String text = "Estimado cliente,\n\n" +
-                    "Le informamos que por motivos de seguridad, su cuenta terminada en " + maskedAccount + 
+                    "Le informamos que por motivos de seguridad, su cuenta terminada en " + maskedAccount +
                     " ha cambiado al estado: " + newStatus + ".\n\n" +
                     "Si usted no solicitó ni reconoce esta acción, por favor comuníquese de inmediato con nuestro soporte telefónico.\n\n" +
                     "Atentamente,\nBanco BanQuito S.A.";
 
-            helper.setText(text, false); 
+            helper.setText(text, false);
 
             mailSender.send(message);
             log.info("Correo de notificación de estado ({}) enviado exitosamente a {} vía Brevo", newStatus, to);
-            
+
         } catch (Exception e) {
             log.error("Error al intentar enviar el correo vía Brevo a {}: {}", to, e.getMessage());
         }

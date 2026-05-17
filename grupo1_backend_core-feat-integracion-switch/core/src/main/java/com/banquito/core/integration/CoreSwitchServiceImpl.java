@@ -186,7 +186,6 @@ public class CoreSwitchServiceImpl implements CoreSwitchService {
             creditInstitutionalAccount(MASS_SERVICE_INCOME_ACCOUNT, commissionSubtotal);
             creditInstitutionalAccount(VAT_PAYABLE_ACCOUNT, vatAmount);
 
-
             return TransferResultDTO.ok("Commission settled successfully", uuid);
         } catch (Exception e) {
             return TransferResultDTO.rejected("COMMISSION_ERROR", e.getMessage(), uuid);

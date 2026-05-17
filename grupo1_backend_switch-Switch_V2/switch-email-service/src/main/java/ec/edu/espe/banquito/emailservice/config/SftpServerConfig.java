@@ -19,9 +19,6 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-/**
- * Embedded SFTP server configuration using Apache SSHD.
- */
 @Configuration
 public class SftpServerConfig {
 
@@ -38,7 +35,6 @@ public class SftpServerConfig {
 
     @Value("${switch.api.base-url:http://localhost:8081}")
     private String coreApiBaseUrl;
-
 
     private static final java.util.concurrent.ConcurrentHashMap<String, String> USERNAME_TO_RUC = new java.util.concurrent.ConcurrentHashMap<>();
 

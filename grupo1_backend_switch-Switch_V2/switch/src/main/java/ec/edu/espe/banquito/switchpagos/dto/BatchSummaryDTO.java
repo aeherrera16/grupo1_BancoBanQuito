@@ -23,8 +23,6 @@ public class BatchSummaryDTO {
     public BatchSummaryDTO() {
     }
 
-    // Accessors.
-
     public Integer getBatchId() {
         return batchId;
     }

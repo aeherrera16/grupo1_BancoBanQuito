@@ -18,9 +18,6 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 
-/**
- * Client for communicating with the main Switch API.
- */
 @Component
 public class SwitchApiClient {
 
@@ -43,9 +40,6 @@ public class SwitchApiClient {
         this.restTemplate = new RestTemplate(requestFactory);
     }
 
-    /**
-     * Sends a CSV file to the main switch through the REST API
-     */
     public boolean sendFileToSwitch(File file, String ruc) {
         try {
             String url = baseUrl + endpoint;
@@ -53,7 +47,7 @@ public class SwitchApiClient {
             LOG.info("Sending file {} to switch: {}", file.getName(), url);
 
             MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
-            
+
             byte[] fileBytes = Files.readAllBytes(file.toPath());
             Resource fileResource = new ByteArrayResource(fileBytes) {
                 @Override
@@ -61,19 +55,19 @@ public class SwitchApiClient {
                     return file.getName();
                 }
             };
-            
+
             body.add("file", fileResource);
-            
+
             if (ruc != null && !ruc.isEmpty()) {
                 body.add("ruc", ruc);
             }
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.MULTIPART_FORM_DATA);
-            
+
             HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
-            
+
             ResponseEntity<String> response = restTemplate.postForEntity(url, requestEntity, String.class);
-            
+
             if (response.getStatusCode().is2xxSuccessful()) {
                 LOG.info("Connected to the main Switch successfully");
                 LOG.info("File {} sent successfully. Response: {}", file.getName(), response.getBody());
@@ -82,7 +76,7 @@ public class SwitchApiClient {
                 LOG.error("Error sending file to the Switch. Status: {}", response.getStatusCode());
                 return false;
             }
-            
+
         } catch (IOException e) {
             LOG.error("Error reading file {}: {}", file.getName(), e.getMessage());
             return false;
@@ -92,9 +86,6 @@ public class SwitchApiClient {
         }
     }
 
-    /**
-     * Checks whether the switch is available
-     */
     public boolean isSwitchAvailable() {
         try {
             String url = baseUrl + "/switch/v1/payment-batch";

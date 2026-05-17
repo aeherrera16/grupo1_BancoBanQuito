@@ -1,3 +1,5 @@
+import { getState } from '../hooks/useState';
+
 async function api(path: string, options: any = {}) {
   const response = await fetch(path, options);
   const contentType = response.headers.get('content-type') || '';
@@ -105,13 +107,13 @@ async function uploadScheduledCsv(file: File, scheduledDate: string) {
   const form = new FormData();
   form.append('file', file);
   form.append('channel', 'SFTP');
-  
+
   const state = getState();
   const session = state.session;
   if (session && session.identification) {
     form.append('ruc', session.identification);
   }
-  
+
   if (scheduledDate) {
     form.append('scheduledDate', scheduledDate + ':00');
   }

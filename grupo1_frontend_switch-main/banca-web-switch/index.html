@@ -250,22 +250,25 @@
           <section class="section-panel is-hidden company-only" data-section-panel="sftp">
             <div class="business-hero" style="background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);">
               <div>
-                <p class="eyebrow">Buzón SFTP y Programación Automática</p>
-                <h2>Servidor SFTP y Automatización</h2>
-                <p>Configura tu cliente externo (como Cyberduck o FileZilla) para subir archivos de pagos masivos directamente al buzón o prográmalos desde esta pestaña para su efectivización automática en fechas futuras.</p>
+                <p class="eyebrow">Buzón SFTP — Pagos masivos automáticos</p>
+                <h2>Programar procesamiento de lote</h2>
+                <p>Sube tu archivo CSV al servidor SFTP o prográmalo aquí directamente. El sistema lo procesará automáticamente en la fecha y hora que elijas.</p>
               </div>
               <div class="hero-balance">
-                <span>SFTP Servidor</span>
-                <strong>localhost:2222</strong>
-                <small>Protocolo de Seguridad SSH</small>
+                <span>Servidor SFTP</span>
+                <strong>136.115.142.160:2222</strong>
+                <small>Protocolo SSH seguro</small>
               </div>
             </div>
 
+            <!-- Formulario de programación -->
             <div class="lookup-panel" style="margin-bottom: 2rem; padding: 2rem; border-radius: var(--radius-lg); background: var(--bg-surface); border: 1px solid var(--border-color);">
               <form id="sftpUploadForm" style="display: flex; flex-direction: column; gap: 1.5rem;">
                 <div>
-                  <h3 style="margin: 0; font-size: 1.25rem; font-weight: 600;">Programar Lote SFTP Automático</h3>
-                  <p class="text-muted" style="margin: 0.25rem 0 0 0; font-size: 0.875rem;">Sube tu archivo de pagos masivos y selecciona la fecha exacta de efectivización para que se procese automáticamente.</p>
+                  <h3 style="margin: 0; font-size: 1.1rem; font-weight: 600;">Programar lote para efectivización automática</h3>
+                  <p class="text-muted" style="margin: 0.25rem 0 0 0; font-size: 0.875rem;">
+                    Selecciona el archivo CSV y la fecha exacta. El sistema lo ejecutará automáticamente cuando llegue el momento.
+                  </p>
                 </div>
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem;">
                   <label class="file-picker" style="margin: 0;">
@@ -277,15 +280,16 @@
                     <input id="sftpScheduledDate" type="datetime-local" required style="width: 100%;" />
                   </label>
                 </div>
-                <button class="primary-button fit-button" type="submit" style="align-self: flex-start;">Programar ejecución</button>
+                <button class="primary-button fit-button" type="submit" style="align-self: flex-start;">Programar ejecución automática</button>
                 <p id="sftpUploadMessage" class="message" role="status" style="margin: 0;"></p>
               </form>
             </div>
 
+            <!-- Tabla de archivos en espera / procesados del buzón -->
             <div class="table-panel">
               <div class="panel-heading">
-                <h2>Lotes Programados y Procesados del Buzón</h2>
-                <button id="loadSftpBatchesButton" class="secondary-button" type="button">⟳ Actualizar Buzón</button>
+                <h2>Archivos en el buzón</h2>
+                <button id="loadSftpBatchesButton" class="secondary-button" type="button">⟳ Actualizar</button>
               </div>
               <div id="sftpBatchesTable" class="table-wrap"></div>
             </div>

@@ -116,7 +116,6 @@ public class AccountService implements IAccountService {
                     });
         }
 
-
         LocalDateTime now = LocalDateTime.now();
 
         Account account = new Account();
@@ -449,7 +448,7 @@ public class AccountService implements IAccountService {
         java.util.Random rnd = new java.util.Random();
 
         do {
-            // Account number: branchCode (4 digits) + 7 random digits = fully numeric
+
             accountNumber = branch.getBranchCode()
                     + String.format("%07d", rnd.nextInt(9_000_000) + 1_000_000);
         } while (accountRepository.findByAccountNumber(accountNumber).isPresent());

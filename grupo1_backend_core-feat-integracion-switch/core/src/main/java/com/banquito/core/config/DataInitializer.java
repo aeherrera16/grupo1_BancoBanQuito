@@ -20,7 +20,6 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
-
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -59,10 +58,6 @@ public class DataInitializer implements CommandLineRunner {
         log.info("Datos de prueba cargados correctamente");
     }
 
-    /**
-     * Crea un conjunto de clientes de demostración con datos realistas para el manual de uso.
-     * Solo se ejecuta si los clientes demo aún no existen (verificado por cédula/RUC).
-     */
     private void initDemoData() {
         CustomerSubtype personal = customerSubtypeRepository.findAll().stream()
                 .filter(s -> "PERSONAL".equals(s.getName()))
@@ -72,7 +67,6 @@ public class DataInitializer implements CommandLineRunner {
                 .filter(s -> "EMPRESA_PAGOS_MASIVOS".equals(s.getName()))
                 .findFirst().orElseThrow();
 
-        // Personas naturales de demostración
         Object[][] personas = {
             {"1750285577", "Anahy",     "Herrera Morales",  LocalDate.of(2002, 9, 8),  "anahyherrera09082002@gmail.com",      "0992832595", "Av. Simon Bolivar"},
             {"1724356789", "Carlos",    "Mendoza Rios",     LocalDate.of(1990, 3,15),  "carlos.mendoza@banquito.fin.ec",     "0987123456", "Av. 10 de Agosto N22-54"},
@@ -106,14 +100,12 @@ public class DataInitializer implements CommandLineRunner {
             }
         }
 
-        // Empresas (personas jurídicas) de demostración
         Object[][] empresas = {
             {"1757158215001", "TechSolutions Ecuador S.A.",       "2015-03-12", "info@techsolutions.ec",       "022345678", "Av. Republica del Salvador N34-183"},
             {"1791234567001", "Importadora Andina Cía. Ltda.",    "2010-07-08", "contacto@importandina.ec",    "024567890", "Av. De la Prensa N47-321"},
             {"1791765432001", "Distribuidora El Comercio S.A.",   "2008-11-20", "gerencia@distcomercio.ec",   "022876543", "Panamericana Norte km 5"},
         };
 
-        // Usa primer cliente natural como representante legal de demo
         Customer repLegal = customerRepository
                 .findByIdentificationTypeAndIdentification("CEDULA", "1750285577")
                 .orElse(null);

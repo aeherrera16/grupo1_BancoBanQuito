@@ -27,9 +27,6 @@ import ec.edu.espe.banquito.switchpagos.model.ServiceCharge;
 import ec.edu.espe.banquito.switchpagos.repository.PaymentBatchRepository;
 import ec.edu.espe.banquito.switchpagos.service.impl.BillingService;
 
-/**
- * RF-06: Billing and commission endpoints.
- */
 @RestController
 @CrossOrigin(origins = "*")
 @RequestMapping("/switch/v1/billing")
@@ -47,9 +44,6 @@ public class BillingController {
         this.paymentBatchRepository = paymentBatchRepository;
     }
 
-    /**
-     * Returns the batch billing summary.
-     */
     @GetMapping("/batches/{batchId}/summary")
     public ResponseEntity<?> obtenerResumenBatch(@PathVariable Integer batchId) {
         logger.info("GET /switch/v1/billing/batches/{}/summary", batchId);
@@ -71,9 +65,6 @@ public class BillingController {
         }
     }
 
-    /**
-     * Returns batch payment details.
-     */
     @GetMapping("/batches/{batchId}/detail")
     public ResponseEntity<?> obtenerDetallesBatch(@PathVariable Integer batchId) {
         logger.info("GET /switch/v1/billing/batches/{}/detail", batchId);
@@ -100,9 +91,6 @@ public class BillingController {
         }
     }
 
-    /**
-     * Returns the batch service charge.
-     */
     @GetMapping("/batches/{batchId}/charge")
     public ResponseEntity<?> obtenerCargoServicio(@PathVariable Integer batchId) {
         logger.info("GET /switch/v1/billing/batches/{}/charge", batchId);
@@ -210,25 +198,20 @@ public class BillingController {
         }
     }
 
-    /**
-     * Test endpoint for charge generation.
-     */
     @PostMapping("/test/{batchId}")
     public ResponseEntity<?> forzarGenerarCobro(@PathVariable Integer batchId) {
         logger.warn("POST /switch/v1/billing/test/{} - TEST OPERATION", batchId);
 
         try {
-            // Load batch.
+
             PaymentBatch batch = paymentBatchRepository.findById(batchId)
                     .orElseThrow(() -> new ResourceNotFoundException("Lote no encontrado: " + batchId));
 
             logger.info("Batch found: {}", batch.getFileName());
 
-            // Load details.
             List<PaymentDetail> detalles = billingService.getBatchDetails(batchId);
             logger.info("Retrieved {} details for processing", detalles.size());
 
-            // Generate charge.
             logger.info("Running charge generation for batch {}", batchId);
             billingService.generateCharge(batch, detalles);
 
@@ -257,9 +240,6 @@ public class BillingController {
         }
     }
 
-    /**
-     * Returns all service charges.
-     */
     @GetMapping("/charges")
     public ResponseEntity<?> obtenerTodosCargos() {
         logger.info("GET /switch/v1/billing/charges");
@@ -280,9 +260,6 @@ public class BillingController {
         }
     }
 
-    /**
-     * Returns the company account by parameter code.
-     */
     @GetMapping("/empresa-account/{paramCode}")
     public ResponseEntity<?> obtenerCuentaEmpresa(@PathVariable String paramCode) {
         logger.info("GET /switch/v1/billing/empresa-account/{}", paramCode);
@@ -308,9 +285,6 @@ public class BillingController {
         }
     }
 
-    /**
-     * Returns the default company account.
-     */
     @GetMapping("/empresa-account")
     public ResponseEntity<?> obtenerCuentaEmpresaDefault() {
         logger.info("GET /switch/v1/billing/empresa-account (default)");
@@ -336,9 +310,6 @@ public class BillingController {
         }
     }
 
-    /**
-     * Downloads the settlement receipt.
-     */
     @GetMapping("/batches/{batchId}/download/comprobante")
     public ResponseEntity<?> descargarComprobanteLiquidacion(@PathVariable Integer batchId) {
         logger.info("GET /switch/v1/billing/batches/{}/download/comprobante", batchId);
@@ -415,9 +386,6 @@ public class BillingController {
         }
     }
 
-    /**
-     * Downloads the rejection report.
-     */
     @GetMapping("/batches/{batchId}/download/novedades")
     public ResponseEntity<?> descargarReporteNovedadesDetallado(@PathVariable Integer batchId) {
         logger.info("GET /switch/v1/billing/batches/{}/download/novedades", batchId);
@@ -481,4 +449,3 @@ public class BillingController {
         }
     }
 }
-

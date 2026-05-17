@@ -2,7 +2,6 @@ package com.banquito.core.controller;
 
 import com.banquito.core.dto.CoreUserAuthResponseDTO;
 import com.banquito.core.dto.CustomerAuthResponseDTO;
-import com.banquito.core.dto.CustomerResponseDTO;
 import com.banquito.core.dto.LoginRequestDTO;
 import com.banquito.core.dto.ChangePasswordRequestDTO;
 import com.banquito.core.service.IAuthenticationService;
@@ -30,6 +29,11 @@ public class AuthenticationController {
     @PostMapping("/sftp/validate")
     public ResponseEntity<Map<String, String>> validateSftpCredentials(@RequestBody LoginRequestDTO request) {
         CustomerAuthResponseDTO auth = authenticationService.authenticateCustomer(request);
+
+        if (auth.getCustomerType() == null || !com.banquito.core.enums.CustomerTypeEnum.JURIDICO.equals(auth.getCustomerType())) {
+            return ResponseEntity.status(403).body(Map.of("error", "Solo clientes empresariales pueden acceder al SFTP"));
+        }
+
         Map<String, String> response = new HashMap<>();
         response.put("ruc", auth.getIdentification());
         return ResponseEntity.ok(response);

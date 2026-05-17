@@ -66,7 +66,6 @@ public class SettlementServiceImpl implements ISettlementService {
                                 BigDecimal.valueOf(successfulTransactions)
                         );
 
-        // RF-06: VAT remains reported at 15%, but it is not charged yet.
         BigDecimal vatAmount = BigDecimal.ZERO;
 
         BigDecimal totalCharge = dispersedAmount.add(commissionSubtotal);
@@ -82,8 +81,6 @@ public class SettlementServiceImpl implements ISettlementService {
         dto.setVatAmount(vatAmount);
 
         dto.setTotalCharge(totalCharge);
-
-        // RF-06: Extra settlement fields.
 
         dto.setUnitFee(rule.getUnitFee());
 

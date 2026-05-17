@@ -33,7 +33,7 @@ import ec.edu.espe.banquito.switchpagos.service.impl.FileValidationService;
 import ec.edu.espe.banquito.switchpagos.service.impl.NoveltyReportServiceImpl;
 import ec.edu.espe.banquito.switchpagos.service.impl.PaymentBatchProcessingService;
 import ec.edu.espe.banquito.switchpagos.service.impl.ReceiptGeneratorServiceImpl;
-import ec.edu.espe.banquito.switchpagos.util.DateTimeProvider;
+import ec.edu.espe.banquito.switchpagos.provider.DateTimeProvider;
 
 @RestController
 @RequestMapping("/switch/v1/payment-batch")
@@ -48,7 +48,7 @@ public class PaymentBatchController {
     private final PaymentBatchRepository paymentBatchRepository;
     private final PaymentDetailRepository paymentDetailRepository;
     private final PaymentBatchProcessingService paymentBatchProcessingService;
-    // Report services.
+
     private final ReceiptGeneratorServiceImpl receiptGeneratorServiceImpl;
     private final NoveltyReportServiceImpl noveltyReportServiceImpl;
     private final DateTimeProvider dateTimeProvider;
@@ -82,7 +82,6 @@ public class PaymentBatchController {
         return ResponseEntity.ok(paymentBatchRepository.findAll());
     }
 
-    // RF-01/RF-02: Manual and SFTP upload entrypoint.
     @PostMapping("/upload-csv")
     public ResponseEntity<?> uploadCsv(@RequestParam("file") MultipartFile file,
                                        @RequestParam("channel") ChannelEnum channel,
@@ -127,8 +126,8 @@ public class PaymentBatchController {
             boolean isBusinessDay = businessDayService.isBusinessDay(dateTimeProvider.today());
             boolean withinIngestionWindow = cutoffTimeService.isWithinIngestionWindow();
             boolean isFutureDate = batch.getScheduledDate() != null && batch.getScheduledDate().toLocalDate().isAfter(dateTimeProvider.today());
-            // TEMP-TEST: business-day check bypassed for demo (today is weekend). Revert: add `!isBusinessDay ||` back.
-            boolean shouldEnqueue = !withinIngestionWindow || isFutureDate;
+
+            boolean shouldEnqueue = !isBusinessDay || !withinIngestionWindow || isFutureDate;
 
             if (shouldEnqueue) {
                 if (isFutureDate) {
@@ -193,9 +192,6 @@ public class PaymentBatchController {
     public ResponseEntity<?> uploadFromSftpMailbox(@RequestParam("file") MultipartFile file, @RequestParam(value = "ruc", required = false) String ruc, @RequestParam(value = "scheduledDate", required = false) java.time.LocalDateTime scheduledDate) {
         return uploadCsv(file, ChannelEnum.SFTP, ruc, scheduledDate);
     }
-
-    // Reports.
-
 
     @GetMapping("/{id}/receipt")
     public ResponseEntity<byte[]> downloadReceipt(@PathVariable Integer id) {

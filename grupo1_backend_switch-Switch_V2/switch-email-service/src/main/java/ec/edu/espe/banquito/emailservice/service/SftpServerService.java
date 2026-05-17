@@ -14,30 +14,24 @@ import org.springframework.stereotype.Service;
 
 import ec.edu.espe.banquito.emailservice.client.SwitchApiClient;
 
-/**
- * Service for handling files uploaded through the embedded SFTP server.
- */
 @Service
 public class SftpServerService {
-    
+
     private static final Logger LOG = LoggerFactory.getLogger(SftpServerService.class);
-    
+
     private final SwitchApiClient switchApiClient;
-    
+
     @Value("${sftp.server.upload-directory:./sftp-uploads}")
     private String uploadDirectory;
-    
+
     @Value("${sftp.server.enabled:false}")
     private boolean sftpServerEnabled;
-    
+
     @Autowired
     public SftpServerService(SwitchApiClient switchApiClient) {
         this.switchApiClient = switchApiClient;
     }
-    
-    /**
-     * Processes files uploaded to the SFTP directory
-     */
+
     public void processUploadedFiles() {
         try {
             Path uploadPath = Paths.get(uploadDirectory);
@@ -45,7 +39,7 @@ public class SftpServerService {
                 LOG.warn("Upload directory does not exist: {}", uploadDirectory);
                 return;
             }
-            
+
             Files.list(uploadPath)
                 .filter(Files::isDirectory)
                 .filter(path -> !path.getFileName().toString().equals("processed") && !path.getFileName().toString().equals("errors"))
@@ -58,20 +52,18 @@ public class SftpServerService {
                         LOG.error("Error processing files for user {}: {}", userDir.getFileName(), e.getMessage());
                     }
                 });
-//                Files.list(uploadPath)
-                // .forEach(this::processFile);
-                
+
         } catch (IOException e) {
             LOG.error("Error processing uploaded files: {}", e.getMessage(), e);
         }
     }
-    
+
     private void processFile(Path filePath, String ruc) {
         try {
             LOG.info("Processing uploaded file: {}", filePath.getFileName());
-            
+
             boolean sentToSwitch = switchApiClient.sendFileToSwitch(filePath.toFile(), ruc);
-            
+
             if (sentToSwitch) {
                 Path processedDir = Paths.get(uploadDirectory, "processed");
                 Files.createDirectories(processedDir);
@@ -85,18 +77,18 @@ public class SftpServerService {
                 Files.move(filePath, target, StandardCopyOption.REPLACE_EXISTING);
                 LOG.warn("File moved to error directory: {}", filePath.getFileName());
             }
-            
+
         } catch (IOException e) {
             LOG.error("Error processing file {}: {}", filePath, e.getMessage(), e);
         }
     }
-    
+
     public boolean isServerRunning() {
         return sftpServerEnabled;
     }
-    
+
     public String getServerInfo() {
-        return String.format("SFTP Server[enabled=%s, uploadDir=%s]", 
+        return String.format("SFTP Server[enabled=%s, uploadDir=%s]",
                            sftpServerEnabled, uploadDirectory);
     }
 }

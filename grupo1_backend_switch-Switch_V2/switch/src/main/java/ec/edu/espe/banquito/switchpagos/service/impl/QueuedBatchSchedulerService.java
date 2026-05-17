@@ -12,7 +12,7 @@ import ec.edu.espe.banquito.switchpagos.enums.BatchStatusEnum;
 import ec.edu.espe.banquito.switchpagos.model.PaymentBatch;
 import ec.edu.espe.banquito.switchpagos.repository.PaymentBatchRepository;
 import ec.edu.espe.banquito.switchpagos.repository.PaymentDetailRepository;
-import ec.edu.espe.banquito.switchpagos.util.DateTimeProvider;
+import ec.edu.espe.banquito.switchpagos.provider.DateTimeProvider;
 
 @Service
 public class QueuedBatchSchedulerService {
@@ -37,7 +37,6 @@ public class QueuedBatchSchedulerService {
         this.dateTimeProvider = dateTimeProvider;
     }
 
-    // RF-01: Processes queued batches on business days.
     @Scheduled(cron = "${app.queue.processing.cron:0 1 0 * * *}")
     public void processQueuedBatches() {
         LocalDate today = dateTimeProvider.today();

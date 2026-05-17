@@ -1,6 +1,6 @@
 import { runReport, runDownload } from '../services/api';
 import { getState } from '../hooks/useState';
-import { escapeHtml, formatDate, formatMoney, statusClass } from '../utils/formatters';
+import { escapeHtml, formatDate, formatMoney, statusClass } from '../helpers/formatters';
 
 const $ = (selector: string): any => document.querySelector(selector);
 

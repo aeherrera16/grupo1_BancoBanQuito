@@ -69,8 +69,6 @@ public class ReceiptGeneratorServiceImpl implements IReceiptGeneratorService {
             Color white =
                     Color.WHITE;
 
-            // RF-07: PDF fonts.
-
             Font titleFont =
                     FontFactory.getFont(
                             FontFactory.HELVETICA_BOLD,
@@ -307,7 +305,6 @@ public class ReceiptGeneratorServiceImpl implements IReceiptGeneratorService {
                     border
             );
 
-
             addMoneyRow(
                     financialTable,
                     "Monto dispersado",
@@ -348,7 +345,6 @@ public class ReceiptGeneratorServiceImpl implements IReceiptGeneratorService {
                     border
             );
 
-
             PdfPCell totalLabel =
                     new PdfPCell(
                             new Phrase(
@@ -386,7 +382,6 @@ public class ReceiptGeneratorServiceImpl implements IReceiptGeneratorService {
             document.add(financialTable);
 
             document.add(new Paragraph(" "));
-
 
             Paragraph section3 =
                     new Paragraph(
