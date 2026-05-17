@@ -13,7 +13,9 @@ async function loadSftpBatches() {
 
     const companyRuc = state.session?.identification;
     const filteredBatches = batches.filter(
-      (batch: any) => !companyRuc || batch.ruc === companyRuc
+      (batch: any) =>
+        batch.channel === 'SFTP' &&
+        (!companyRuc || batch.ruc === companyRuc)
     );
     setState({ sftpBatches: filteredBatches });
   } catch (error: any) {
