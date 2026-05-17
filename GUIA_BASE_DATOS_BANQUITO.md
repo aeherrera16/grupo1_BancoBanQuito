@@ -17,11 +17,11 @@ sudo cat /etc/systemd/system/banquito-switch.service | grep -E "DB_|Environment"
 sudo cat /etc/systemd/system/banquito-switch.service.d/override.conf 2>/dev/null | grep -E "DB_|Environment"
 ```
 
-> **Defaults del código si no hay override:**
+> **Credenciales confirmadas en el servidor:**
 > | Servicio | Motor | Usuario | Contraseña | Base de datos |
 > |----------|-------|---------|------------|---------------|
-> | banquito-core | MariaDB | `root` | *(vacía)* | `banquito_core` |
-> | banquito-switch | PostgreSQL | `postgres` | `123` | `switch_pagos` |
+> | banquito-core | MariaDB | `root` | `root` | `banquito_core` |
+> | banquito-switch | PostgreSQL | `switch_user` | `SwitchP4ss` | `switch_pagos` |
 
 ---
 
@@ -71,15 +71,11 @@ sudo journalctl -u banquito-core -f | grep -E "INFO|ERROR|cargados"
 
 ```bash
 # MariaDB (Core) ──────────────────────────────────────────────
-sudo mysql -u root banquito_core
-# Con contraseña:
-sudo mysql -u root -p banquito_core
+sudo mysql -u root -proot banquito_core
 
 # PostgreSQL (Switch) ─────────────────────────────────────────
-sudo -u postgres psql switch_pagos
-# Con contraseña y host:
-psql -h localhost -U postgres -d switch_pagos
-# Ingresar contraseña cuando lo pida: 123
+psql -h localhost -U switch_user -d switch_pagos
+# Contraseña cuando la pida: SwitchP4ss
 ```
 
 ---
