@@ -24,6 +24,7 @@ async function loadSftpBatches(silent = false) {
     );
     setState({ sftpBatches: filteredBatches });
     renderSftpBatches();
+    updateScheduleSummary();
   } catch (error: any) {
     setState({ sftpBatches: [] });
     if (!silent) {
@@ -112,6 +113,38 @@ function renderSftpBatches() {
   `;
 }
 
+function updateScheduleSummary() {
+  const summary = document.getElementById('sftpScheduleSummary');
+  if (!summary) return;
+
+  const state = getState();
+  const batches = state.sftpBatches || [];
+  const encolados = batches.filter((b: any) =>
+    ['ENCOLADO', 'PENDIENTE', 'PENDING'].includes((b.status || '').toUpperCase())
+  );
+
+  if (encolados.length === 0) {
+    summary.style.display = 'none';
+    return;
+  }
+
+  const dateInput = document.getElementById('sftpScheduledDate') as HTMLInputElement | null;
+  const dateVal = dateInput?.value;
+
+  let texto: string;
+  if (dateVal) {
+    const d = new Date(dateVal);
+    const fecha = d.toLocaleDateString('es-EC', { day: 'numeric', month: 'short', year: 'numeric' });
+    const hora = d.toLocaleTimeString('es-EC', { hour: '2-digit', minute: '2-digit' });
+    texto = `📋 ${encolados.length} ${encolados.length === 1 ? 'archivo' : 'archivos'} en el buzón ${encolados.length === 1 ? 'será programado' : 'serán programados'} para el <strong>${fecha}, ${hora}</strong>`;
+  } else {
+    texto = `📋 ${encolados.length} ${encolados.length === 1 ? 'archivo encolado' : 'archivos encolados'} en el buzón. Selecciona una fecha y hora para programarlos.`;
+  }
+
+  summary.innerHTML = texto;
+  summary.style.display = 'block';
+}
+
 async function uploadScheduledCsvHandler(event: SubmitEvent) {
   event.preventDefault();
   const uploadMessage = $('#sftpUploadMessage');
@@ -149,4 +182,5 @@ export {
   loadSftpBatches,
   renderSftpBatches,
   uploadScheduledCsvHandler,
+  updateScheduleSummary,
 };

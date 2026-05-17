@@ -7,7 +7,7 @@ import { loadTransactions, renderTransactions } from './pages/TransactionsPage';
 import { loadBatches, uploadCsvHandler, processBatchHandler, refreshCompanyData } from './pages/PaymentsPage';
 import { runReportHandler, runDownloadHandler, renderBatchPreview, currentBatch, syncReportBatchOptions } from './pages/ReportsPage';
 import { filterVisibleRows } from './pages/DashboardPage';
-import { loadSftpBatches, uploadScheduledCsvHandler } from './pages/SftpPage';
+import { loadSftpBatches, uploadScheduledCsvHandler, updateScheduleSummary } from './pages/SftpPage';
 
 const $ = (selector: string): any => document.querySelector(selector);
 const $$ = (selector: string): any[] => Array.from(document.querySelectorAll(selector));
@@ -92,6 +92,7 @@ function bindEvents() {
 
   $('#sftpUploadForm').addEventListener('submit', uploadScheduledCsvHandler);
   $('#loadSftpBatchesButton').addEventListener('click', loadSftpBatches);
+  $('#sftpScheduledDate').addEventListener('input', updateScheduleSummary);
   // File selection is handled via SFTP client; form only schedules execution of existing files in the buzón.
 
   $$('.nav-item').forEach((button: any) => {
