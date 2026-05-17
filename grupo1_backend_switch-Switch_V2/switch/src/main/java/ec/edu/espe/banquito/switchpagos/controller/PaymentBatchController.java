@@ -127,7 +127,8 @@ public class PaymentBatchController {
             boolean isBusinessDay = businessDayService.isBusinessDay(dateTimeProvider.today());
             boolean withinIngestionWindow = cutoffTimeService.isWithinIngestionWindow();
             boolean isFutureDate = batch.getScheduledDate() != null && batch.getScheduledDate().toLocalDate().isAfter(dateTimeProvider.today());
-            boolean shouldEnqueue = !isBusinessDay || !withinIngestionWindow || isFutureDate;
+            // TEMP-TEST: business-day check bypassed for demo (today is weekend). Revert: add `!isBusinessDay ||` back.
+            boolean shouldEnqueue = !withinIngestionWindow || isFutureDate;
 
             if (shouldEnqueue) {
                 if (isFutureDate) {

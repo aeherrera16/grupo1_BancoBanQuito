@@ -7,6 +7,8 @@ import com.banquito.core.dto.CreateWebCredentialRequestDTO;
 import com.banquito.core.dto.CustomerAuthResponseDTO;
 import com.banquito.core.dto.LoginRequestDTO;
 
+import com.banquito.core.model.Customer;
+
 public interface IAuthenticationService {
 
     CustomerAuthResponseDTO authenticateCustomer(LoginRequestDTO request);
@@ -14,6 +16,8 @@ public interface IAuthenticationService {
     CoreUserAuthResponseDTO authenticateCoreUser(LoginRequestDTO request);
 
     CustomerAuthResponseDTO createWebCredential(CreateWebCredentialRequestDTO request, Integer coreUserId);
+
+    void createInitialWebCredential(Customer customer);
 
     CoreUserAuthResponseDTO createCoreUser(CreateCoreUserRequestDTO request, Integer coreUserId);
 

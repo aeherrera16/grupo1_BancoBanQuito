@@ -9,6 +9,7 @@ import com.banquito.core.model.Customer;
 import com.banquito.core.model.CustomerSubtype;
 import com.banquito.core.repository.CustomerRepository;
 import com.banquito.core.repository.CustomerSubtypeRepository;
+import com.banquito.core.service.IAuthenticationService;
 import com.banquito.core.service.ICustomerService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -25,6 +26,7 @@ public class CustomerService implements ICustomerService {
 
     private final CustomerRepository customerRepository;
     private final CustomerSubtypeRepository customerSubtypeRepository;
+    private final IAuthenticationService authenticationService;
 
     @Transactional(readOnly = true)
     @Override
@@ -81,7 +83,9 @@ public class CustomerService implements ICustomerService {
         customer.setRegistrationDate(LocalDateTime.now());
 
         log.info("Creando cliente con identificación: {}", customer.getIdentification());
-        return toResponse(customerRepository.save(customer));
+        Customer savedCustomer = customerRepository.save(customer);
+        authenticationService.createInitialWebCredential(savedCustomer);
+        return toResponse(savedCustomer);
     }
 
     @Transactional
@@ -188,6 +192,7 @@ public class CustomerService implements ICustomerService {
                 customer.getIdentification(),
                 customer.getFirstName(),
                 customer.getLastName(),
+                customer.getLegalName(),
                 customer.getEmail(),
                 customer.getMobilePhone(),
                 customer.getAddress(),

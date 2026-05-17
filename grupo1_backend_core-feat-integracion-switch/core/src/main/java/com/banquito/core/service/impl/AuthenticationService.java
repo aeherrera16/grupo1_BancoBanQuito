@@ -22,6 +22,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class AuthenticationService implements IAuthenticationService {
@@ -73,6 +76,27 @@ public class AuthenticationService implements IAuthenticationService {
 
         coreUser.setLastLogin(LocalDateTime.now());
         return toCoreUserAuthResponse(coreUserRepository.save(coreUser));
+    }
+
+    @Override
+    @Transactional
+    public void createInitialWebCredential(Customer customer) {
+        // Proper guard: return from the METHOD (not just a lambda) if credential exists
+        if (webCredentialRepository.findByCustomer_Id(customer.getId()).isPresent()) {
+            log.info("Cliente {} ya tiene credenciales web — sin cambios", customer.getIdentification());
+            return;
+        }
+
+        WebCredential credential = new WebCredential();
+        credential.setCustomer(customer);
+        credential.setUsername(customer.getIdentification());
+        credential.setPasswordHash(passwordEncoder.encode(customer.getIdentification()));
+        credential.setStatus(CommonStatusEnum.ACTIVO);
+        credential.setCreationDate(LocalDateTime.now());
+        credential.setPasswordChangeRequired(true);
+
+        webCredentialRepository.save(credential);
+        log.info("Credenciales iniciales creadas para el cliente: {}", customer.getIdentification());
     }
 
     @Override

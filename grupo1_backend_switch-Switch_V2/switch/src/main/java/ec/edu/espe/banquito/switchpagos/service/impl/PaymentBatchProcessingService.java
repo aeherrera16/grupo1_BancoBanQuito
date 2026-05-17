@@ -173,14 +173,14 @@ public class PaymentBatchProcessingService implements IPaymentBatchProcessingSer
 
         if (!StringUtils.hasText(detail.getBeneficiaryEmail())) {
             logger.warn("Notification not sent for detail {} because email is missing", detail.getId());
-            detail.setNotificationStatus("FAILED");
+            detail.setNotificationStatus("SIN_CORREO");
             return;
         }
 
         String companyName = resolveCompanyName(batch);
         if (!StringUtils.hasText(companyName)) {
             logger.warn("Notification not sent for detail {} because Core did not return company name", detail.getId());
-            detail.setNotificationStatus("FAILED");
+            detail.setNotificationStatus("SIN_EMPRESA");
             return;
         }
 

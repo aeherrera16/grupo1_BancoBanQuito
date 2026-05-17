@@ -17,7 +17,7 @@ public class CutoffTimeService implements ICutoffTimeService {
 
     private static final Logger logger = LoggerFactory.getLogger(CutoffTimeService.class);
 
-    @Value("${app.ingest.cutoff-hour:18}")
+    @Value("${app.ingest.cutoff-hour}")
     private int cutoffHour;
 
     private final BusinessDayService businessDayService;
@@ -49,7 +49,8 @@ public class CutoffTimeService implements ICutoffTimeService {
     public boolean shouldQueue() {
         LocalDate today = dateTimeProvider.today();
         if (!isWithinIngestionWindow()) {
-            logger.info("Current time is outside ingestion window (cutoff: {}). Batch will be queued.", getCutoffTime());
+            logger.info("Current time is outside ingestion window (cutoff: {}). Batch will be queued.",
+                    getCutoffTime());
             return true;
         }
         if (isWeekendOrHoliday(today)) {
