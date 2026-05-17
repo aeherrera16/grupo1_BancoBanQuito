@@ -25,6 +25,59 @@ import java.util.List;
 @RequiredArgsConstructor
 public class DataInitializer implements CommandLineRunner {
 
+    private static final String[] COMPANY_NAMES = {
+        "Inversiones Andinas del Ecuador S.A.",
+        "Comercializadora Pichincha Cía. Ltda.",
+        "Grupo Empresarial Pacífico S.A.",
+        "Importadora Continental Cía. Ltda.",
+        "Distribuciones Sierra Verde S.A.",
+        "Tecnologías Innovación Ecuador S.A.",
+        "Construcciones Metropolitanas S.A.",
+        "Agroindustrial Cóndor Cía. Ltda.",
+        "Transportes Nacionales Unidos S.A.",
+        "Soluciones Corporativas Andes S.A.",
+        "Industrias Alimenticias del Norte Cía. Ltda.",
+        "Grupo Logístico Manabí S.A.",
+        "Servicios Financieros Austral Cía. Ltda.",
+        "Exportadora Amazónica S.A.",
+        "Consultora Empresarial Cuenca Cía. Ltda.",
+        "Manufactura Especializada Guayas S.A.",
+        "Telecomunicaciones Nacionales S.A.",
+        "Inmobiliaria Capital Norte Cía. Ltda.",
+        "Seguridad Integral Ecuatoriana S.A.",
+        "Farmacéutica Andina Cía. Ltda.",
+        "Energía Renovable del Ecuador S.A.",
+        "Textiles del Oriente Cía. Ltda.",
+        "Automotriz Nacional S.A.",
+        "Hotelería y Turismo Galápagos Cía. Ltda.",
+        "Alimentos Procesados del Sur S.A.",
+        "Ingeniería Civil y Arquitectura Cía. Ltda.",
+        "Servicios de Salud Integral S.A.",
+        "Tecnología Agropecuaria Nacional Cía. Ltda.",
+        "Retail y Comercio Especializado S.A.",
+        "Grupo Empresarial Tungurahua Cía. Ltda.",
+        "Distribuciones Comerciales Loja S.A.",
+        "Petroquímica Ecuatoriana Cía. Ltda.",
+        "Ganadería y Producción Agropecuaria S.A.",
+        "Centro Comercial Metropolitano Cía. Ltda.",
+        "Producción Audiovisual Nacional S.A.",
+        "Gestión Ambiental Sostenible Cía. Ltda.",
+        "Industria Plástica Especializada S.A.",
+        "Operaciones Mineras del Norte Cía. Ltda.",
+        "Desarrollo Inmobiliario Moderno S.A.",
+        "Servicios Informáticos Avanzados Cía. Ltda.",
+        "Exportaciones Marítimas Ecuatorianas S.A.",
+        "Procesadora de Alimentos Nativos Cía. Ltda.",
+        "Construcciones Viales Nacionales S.A.",
+        "Servicios Educativos Superiores Cía. Ltda.",
+        "Distribución Eléctrica Nacional S.A.",
+        "Laboratorios del Austro Cía. Ltda.",
+        "Corporación Manufacturera del Pacífico S.A.",
+        "Recursos Naturales Amazónicos Cía. Ltda.",
+        "Innovación Biotecnológica Ecuador S.A.",
+        "Servicios Portuarios Nacionales Cía. Ltda.",
+    };
+
     private final CustomerSubtypeRepository customerSubtypeRepository;
     private final BranchRepository branchRepository;
     private final AccountSubtypeRepository accountSubtypeRepository;
@@ -492,17 +545,6 @@ public class DataInitializer implements CommandLineRunner {
             throw new IllegalStateException("No existen clientes naturales para asignar representantes legales");
         }
 
-        String[] nombresEmpresas = {
-                "Andes", "Pacifico", "Equinoccio", "Pichincha", "Amazonas",
-                "Sierra", "Condor", "Galapagos", "Capital", "Libertad"
-        };
-
-        String[] actividadesEmpresas = {
-                "Servicios Corporativos", "Soluciones Financieras", "Comercializadora",
-                "Logistica Empresarial", "Consultoria Integral", "Tecnologia Aplicada",
-                "Gestion Administrativa", "Servicios Industriales"
-        };
-
         long corporateCount = customerRepository.findAll().stream()
                 .filter(c -> CustomerTypeEnum.JURIDICO.equals(c.getCustomerType()))
                 .count();
@@ -512,9 +554,7 @@ public class DataInitializer implements CommandLineRunner {
             String ruc = generateCompanyRuc(corporateIndex);
 
             if (customerRepository.findByIdentificationTypeAndIdentification("RUC", ruc).isEmpty()) {
-                String legalName = nombresEmpresas[corporateIndex % nombresEmpresas.length] + " "
-                        + actividadesEmpresas[corporateIndex % actividadesEmpresas.length] + " "
-                        + String.format("%03d", corporateIndex) + " S.A.";
+                String legalName = COMPANY_NAMES[(corporateIndex - 1) % COMPANY_NAMES.length];
 
                 Customer company = new Customer();
                 company.setCustomerSubtype(empresaPagosMasivosSubtype);
@@ -567,11 +607,18 @@ public class DataInitializer implements CommandLineRunner {
 
         List<Customer> naturalCustomers = customerRepository.findAll().stream()
                 .filter(c -> CustomerTypeEnum.NATURAL.equals(c.getCustomerType()))
+                .sorted(java.util.Comparator.comparing(Customer::getIdentification))
                 .toList();
 
         List<Customer> corporateCustomers = customerRepository.findAll().stream()
                 .filter(c -> CustomerTypeEnum.JURIDICO.equals(c.getCustomerType()))
+                .sorted(java.util.Comparator.comparing(Customer::getIdentification))
                 .toList();
+
+        AccountSubtype nomina = accountSubtypeRepository.findAll().stream()
+                .filter(s -> "NOM".equals(s.getCode()))
+                .findFirst()
+                .orElseThrow(() -> new IllegalStateException("Subtipo NOM no encontrado"));
 
         int accountSequence = 1;
 
@@ -599,12 +646,14 @@ public class DataInitializer implements CommandLineRunner {
 
         for (int i = 0; i < corporateCustomers.size(); i++) {
             Customer company = corporateCustomers.get(i);
+            Branch branch = branches.get(i % branches.size());
 
             while (accountRepository.findByCustomer_Id(company.getId()).size() < 3) {
-                Branch branch = branches.get(i % branches.size());
-                AccountSubtype subtype = accountRepository.findByCustomer_Id(company.getId()).size() % 2 == 0
-                        ? corriente
-                        : ahorros;
+                int currentCount = accountRepository.findByCustomer_Id(company.getId()).size();
+                AccountSubtype subtype;
+                if (currentCount == 0) subtype = corriente;   // Cuenta Operativa
+                else if (currentCount == 1) subtype = nomina; // Cuenta Nómina
+                else subtype = ahorros;                       // Cuenta Impuestos/Reservas
 
                 createSeedAccount(company, branch, subtype, accountSequence++);
             }
