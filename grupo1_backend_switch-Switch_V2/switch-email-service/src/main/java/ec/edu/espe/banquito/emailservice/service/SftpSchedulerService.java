@@ -1,12 +1,11 @@
 package ec.edu.espe.banquito.emailservice.service;
 
 import java.io.File;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
-import java.util.ArrayList;
-import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,15 +29,16 @@ public class SftpSchedulerService {
     @Value("${sftp.scheduler.interval}")
     private String schedulerInterval;
 
-    @Value("${sftp.local.directory}")
-    private String localDirectory;
+    // Usar el directorio real del servidor SFTP embebido, no sftp.local.directory
+    @Value("${sftp.server.upload-directory:./sftp-uploads}")
+    private String uploadDirectory;
 
     @Autowired
     public SftpSchedulerService(SwitchApiClient switchApiClient) {
         this.switchApiClient = switchApiClient;
     }
 
-    @Scheduled(fixedRateString = "${sftp.scheduler.interval:60000}")
+    @Scheduled(fixedRateString = "${sftp.scheduler.interval:10000}")
     public void processSftpFiles() {
         if (!schedulerEnabled) {
             LOG.debug("SFTP scheduler disabled");
@@ -48,50 +48,55 @@ public class SftpSchedulerService {
         LOG.info("Starting SFTP file processing cycle (interval: {})", schedulerInterval);
 
         try {
-            Path uploadPath = Paths.get(localDirectory);
+            Path uploadPath = Paths.get(uploadDirectory);
             if (!Files.exists(uploadPath)) {
                 Files.createDirectories(uploadPath);
-                LOG.info("SFTP directory created: {}", localDirectory);
+                return;
             }
 
-            File[] files = uploadPath.toFile().listFiles((dir, name) -> name.toLowerCase().endsWith(".csv"));
-            List<String> processedFiles = new ArrayList<>();
+            // Procesar CSVs en el directorio raíz
+            processFilesInDirectory(uploadPath, null);
 
-            if (files == null || files.length == 0) {
-                LOG.info("No CSV files found in the SFTP directory");
-            } else {
-                LOG.info("Found {} CSV files to process", files.length);
+            // Procesar CSVs en subdirectorios de usuario (estructura por RUC)
+            Files.list(uploadPath)
+                .filter(Files::isDirectory)
+                .filter(p -> {
+                    String name = p.getFileName().toString();
+                    return !name.equals("processed") && !name.equals("errors");
+                })
+                .forEach(userDir -> {
+                    String ruc = userDir.getFileName().toString();
+                    processFilesInDirectory(userDir, ruc);
+                });
 
-                for (File file : files) {
-                    try {
-                        LOG.info("Processing file: {}", file.getName());
-                        boolean sentToSwitch = switchApiClient.sendFileToSwitch(file, null);
-
-                        if (sentToSwitch) {
-                            processedFiles.add(file.getName());
-                            LOG.info("File {} sent to the Switch successfully", file.getName());
-
-                            Path processedDir = uploadPath.resolve("processed");
-                            if (!Files.exists(processedDir)) {
-                                Files.createDirectories(processedDir);
-                            }
-                            Files.move(file.toPath(), processedDir.resolve(file.getName()),
-                                    StandardCopyOption.REPLACE_EXISTING);
-                            LOG.info("File moved to processed directory: {}", file.getName());
-                        } else {
-                            LOG.error("Error sending file {} to the Switch", file.getName());
-                        }
-                    } catch (java.io.IOException e) {
-                        LOG.error("Error processing file {}: {}", file.getName(), e.getMessage());
-                    }
-                }
-
-                if (!processedFiles.isEmpty()) {
-                    LOG.info("Files processed successfully: {}", processedFiles);
-                }
-            }
-        } catch (java.io.IOException e) {
+        } catch (IOException e) {
             LOG.error("Error processing SFTP files: {}", e.getMessage(), e);
+        }
+    }
+
+    private void processFilesInDirectory(Path dir, String ruc) {
+        File[] files = dir.toFile().listFiles((d, name) -> name.toLowerCase().endsWith(".csv"));
+        if (files == null || files.length == 0) return;
+
+        LOG.info("Found {} CSV file(s) in {} (ruc={})", files.length, dir, ruc);
+
+        for (File file : files) {
+            try {
+                boolean sent = switchApiClient.sendFileToSwitch(file, ruc);
+
+                Path destRoot = Paths.get(uploadDirectory);
+                Path destDir = destRoot.resolve(sent ? "processed" : "errors");
+                Files.createDirectories(destDir);
+                Files.move(file.toPath(), destDir.resolve(file.getName()), StandardCopyOption.REPLACE_EXISTING);
+
+                if (sent) {
+                    LOG.info("File {} sent to Switch and moved to processed/", file.getName());
+                } else {
+                    LOG.warn("File {} failed to send, moved to errors/", file.getName());
+                }
+            } catch (IOException e) {
+                LOG.error("Error processing file {}: {}", file.getName(), e.getMessage(), e);
+            }
         }
     }
 
@@ -101,6 +106,6 @@ public class SftpSchedulerService {
 
     public String getSchedulerInfo() {
         return String.format("SftpScheduler[enabled=%s, interval=%s, directory=%s]",
-                schedulerEnabled, schedulerInterval, localDirectory);
+                schedulerEnabled, schedulerInterval, uploadDirectory);
     }
 }
