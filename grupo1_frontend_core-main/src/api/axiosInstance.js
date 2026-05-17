@@ -35,11 +35,11 @@ instance.interceptors.request.use((config) => {
   } catch (e) {
     // ignore any unexpected errors reading storage
   }
-  // DEV fallback: if no core user id found, use default core user 1 to allow local testing
+  // DEV fallback: if no core user id found, do NOT set a default
+  // This prevents 403 errors when the user is not properly authenticated
   if (import.meta.env.DEV && !config.headers['X-Core-User-Id']) {
-    config.headers['X-Core-User-Id'] = '1';
     // eslint-disable-next-line no-console
-    console.warn('axios - DEV fallback: setting X-Core-User-Id to 1 for local testing');
+    console.warn('axios - No X-Core-User-Id found in localStorage. User may not be authenticated.');
   }
   if (import.meta.env.DEV) {
     try {
