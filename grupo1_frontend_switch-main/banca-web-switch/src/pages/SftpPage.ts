@@ -4,11 +4,11 @@ import { formatMoney, statusClass, escapeHtml, setMessage, formatDate } from '..
 
 const $ = (selector: string): any => document.querySelector(selector);
 
-async function loadSftpBatches() {
+async function loadSftpBatches(silent = false) {
   const state = getState();
   if (state.customerType !== 'JURIDICO') return;
 
-  const btn = document.getElementById('loadSftpBatchesButton') as HTMLButtonElement | null;
+  const btn = silent ? null : document.getElementById('loadSftpBatchesButton') as HTMLButtonElement | null;
   if (btn) {
     btn.disabled = true;
     btn.innerHTML = '<span class="btn-spinner">⟳</span> Actualizando...';
@@ -16,7 +16,6 @@ async function loadSftpBatches() {
 
   try {
     const batches = await loadBatchesApi();
-
     const companyRuc = state.session?.identification;
     const filteredBatches = batches.filter(
       (batch: any) =>
@@ -24,21 +23,21 @@ async function loadSftpBatches() {
         (!companyRuc || batch.ruc === companyRuc)
     );
     setState({ sftpBatches: filteredBatches });
+    renderSftpBatches();
   } catch (error: any) {
     setState({ sftpBatches: [] });
-    const sftpTable = $('#sftpBatchesTable');
-    if (sftpTable) {
-      sftpTable.innerHTML = `<div class="empty-state">${escapeHtml(error.message)}</div>`;
+    if (!silent) {
+      const sftpTable = $('#sftpBatchesTable');
+      if (sftpTable) {
+        sftpTable.innerHTML = `<div class="empty-state">${escapeHtml(error.message)}</div>`;
+      }
     }
   } finally {
     if (btn) {
       btn.disabled = false;
-      const now = new Date().toLocaleTimeString('es-EC', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-      btn.innerHTML = `⟳ Actualizar <small style="opacity:0.6;font-size:0.7em">${now}</small>`;
+      btn.innerHTML = '⟳ Actualizar';
     }
   }
-
-  renderSftpBatches();
 }
 
 function renderSftpBatches() {

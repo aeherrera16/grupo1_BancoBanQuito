@@ -20,7 +20,7 @@ let sftpAutoRefreshTimer: ReturnType<typeof setInterval> | null = null;
 
 function startSftpAutoRefresh() {
   stopSftpAutoRefresh();
-  sftpAutoRefreshTimer = setInterval(loadSftpBatches, 3000);
+  sftpAutoRefreshTimer = setInterval(() => loadSftpBatches(true), 3000);
 }
 
 function stopSftpAutoRefresh() {
