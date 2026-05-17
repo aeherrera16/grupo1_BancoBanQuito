@@ -118,7 +118,7 @@ function logout() {
 function activateSection(section: string) {
   const state = getState();
   const isCompany = state.customerType === 'JURIDICO';
-  if (!isCompany && ['payments', 'reports'].includes(section)) section = 'overview';
+  if (!isCompany && ['payments', 'reports', 'sftp'].includes(section)) section = 'overview';
 
   $$('.nav-item').forEach((button: any) => button.classList.toggle('is-active', button.dataset.section === section));
   $$('[data-section-panel]').forEach((panel: any) => {

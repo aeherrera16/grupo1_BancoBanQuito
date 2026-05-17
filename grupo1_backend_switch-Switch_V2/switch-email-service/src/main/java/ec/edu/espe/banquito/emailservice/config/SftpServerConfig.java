@@ -40,6 +40,8 @@ public class SftpServerConfig {
     private String coreApiBaseUrl;
 
 
+    private static final java.util.concurrent.ConcurrentHashMap<String, String> USERNAME_TO_RUC = new java.util.concurrent.ConcurrentHashMap<>();
+
     @Bean(destroyMethod = "stop")
     @ConditionalOnProperty(name = "sftp.server.enabled", havingValue = "true")
     public SshServer sshServer() throws IOException {
@@ -58,7 +60,11 @@ public class SftpServerConfig {
         VirtualFileSystemFactory fileSystemFactory = new VirtualFileSystemFactory(uploadPath) {
 
             public Path getUserHomeDir(org.apache.sshd.server.session.ServerSession session) {
-                Path userDir = uploadPath.resolve(session.getUsername());
+                String ruc = USERNAME_TO_RUC.get(session.getUsername());
+                if (ruc == null || ruc.isEmpty()) {
+                    ruc = session.getUsername();
+                }
+                Path userDir = uploadPath.resolve(ruc);
                 try {
                     Files.createDirectories(userDir);
                 } catch (IOException e) {
@@ -90,7 +96,15 @@ public class SftpServerConfig {
                 headers.setContentType(org.springframework.http.MediaType.APPLICATION_JSON);
                 org.springframework.http.HttpEntity<java.util.Map<String, String>> entity = new org.springframework.http.HttpEntity<>(request, headers);
                 org.springframework.http.ResponseEntity<java.util.Map> response = restTemplate.postForEntity(url, entity, java.util.Map.class);
-                return response.getStatusCode().is2xxSuccessful() && response.getBody() != null && response.getBody().containsKey("ruc");
+                boolean success = response.getStatusCode().is2xxSuccessful() && response.getBody() != null && response.getBody().containsKey("ruc");
+                if (success) {
+                    String ruc = (String) response.getBody().get("ruc");
+                    if (ruc != null && !ruc.isEmpty()) {
+                        USERNAME_TO_RUC.put(providedUsername, ruc);
+                        LOG.info("Authenticated SFTP user {} successfully mapped to RUC {}", providedUsername, ruc);
+                    }
+                }
+                return success;
             } catch (Exception e) {
                 LOG.warn("Failed to authenticate user {} through Core API: {}", providedUsername, e.getMessage());
                 return false;

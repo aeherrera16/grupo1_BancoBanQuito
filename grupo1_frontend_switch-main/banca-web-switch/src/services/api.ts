@@ -101,6 +101,27 @@ async function uploadCsv(file: File) {
   });
 }
 
+async function uploadScheduledCsv(file: File, scheduledDate: string) {
+  const form = new FormData();
+  form.append('file', file);
+  form.append('channel', 'SFTP');
+  
+  const state = getState();
+  const session = state.session;
+  if (session && session.identification) {
+    form.append('ruc', session.identification);
+  }
+  
+  if (scheduledDate) {
+    form.append('scheduledDate', scheduledDate + ':00');
+  }
+
+  return api('/api/switch/v1/payment-batch/upload-csv', {
+    method: 'POST',
+    body: form,
+  });
+}
+
 async function processBatch(batchId: string) {
   return api(`/api/switch/v1/payment-batch/${batchId}/process`, { method: 'POST' });
 }
@@ -144,6 +165,7 @@ export {
   loadCharges,
   loadCompanyAccount,
   uploadCsv,
+  uploadScheduledCsv,
   processBatch,
   runReport,
   runDownload,

@@ -107,6 +107,7 @@
             <button class="nav-item" data-section="accounts"><span class="nav-icon">CT</span><span>Cuentas</span></button>
             <button class="nav-item" data-section="transactions"><span class="nav-icon">TR</span><span>Transacciones</span></button>
             <button class="nav-item company-only" data-section="payments"><span class="nav-icon">PM</span><span>Pagos masivos</span></button>
+            <button class="nav-item company-only" data-section="sftp"><span class="nav-icon">SF</span><span>Buzón SFTP</span></button>
             <button class="nav-item company-only" data-section="reports"><span class="nav-icon">RP</span><span>Reportes</span></button>
           </nav>
           <div class="sidebar-foot">
@@ -243,6 +244,50 @@
                 <button id="loadBatchesButton" class="secondary-button" type="button">⟳ Actualizar lotes</button>
               </div>
               <div id="batchesTable" class="table-wrap"></div>
+            </div>
+          </section>
+
+          <section class="section-panel is-hidden company-only" data-section-panel="sftp">
+            <div class="business-hero" style="background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);">
+              <div>
+                <p class="eyebrow">Buzón SFTP y Programación Automática</p>
+                <h2>Servidor SFTP y Automatización</h2>
+                <p>Configura tu cliente externo (como Cyberduck o FileZilla) para subir archivos de pagos masivos directamente al buzón o prográmalos desde esta pestaña para su efectivización automática en fechas futuras.</p>
+              </div>
+              <div class="hero-balance">
+                <span>SFTP Servidor</span>
+                <strong>localhost:2222</strong>
+                <small>Protocolo de Seguridad SSH</small>
+              </div>
+            </div>
+
+            <div class="lookup-panel" style="margin-bottom: 2rem; padding: 2rem; border-radius: var(--radius-lg); background: var(--bg-surface); border: 1px solid var(--border-color);">
+              <form id="sftpUploadForm" style="display: flex; flex-direction: column; gap: 1.5rem;">
+                <div>
+                  <h3 style="margin: 0; font-size: 1.25rem; font-weight: 600;">Programar Lote SFTP Automático</h3>
+                  <p class="text-muted" style="margin: 0.25rem 0 0 0; font-size: 0.875rem;">Sube tu archivo de pagos masivos y selecciona la fecha exacta de efectivización para que se procese automáticamente.</p>
+                </div>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem;">
+                  <label class="file-picker" style="margin: 0;">
+                    <input id="sftpCsvFile" name="file" type="file" accept=".csv,text/csv" required />
+                    <span id="sftpFileName">Seleccionar CSV</span>
+                  </label>
+                  <label class="field" style="margin: 0;">
+                    <span>Fecha y hora de efectivización</span>
+                    <input id="sftpScheduledDate" type="datetime-local" required style="width: 100%;" />
+                  </label>
+                </div>
+                <button class="primary-button fit-button" type="submit" style="align-self: flex-start;">Programar ejecución</button>
+                <p id="sftpUploadMessage" class="message" role="status" style="margin: 0;"></p>
+              </form>
+            </div>
+
+            <div class="table-panel">
+              <div class="panel-heading">
+                <h2>Lotes Programados y Procesados del Buzón</h2>
+                <button id="loadSftpBatchesButton" class="secondary-button" type="button">⟳ Actualizar Buzón</button>
+              </div>
+              <div id="sftpBatchesTable" class="table-wrap"></div>
             </div>
           </section>
 

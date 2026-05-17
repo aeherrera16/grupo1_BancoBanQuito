@@ -7,6 +7,7 @@ import { loadTransactions, renderTransactions } from './pages/TransactionsPage';
 import { loadBatches, uploadCsvHandler, processBatchHandler, refreshCompanyData } from './pages/PaymentsPage';
 import { runReportHandler, runDownloadHandler, renderBatchPreview, currentBatch, syncReportBatchOptions } from './pages/ReportsPage';
 import { filterVisibleRows } from './pages/DashboardPage';
+import { loadSftpBatches, uploadScheduledCsvHandler } from './pages/SftpPage';
 
 const $ = (selector: string): any => document.querySelector(selector);
 const $$ = (selector: string): any[] => Array.from(document.querySelectorAll(selector));
@@ -35,6 +36,9 @@ async function activateSectionWithData(section: string) {
     await refreshCompanyData();
     if (section === 'reports') syncReportBatchOptions();
   }
+  if (section === 'sftp') {
+    await loadSftpBatches();
+  }
 }
 
 function restoreSession() {
@@ -58,6 +62,9 @@ function bindEvents() {
       await refreshCompanyData();
       if (activeSection === 'reports') syncReportBatchOptions();
     }
+    if (activeSection === 'sftp') {
+      await loadSftpBatches();
+    }
   });
   $('#globalSearch').addEventListener('input', (event: any) => filterVisibleRows(event.target.value));
   $('#uploadForm').addEventListener('submit', uploadCsvHandler);
@@ -65,6 +72,13 @@ function bindEvents() {
   $('#batchSelector').addEventListener('change', () => renderBatchPreview(currentBatch()));
   $('#csvFile').addEventListener('change', (event: any) => {
     $('#fileName').textContent = event.target.files[0]?.name || 'Seleccionar CSV';
+  });
+
+  // SFTP mailbox page events
+  $('#sftpUploadForm').addEventListener('submit', uploadScheduledCsvHandler);
+  $('#loadSftpBatchesButton').addEventListener('click', loadSftpBatches);
+  $('#sftpCsvFile').addEventListener('change', (event: any) => {
+    $('#sftpFileName').textContent = event.target.files[0]?.name || 'Seleccionar CSV';
   });
 
   $$('.nav-item').forEach((button: any) => {
