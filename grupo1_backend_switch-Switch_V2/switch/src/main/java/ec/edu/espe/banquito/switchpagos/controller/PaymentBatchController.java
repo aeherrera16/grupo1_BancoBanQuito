@@ -1,6 +1,8 @@
 package ec.edu.espe.banquito.switchpagos.controller;
 
 import java.io.IOException;
+import java.util.List;
+import java.util.ArrayList;
 import java.util.Map;
 
 import org.slf4j.Logger;
@@ -224,4 +226,43 @@ public class PaymentBatchController {
                 .contentType(MediaType.TEXT_PLAIN)
                 .body(csv);
     }
+
+    @PostMapping("/schedule-queued")
+    public ResponseEntity<?> scheduleQueued(
+            @RequestParam("scheduledDate") @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE_TIME) java.time.LocalDateTime scheduledDate,
+            @RequestParam(value = "ruc", required = false) String ruc) {
+        logger.info("Scheduling queued batches to: {}, filtered by RUC: {}", scheduledDate, ruc);
+        try {
+            List<PaymentBatch> queued = paymentBatchRepository.findByStatusOrderByReceivedAtAsc(BatchStatusEnum.ENCOLADO);
+            List<PaymentBatch> received = paymentBatchRepository.findByStatusOrderByReceivedAtAsc(BatchStatusEnum.RECEIVED);
+
+            List<PaymentBatch> toSchedule = new java.util.ArrayList<>();
+            for (PaymentBatch b : queued) {
+                if (ruc == null || ruc.isEmpty() || ruc.equals(b.getRuc())) {
+                    toSchedule.add(b);
+                }
+            }
+            for (PaymentBatch b : received) {
+                if (ruc == null || ruc.isEmpty() || ruc.equals(b.getRuc())) {
+                    toSchedule.add(b);
+                }
+            }
+
+            for (PaymentBatch batch : toSchedule) {
+                batch.setScheduledDate(scheduledDate);
+                batch.setStatus(BatchStatusEnum.PROGRAMADO);
+                paymentBatchRepository.save(batch);
+            }
+
+            logger.info("Successfully scheduled {} batches to {}", toSchedule.size(), scheduledDate);
+            return ResponseEntity.ok(Map.of(
+                    "message", "Lotes programados exitosamente",
+                    "count", toSchedule.size()
+            ));
+        } catch (Exception e) {
+            logger.error("Error scheduling queued batches: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("error", e.getMessage()));
+        }
+    }
 }
+

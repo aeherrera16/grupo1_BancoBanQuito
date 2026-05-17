@@ -1,4 +1,4 @@
-import { loadBatches as loadBatchesApi, uploadScheduledCsv } from '../services/api';
+import { loadBatches as loadBatchesApi, scheduleQueuedBatches } from '../services/api';
 import { getState, setState } from '../hooks/useState';
 import { formatMoney, statusClass, escapeHtml, setMessage, formatDate } from '../helpers/formatters';
 
@@ -109,34 +109,26 @@ async function uploadScheduledCsvHandler(event: SubmitEvent) {
     return;
   }
 
-  const file = $('#sftpCsvFile').files[0];
-  if (!file) {
-    setMessage(uploadMessage, 'Selecciona un archivo CSV.', 'error');
-    return;
-  }
-
   const scheduledDateVal = $('#sftpScheduledDate').value;
   if (!scheduledDateVal) {
     setMessage(uploadMessage, 'Selecciona una fecha y hora de efectivización.', 'error');
     return;
   }
 
-  setMessage(uploadMessage, '⏳ Programando lote...');
+  setMessage(uploadMessage, '⏳ Aplicando regla de efectivización...');
 
   try {
-    const result = await uploadScheduledCsv(file, scheduledDateVal);
+    const result = await scheduleQueuedBatches(scheduledDateVal);
     setMessage(
       uploadMessage,
-      `✅ Lote programado exitosamente. ID: ${result.id || 'N/D'} — se procesará el ${scheduledDateVal.replace('T', ' ')}`,
+      `✅ Regla de efectivización aplicada. ${result.count || 0} lotes del buzón programados para el ${scheduledDateVal.replace('T', ' ')}`,
       'success'
     );
-    $('#sftpCsvFile').value = '';
-    $('#sftpFileName').textContent = 'Seleccionar CSV';
     $('#sftpScheduledDate').value = '';
 
     await loadSftpBatches();
   } catch (error: any) {
-    setMessage(uploadMessage, error.message || 'No se pudo programar el archivo.', 'error');
+    setMessage(uploadMessage, error.message || 'No se pudo aplicar la regla.', 'error');
   }
 }
 

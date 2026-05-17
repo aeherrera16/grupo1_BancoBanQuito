@@ -252,50 +252,42 @@
               <div>
                 <p class="eyebrow">Buzón SFTP — Pagos masivos automáticos</p>
                 <h2>Monitoreo de Buzón SFTP</h2>
-                <p>Sube tu archivo CSV de nómina/pagos al servidor SFTP. El procesador interno lo leerá automáticamente y lo liquidará en tiempo real en el Switch de pagos.</p>
+                <p>Sube tu archivo CSV al servidor SFTP o prográmalo aquí directamente para su procesamiento automático.</p>
               </div>
-              <div class="hero-balance">
-                <span>Servidor SFTP</span>
-                <strong>136.115.142.160:2222</strong>
-                <small>Protocolo SSH seguro</small>
+              <div style="display: flex; flex-direction: column; gap: 4px; text-align: right; background: rgba(255,255,255,0.1); padding: 0.75rem 1.25rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.15);">
+                <span style="font-size: 0.7rem; text-transform: uppercase; color: #a5c5eb; font-weight: bold; letter-spacing: 0.05em;">Hora del Switch (GMT-5)</span>
+                <span id="switchServerClock" style="font-size: 1.6rem; font-weight: 800; font-family: monospace; color: white; display: block; line-height: 1;">--:--:--</span>
+                <small style="color: #9cc4ff; font-size: 0.65rem;">Corte cutoff: 18:00</small>
               </div>
             </div>
 
-            <!-- Panel de Reloj del Servidor e Información de Procesamiento -->
+            <!-- Panel informativo de conexion -->
+            <div style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 1rem 1.5rem; border-radius: var(--radius-md); margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center; font-size: 0.9rem;">
+              <span><strong>Servidor SFTP:</strong> 136.115.142.160:2222 | Protocolo SSH seguro</span>
+              <span style="color: #64748b; font-size: 0.8rem; font-weight: bold;">● PROCESADOR ACTIVO (10s)</span>
+            </div>
+
+            <!-- Formulario de programación (Restaurado) -->
             <div class="lookup-panel" style="margin-bottom: 2rem; padding: 2rem; border-radius: var(--radius-lg); background: var(--bg-surface); border: 1px solid var(--border-color);">
-              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; align-items: center;">
+              <form id="sftpUploadForm" style="display: flex; flex-direction: column; gap: 1.5rem;">
                 <div>
-                  <h3 style="margin: 0; font-size: 1.1rem; font-weight: 600; color: #1e3c72;">Reloj del Switch de Pagos</h3>
+                  <h3 style="margin: 0; font-size: 1.1rem; font-weight: 600;">Programar lote para efectivización automática</h3>
                   <p class="text-muted" style="margin: 0.25rem 0 0 0; font-size: 0.875rem;">
-                    Hora central del sistema. Los lotes subidos al buzón SFTP se procesan bajo este horario.
+                    Selecciona el archivo CSV y la fecha exacta. El sistema lo ejecutará automáticamente cuando llegue el momento.
                   </p>
-                  <div style="display: flex; align-items: center; gap: 10px; margin-top: 1rem;">
-                    <span style="background: #e6f4ea; color: #137333; padding: 6px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: bold; border: 1px solid #ceead6;">
-                      ● PROCESADOR EN LÍNEA
-                    </span>
-                    <span style="background: #f1f3f4; color: #5f6368; padding: 6px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: bold; border: 1px solid #dadce0;">
-                      Escaneo: cada 10s
-                    </span>
-                  </div>
                 </div>
-                
-                <!-- Reloj Digital con Zona Horaria Central -->
-                <div style="background: linear-gradient(135deg, #09284d, #123f76); color: #fff; padding: 1.5rem; border-radius: 10px; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.15);">
-                  <span style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: #a5c5eb; font-weight: bold; display: block;">Hora Oficial de Ecuador (GMT-5)</span>
-                  <div id="switchServerClock" style="font-size: 2.2rem; font-weight: 800; margin: 0.5rem 0; letter-spacing: 0.05em; font-family: monospace;">--:--:--</div>
-                  <small style="color: #9cc4ff; font-size: 0.75rem; display: block;">Hora de corte diaria (Cutoff): 18:00</small>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem;">
+                  <label class="file-picker" style="margin: 0;">
+                    <input id="sftpCsvFile" name="file" type="file" accept=".csv,text/csv" required />
+                    <span id="sftpFileName">Seleccionar CSV</span>
+                  </label>
+                  <label class="field" style="margin: 0;">
+                    <span>Fecha y hora de efectivización</span>
+                    <input id="sftpScheduledDate" type="datetime-local" required style="width: 100%;" />
+                  </label>
                 </div>
-              </div>
-            </div>
-
-            <!-- Formulario de programación oculto para preservar enlaces del script principal -->
-            <div id="sftpUploadFormContainer" style="display: none;">
-              <form id="sftpUploadForm">
-                <input id="sftpCsvFile" type="file" />
-                <span id="sftpFileName"></span>
-                <input id="sftpScheduledDate" type="datetime-local" />
-                <button type="submit"></button>
-                <p id="sftpUploadMessage"></p>
+                <button class="primary-button fit-button" type="submit" style="align-self: flex-start;">Programar ejecución automática</button>
+                <p id="sftpUploadMessage" class="message" role="status" style="margin: 0;"></p>
               </form>
             </div>
 

@@ -154,6 +154,20 @@ async function runDownload(type: string, batchId: string) {
   return fileNames[type];
 }
 
+async function scheduleQueuedBatches(scheduledDate: string) {
+  const state = getState();
+  const ruc = state.session?.identification || '';
+
+  // YYYY-MM-DDTHH:MM -> YYYY-MM-DDTHH:MM:00
+  const formattedDate = scheduledDate.includes(':') && scheduledDate.split(':').length === 2
+    ? scheduledDate + ':00'
+    : scheduledDate;
+
+  return api(`/api/switch/v1/payment-batch/schedule-queued?scheduledDate=${encodeURIComponent(formattedDate)}&ruc=${encodeURIComponent(ruc)}`, {
+    method: 'POST',
+  });
+}
+
 export {
   api,
   download,
@@ -168,7 +182,9 @@ export {
   loadCompanyAccount,
   uploadCsv,
   uploadScheduledCsv,
+  scheduleQueuedBatches,
   processBatch,
   runReport,
   runDownload,
 };
+
