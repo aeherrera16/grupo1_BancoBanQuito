@@ -911,28 +911,79 @@ tbody td:nth-child(4) {
 
 .account-card {
   display: grid;
-  gap: 14px;
-  padding: 20px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.88), rgba(241, 250, 255, 0.96)),
-    linear-gradient(135deg, rgba(23, 139, 216, 0.1), rgba(0, 131, 111, 0.08));
-  box-shadow: var(--soft-shadow);
+  gap: 0;
+  padding: 0;
+  border: 1px solid #b8d0e8;
+  border-radius: 10px;
+  background: linear-gradient(160deg, #0b2f58 0%, #1669aa 55%, #00836f 100%);
+  color: #ffffff;
+  box-shadow: 0 4px 18px rgba(11, 47, 88, 0.18);
+  overflow: hidden;
 }
 
-.account-card > span {
-  color: var(--muted);
+.account-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px 10px;
+}
+
+.account-type-label {
+  color: rgba(255, 255, 255, 0.72);
   font-size: 11px;
   font-weight: 900;
   text-transform: uppercase;
-  letter-spacing: 0;
+  letter-spacing: 0.06em;
 }
 
-.account-card strong,
-.hero-balance strong {
-  font-size: clamp(22px, 2vw, 34px);
-  color: var(--blue-900);
+.account-number {
+  margin: 0;
+  padding: 0 18px 14px;
+  font-size: clamp(22px, 2.4vw, 30px);
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: #ffffff;
+  overflow-wrap: anywhere;
+}
+
+.account-data-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1px;
+  margin: 0;
+  background: rgba(255, 255, 255, 0.12);
+  border-top: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+.account-data-grid > div {
+  padding: 12px 16px;
+  background: rgba(0, 0, 0, 0.18);
+}
+
+.account-data-grid dt {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 10px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.account-data-grid dd {
+  margin: 4px 0 0;
+  font-size: 15px;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.account-data-grid .amount-highlight {
+  font-size: 18px;
+  color: #9df2dd;
+}
+
+.account-card .badge {
+  background: rgba(255, 255, 255, 0.18);
+  color: #ffffff;
+  font-style: normal;
 }
 
 .detail-grid {

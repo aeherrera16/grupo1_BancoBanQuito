@@ -24,6 +24,12 @@ async function loadBatches() {
   }
 
   renderBatches();
+
+  // Scroll to the batches table so the user sees the result
+  const table = document.getElementById('batchesTable');
+  if (table) {
+    table.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
 }
 
 async function loadCharges() {

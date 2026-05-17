@@ -36,6 +36,13 @@ const fieldLabels: any = {
   accountNumber: 'Cuenta',
   description: 'Descripcion',
   message: 'Mensaje',
+  notificationStatus: 'Estado notif.',
+  rejectionReason: 'Motivo rechazo',
+  lineNumber: 'Linea',
+  beneficiaryName: 'Beneficiario',
+  identification: 'Identificacion',
+  identificationNumber: 'Identificacion',
+  executedAt: 'Ejecutado',
 };
 
 const summaryFields = [
@@ -71,8 +78,11 @@ const tableFields = [
   'amount',
   'status',
   'validationResult',
+  'notificationStatus',
+  'rejectionReason',
   'message',
   'description',
+  'executedAt',
   'createdAt',
   'processedAt',
 ];
@@ -409,8 +419,8 @@ function renderReportPayload(data: any) {
 
 function showReportState(markup: string, type = '') {
   const output = $('#reportOutput');
-  output.classList.toggle('is-error', type === 'error');
-  output.classList.toggle('is-success', type === 'success');
+  output.classList.remove('is-error', 'is-success', 'is-info');
+  if (type) output.classList.add(`is-${type}`);
   output.innerHTML = markup;
 }
 
@@ -427,6 +437,16 @@ async function runReportHandler(type: string) {
     const batch = currentBatch();
     showReportState(renderReportDocument(type, batchId, batch, data));
   } catch (error: any) {
+    const msg = error.message || '';
+    if (msg.includes('No service charge found') || msg.includes('No hay cargo')) {
+      showReportState(`
+        <div class="report-empty">
+          <strong>Lote en espera de procesamiento</strong>
+          <span>Este lote se encuentra en estado ENCOLADO o PROGRAMADO. El reporte estará disponible automáticamente una vez que el banco procese la operación (en el siguiente corte o día hábil).</span>
+        </div>
+      `, 'info');
+      return;
+    }
     showReportState(`<div class="report-empty"><strong>No se pudo consultar el reporte.</strong><span>${escapeHtml(error.message)}</span></div>`, 'error');
   }
 }
@@ -449,6 +469,16 @@ async function runDownloadHandler(type: string) {
       </div>
     `, 'success');
   } catch (error: any) {
+    const msg = error.message || '';
+    if (msg.includes('No service charge found') || msg.includes('No hay cargo')) {
+      showReportState(`
+        <div class="report-empty">
+          <strong>Comprobante aún no generado</strong>
+          <span>El lote aún no ha sido procesado por el sistema contable del banco. Podrás descargar el comprobante PDF una vez que el lote pase a estado EXITOSO.</span>
+        </div>
+      `, 'info');
+      return;
+    }
     showReportState(`<div class="report-empty"><strong>No se pudo generar la descarga.</strong><span>${escapeHtml(error.message)}</span></div>`, 'error');
   }
 }

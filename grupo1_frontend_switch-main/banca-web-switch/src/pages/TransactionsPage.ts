@@ -21,7 +21,8 @@ async function loadTransactions() {
 
 function renderTransactions() {
   const state = getState();
-  $('#transactionsMetric').textContent = state.transactions.length;
+  const metric = $('#transactionsMetric');
+  if (metric) metric.textContent = state.transactions.length;
   const recent = $('#recentTransactions');
   const table = $('#transactionsTable');
 

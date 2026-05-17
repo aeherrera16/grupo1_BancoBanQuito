@@ -41,6 +41,40 @@
         </form>
       </section>
 
+      <section class="login-view is-hidden" data-view="password-change">
+        <div class="brand-panel">
+          <p class="eyebrow">Seguridad BanQuito</p>
+          <h1>Actualiza tu contraseña para continuar</h1>
+          <p class="brand-copy">
+            Por tu seguridad, solicitamos que cambies la contraseña asignada inicialmente
+            antes de acceder a tu banca web. Elige una clave segura y privada.
+          </p>
+        </div>
+
+        <form id="passwordChangeForm" class="login-card">
+          <div class="login-heading">
+            <p class="eyebrow">Cambio obligatorio</p>
+            <h2>Nueva contraseña</h2>
+            <span>Define tu clave personal de acceso</span>
+          </div>
+
+          <label class="field">
+            <span>Contraseña actual</span>
+            <input id="currentPassword" name="currentPassword" type="password" autocomplete="current-password" required />
+          </label>
+          <label class="field">
+            <span>Nueva contraseña</span>
+            <input id="newPassword" name="newPassword" type="password" autocomplete="new-password" required />
+          </label>
+          <label class="field">
+            <span>Confirmar nueva contraseña</span>
+            <input id="confirmPassword" name="confirmPassword" type="password" autocomplete="new-password" required />
+          </label>
+          <button class="primary-button" type="submit">Actualizar y entrar</button>
+          <p id="passwordChangeMessage" class="message" role="status"></p>
+        </form>
+      </section>
+
       <section class="dashboard is-hidden" data-view="dashboard">
         <aside class="sidebar">
           <div class="bank-mark">
@@ -62,7 +96,7 @@
             </label>
             <div>
               <span class="version-pill">V1</span>
-              <button id="refreshButton" class="secondary-button" type="button">Actualizar</button>
+              <button id="refreshButton" class="secondary-button" type="button" title="Sincronizar datos desde el servidor">⟳ Sincronizar</button>
             </div>
           </div>
           <nav class="nav-list" aria-label="Secciones">
@@ -120,35 +154,25 @@
                   <span id="portalCoreStatus">Servicios disponibles</span>
                 </div>
                 <div class="quick-actions service-grid">
-                  <button class="quick-card" data-feature-coming-soon type="button">
-                    <span>PS</span>
-                    <strong>Pago de servicios</strong>
-                    <small>Luz, agua, telefonia e internet desde tu banca.</small>
-                  </button>
-                  <button class="quick-card" data-feature-coming-soon type="button">
-                    <span>TF</span>
-                    <strong>Transferencias</strong>
-                    <small>Envios entre cuentas propias, terceros y otros bancos.</small>
-                  </button>
-                  <button class="quick-card" data-feature-coming-soon type="button">
-                    <span>TC</span>
-                    <strong>Tarjetas</strong>
-                    <small>Consulta consumos, cupos y pagos pendientes.</small>
-                  </button>
-                  <button class="quick-card" data-feature-coming-soon type="button">
-                    <span>RB</span>
-                    <strong>Referencia bancaria</strong>
-                    <small>Genera certificados y referencias de tus productos.</small>
-                  </button>
                   <button class="quick-card" data-section-shortcut="transactions" type="button">
                     <span>TR</span>
                     <strong>Movimientos</strong>
-                    <small>Consulta el historial cuando lo necesites.</small>
+                    <small>Consulta el historial de transacciones de tus cuentas.</small>
+                  </button>
+                  <button class="quick-card" data-section-shortcut="accounts" type="button">
+                    <span>CT</span>
+                    <strong>Mis Cuentas</strong>
+                    <small>Revisa saldos disponibles y contables de tus productos.</small>
                   </button>
                   <button class="quick-card company-only" data-section-shortcut="payments" type="button">
                     <span>PM</span>
                     <strong>Pagos masivos</strong>
                     <small>Carga archivos corporativos desde el modulo empresarial.</small>
+                  </button>
+                  <button class="quick-card company-only" data-section-shortcut="reports" type="button">
+                    <span>RP</span>
+                    <strong>Reportes</strong>
+                    <small>Consulta reportes, comprobantes y novedades de cada lote.</small>
                   </button>
                 </div>
               </section>
@@ -167,11 +191,13 @@
           </section>
 
           <section class="section-panel is-hidden" data-section-panel="accounts">
-            <div class="panel-heading">
-              <h2>Cuentas y saldos</h2>
-              <span>Productos activos</span>
+            <div class="table-panel">
+              <div class="panel-heading">
+                <h2>Cuentas y saldos</h2>
+                <span>Productos activos</span>
+              </div>
+              <div id="accountsTable" class="table-wrap"></div>
             </div>
-            <div id="accountsList" class="card-grid"></div>
           </section>
 
           <section class="section-panel is-hidden" data-section-panel="transactions">
@@ -214,7 +240,7 @@
             <div class="table-panel">
               <div class="panel-heading">
                 <h2>Lotes de pago</h2>
-                <button id="loadBatchesButton" class="secondary-button" type="button">Ver lotes</button>
+                <button id="loadBatchesButton" class="secondary-button" type="button">⟳ Actualizar lotes</button>
               </div>
               <div id="batchesTable" class="table-wrap"></div>
             </div>
@@ -254,6 +280,17 @@
               </div>
 
               <div id="reportOutput" class="report-output">
+<style>
+.report-output.is-error {
+  border-color: rgba(231, 76, 60, 0.2);
+  background: rgba(231, 76, 60, 0.02);
+}
+
+.report-output.is-info {
+  border-color: rgba(52, 152, 219, 0.2);
+  background: rgba(52, 152, 219, 0.02);
+}
+</style>
                 <div class="report-empty">
                   <strong>Selecciona un lote para consultar.</strong>
                   <span>Los resultados se mostraran aqui con formato de reporte bancario.</span>

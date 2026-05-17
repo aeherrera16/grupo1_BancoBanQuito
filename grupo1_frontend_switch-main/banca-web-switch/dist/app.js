@@ -109,7 +109,7 @@ async function download(path, fileName) {
 
 async function checkServices() {
   try {
-    const data = await api("/api/core/v1/auth/test-data");
+    const data = await api("/api/core/core/v1/auth/test-data");
     state.coreUserId = data.coreUserId || 1;
     $("#coreStatus").textContent = "Core conectado";
   } catch (error) {

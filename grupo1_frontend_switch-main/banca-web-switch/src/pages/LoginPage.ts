@@ -1,4 +1,4 @@
-import { login as loginApi } from '../services/api';
+import { login as loginApi, changePassword as changePasswordApi } from '../services/api';
 import { getState, setState, saveSession } from '../hooks/useState';
 import { setMessage, escapeHtml, formatDate } from '../utils/formatters';
 import { loadAccounts } from './AccountsPage';
@@ -12,9 +12,17 @@ async function login(event: SubmitEvent) {
   setMessage(loginMessage, 'Validando credenciales...');
 
   const form = new FormData(event.currentTarget as HTMLFormElement);
+  const username = form.get('username') as string;
+  const password = form.get('password') as string;
 
   try {
-    const session = await loginApi(form.get('username') as string, form.get('password') as string);
+    const session = await loginApi(username, password);
+
+    if (session.passwordChangeRequired) {
+      setMessage(loginMessage, 'Cambio de contraseña requerido.', 'success');
+      showPasswordChange(username, password);
+      return;
+    }
 
     const realType = session.customerType;
     if (!realType) {
@@ -31,8 +39,50 @@ async function login(event: SubmitEvent) {
   }
 }
 
+function showPasswordChange(username: string, currentPassword: string) {
+  $('[data-view="login"]').classList.add('is-hidden');
+  $('[data-view="password-change"]').classList.remove('is-hidden');
+  
+  const form = $('#passwordChangeForm');
+  $('#currentPassword').value = currentPassword;
+  
+  form.onsubmit = async (event: SubmitEvent) => {
+    event.preventDefault();
+    const message = $('#passwordChangeMessage');
+    const newPassword = $('#newPassword').value;
+    const confirmPassword = $('#confirmPassword').value;
+
+    if (newPassword !== confirmPassword) {
+      setMessage(message, 'Las contraseñas no coinciden.', 'error');
+      return;
+    }
+
+    if (newPassword === currentPassword) {
+      setMessage(message, 'La nueva contraseña debe ser diferente a la actual.', 'error');
+      return;
+    }
+
+    setMessage(message, 'Actualizando contraseña...');
+    try {
+      const session = await changePasswordApi(username, currentPassword, newPassword);
+      
+      const realType = session.customerType;
+      setState({ session, customerType: realType });
+      saveSession();
+      
+      setMessage(message, 'Contraseña actualizada con éxito.', 'success');
+      $('[data-view="password-change"]').classList.add('is-hidden');
+      showDashboard();
+      await refreshAll();
+    } catch (error: any) {
+      setMessage(message, error.message || 'Error al cambiar la contraseña.', 'error');
+    }
+  };
+}
+
 function showDashboard() {
   $('[data-view="login"]').classList.add('is-hidden');
+  $('[data-view="password-change"]').classList.add('is-hidden');
   $('[data-view="dashboard"]').classList.remove('is-hidden');
 
   const state = getState();
