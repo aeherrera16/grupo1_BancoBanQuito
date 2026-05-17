@@ -16,6 +16,20 @@ if ('scrollRestoration' in history) {
   history.scrollRestoration = 'manual';
 }
 
+let sftpAutoRefreshTimer: ReturnType<typeof setInterval> | null = null;
+
+function startSftpAutoRefresh() {
+  stopSftpAutoRefresh();
+  sftpAutoRefreshTimer = setInterval(loadSftpBatches, 3000);
+}
+
+function stopSftpAutoRefresh() {
+  if (sftpAutoRefreshTimer !== null) {
+    clearInterval(sftpAutoRefreshTimer);
+    sftpAutoRefreshTimer = null;
+  }
+}
+
 async function checkServicesStatus() {
   const { coreUserId, coreStatus } = await checkServices();
   setState({ coreUserId });
@@ -28,6 +42,7 @@ async function checkServicesStatus() {
 }
 
 async function activateSectionWithData(section: string) {
+  stopSftpAutoRefresh();
   activateSection(section);
   if (section === 'transactions') {
     await loadTransactions();
@@ -38,6 +53,7 @@ async function activateSectionWithData(section: string) {
   }
   if (section === 'sftp') {
     await loadSftpBatches();
+    startSftpAutoRefresh();
   }
 }
 

@@ -8,6 +8,12 @@ async function loadSftpBatches() {
   const state = getState();
   if (state.customerType !== 'JURIDICO') return;
 
+  const btn = document.getElementById('loadSftpBatchesButton') as HTMLButtonElement | null;
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<span class="btn-spinner">⟳</span> Actualizando...';
+  }
+
   try {
     const batches = await loadBatchesApi();
 
@@ -23,6 +29,12 @@ async function loadSftpBatches() {
     const sftpTable = $('#sftpBatchesTable');
     if (sftpTable) {
       sftpTable.innerHTML = `<div class="empty-state">${escapeHtml(error.message)}</div>`;
+    }
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      const now = new Date().toLocaleTimeString('es-EC', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      btn.innerHTML = `⟳ Actualizar <small style="opacity:0.6;font-size:0.7em">${now}</small>`;
     }
   }
 

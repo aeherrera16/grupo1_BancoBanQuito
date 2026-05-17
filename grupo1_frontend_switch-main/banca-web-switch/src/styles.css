@@ -2940,3 +2940,13 @@ tbody tr.row-pending:first-child td:first-child {
   color: #1a4fa0;
   font-weight: 700;
 }
+
+@keyframes btn-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.btn-spinner {
+  display: inline-block;
+  animation: btn-spin 0.7s linear infinite;
+}
