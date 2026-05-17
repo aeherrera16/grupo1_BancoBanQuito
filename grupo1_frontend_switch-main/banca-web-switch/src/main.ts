@@ -76,9 +76,7 @@ function bindEvents() {
 
   $('#sftpUploadForm').addEventListener('submit', uploadScheduledCsvHandler);
   $('#loadSftpBatchesButton').addEventListener('click', loadSftpBatches);
-  $('#sftpCsvFile').addEventListener('change', (event: any) => {
-    $('#sftpFileName').textContent = event.target.files[0]?.name || 'Seleccionar CSV';
-  });
+  // File selection is handled via SFTP client; form only schedules execution of existing files in the buzón.
 
   $$('.nav-item').forEach((button: any) => {
     button.addEventListener('click', () => activateSectionWithData(button.dataset.section));

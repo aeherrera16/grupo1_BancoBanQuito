@@ -39,7 +39,17 @@ public class SftpServerService {
                 LOG.warn("Upload directory does not exist: {}", uploadDirectory);
                 return;
             }
+            // First process any CSV files placed directly in the upload directory
+            try {
+                Files.list(uploadPath)
+                    .filter(Files::isRegularFile)
+                    .filter(path -> path.toString().toLowerCase().endsWith(".csv"))
+                    .forEach(file -> processFile(file, null));
+            } catch (IOException e) {
+                LOG.warn("No regular files to process in upload directory: {}", e.getMessage());
+            }
 
+            // Then process CSV files placed under user subdirectories (legacy behavior)
             Files.list(uploadPath)
                 .filter(Files::isDirectory)
                 .filter(path -> !path.getFileName().toString().equals("processed") && !path.getFileName().toString().equals("errors"))

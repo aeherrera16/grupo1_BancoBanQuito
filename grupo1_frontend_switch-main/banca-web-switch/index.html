@@ -277,10 +277,10 @@
                   </p>
                 </div>
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem;">
-                  <label class="file-picker" style="margin: 0;">
-                    <input id="sftpCsvFile" name="file" type="file" accept=".csv,text/csv" required />
-                    <span id="sftpFileName">Seleccionar CSV</span>
-                  </label>
+                  <div style="margin:0; display:flex; flex-direction:column; gap:6px;">
+                    <strong>Nota:</strong>
+                    <span>Sube tus archivos CSV únicamente mediante SFTP al servidor indicado. Aquí puedes programar la ejecución de los archivos ya existentes en el buzón.</span>
+                  </div>
                   <label class="field" style="margin: 0;">
                     <span>Fecha y hora de efectivización</span>
                     <input id="sftpScheduledDate" type="datetime-local" required style="width: 100%;" />
