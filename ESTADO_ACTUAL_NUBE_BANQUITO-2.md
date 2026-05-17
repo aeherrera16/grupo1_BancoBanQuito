@@ -18,8 +18,9 @@ Este documento contiene el estado global y absoluto del servidor en GCP. Cubre c
 | Puerto | Protocolo | Servicio / Uso | Expuesto en Firewall GCP |
 |---|---|---|---|
 | `22` | TCP | Conexión SSH (Acceso remoto) | Sí |
-| `80` | TCP | Frontend Core (Banca Empresas) vía Nginx | Sí |
-| `81` | TCP | Frontend Switch (Switch Admin) vía Nginx | Sí |
+| `80` | TCP | Redirección HTTP a HTTPS vía Nginx | Sí |
+| `81` | TCP | (Ya no se usa) | No |
+| `443` | TCP | Ambos Frontends (Seguros vía DuckDNS + Certbot) | Sí (`allow-https-banquito`)|
 | `2222` | TCP | Servidor SFTP incrustado para carga masiva | Sí (`allow-sftp-banquito`)|
 | `3306` | TCP | Base de Datos MariaDB | Sólo Localhost |
 | `5432` | TCP | Base de Datos PostgreSQL | Sólo Localhost |
@@ -134,24 +135,25 @@ RestartSec=10
 
 ---
 
-## 4. Frontend y Servidor Web Proxy (Nginx)
+## 4. Frontend, Dominios y Servidor Web Proxy (Nginx + DuckDNS)
 
-Nginx expone las vistas web de React y realiza "enrutamiento" (proxy pass) para que el frontend pueda llamar a las APIs de Backend sin errores de CORS y sin quemar el "localhost".
+Nginx expone las vistas web de React y realiza "enrutamiento" (proxy pass) para que el frontend pueda llamar a las APIs de Backend sin errores de CORS. Ambos sistemas utilizan dominios gratuitos de DuckDNS y tráfico encriptado HTTPS provisto por Let's Encrypt (Certbot).
 
 ### A. Frontend Core Bancario (Banca Empresas)
 - **Directorio de compilado:** `/var/www/banca-empresas`
 - **Configuración Nginx:** `/etc/nginx/sites-available/bancaempresas.conf`
-- **Puerto:** `80`
+- **Puerto:** `443` (Redirección automática desde el `80`)
+- **Dominio Público:** `https://banquito.duckdns.org`
 
 ### B. Frontend Switch Admin
 - **Directorio de compilado:** `/var/www/switch-admin`
 - **Configuración Nginx:** `/etc/nginx/sites-available/switchadmin.conf`
-- **Puerto:** `81`
-- **Configuración exacta actual (Proxy pass al Backend API):**
+- **Puerto:** `443` (Redirección automática desde el `80`)
+- **Dominio Público:** `https://banco-banquito.duckdns.org`
+- **Configuración exacta actual Nginx (Con SSL y Proxy pass al Backend):**
 ```nginx
 server {
-    listen 81;
-    server_name _;
+    server_name banco-banquito.duckdns.org;
     
     root /var/www/switch-admin;
     index index.html;
@@ -176,6 +178,22 @@ server {
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
     }
+
+    listen 443 ssl; # managed by Certbot
+    ssl_certificate /etc/letsencrypt/live/banco-banquito.duckdns.org/fullchain.pem; # managed by Certbot
+    ssl_certificate_key /etc/letsencrypt/live/banco-banquito.duckdns.org/privkey.pem; # managed by Certbot
+    include /etc/letsencrypt/options-ssl-nginx.conf; # managed by Certbot
+    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem; # managed by Certbot
+}
+
+server {
+    if ($host = banco-banquito.duckdns.org) {
+        return 301 https://$host$request_uri;
+    } # managed by Certbot
+
+    listen 80;
+    server_name banco-banquito.duckdns.org;
+    return 404; # managed by Certbot
 }
 ```
 
