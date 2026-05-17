@@ -82,9 +82,11 @@ function renderBatches() {
     return;
   }
 
+  const companyRuc = state.session?.identification;
   const rows = paymentBatches
     .slice()
     .filter((batch: any) => !batch.channel || !(batch.channel + '').toLowerCase().includes('sftp'))
+    .filter((batch: any) => !companyRuc || batch.ruc === companyRuc)
     .sort((a: any, b: any) => (b.id || 0) - (a.id || 0))
     .map((batch: any) => `
       <tr>
