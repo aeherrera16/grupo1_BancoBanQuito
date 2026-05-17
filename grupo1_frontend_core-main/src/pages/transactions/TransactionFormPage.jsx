@@ -205,6 +205,12 @@ export const TransactionFormPage = () => {
     );
   };
 
+  const getApiErrorMessage = (err, fallback) =>
+    err?.response?.data?.error ||
+    err?.response?.data?.message ||
+    err?.message ||
+    fallback;
+
   const handleDebit = async (e) => {
     e.preventDefault();
     setError('');
@@ -253,7 +259,7 @@ export const TransactionFormPage = () => {
       });
       setDebitAccInfo(emptyInfo);
     } catch (err) {
-      setError(err.response?.data?.message || 'Error al procesar débito');
+      setError(getApiErrorMessage(err, 'Error al procesar débito'));
     } finally {
       setLoading(false);
     }
@@ -302,7 +308,7 @@ export const TransactionFormPage = () => {
       });
       setCreditAccInfo(emptyInfo);
     } catch (err) {
-      setError(err.response?.data?.message || 'Error al procesar crédito');
+      setError(getApiErrorMessage(err, 'Error al procesar crédito'));
     } finally {
       setLoading(false);
     }
@@ -354,7 +360,7 @@ export const TransactionFormPage = () => {
       setSourceInfo(emptyInfo);
       setDestInfo(emptyInfo);
     } catch (err) {
-      setError(err.response?.data?.message || 'Error al procesar transferencia');
+      setError(getApiErrorMessage(err, 'Error al procesar transferencia'));
     } finally {
       setLoading(false);
     }
