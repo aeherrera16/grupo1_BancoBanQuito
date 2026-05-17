@@ -65,7 +65,10 @@ export const AccountDetailPage = () => {
       const status = err.response?.status;
       let text;
       if (status === 403) {
-        text = `No tienes permiso para ${action} cuentas. El backend ha rechazado la petición (403). Contacta al administrador del sistema.`;
+        const backendMsg = err.response?.data?.error || err.response?.data?.message || null;
+        text = backendMsg
+          ? `No tienes permiso para ${action} cuentas: ${backendMsg}`
+          : `No tienes permiso para ${action} cuentas. El backend ha rechazado la petición (403). Contacta al administrador del sistema.`;
       } else if (status === 404) {
         text = 'Cuenta no encontrada.';
       } else {

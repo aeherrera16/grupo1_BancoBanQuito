@@ -27,64 +27,56 @@ public class AccountController {
     public ResponseEntity<List<AccountResponseDTO>> findByCustomerId(
             @PathVariable Integer customerId,
             @RequestHeader(value = "X-Core-User-Id", required = false) Integer coreUserId) {
-        int coreId = coreUserId != null ? coreUserId : 1;
-        return ResponseEntity.ok(accountService.findByCustomerId(customerId, coreId));
+        return ResponseEntity.ok(accountService.findByCustomerId(customerId, coreUserId));
     }
 
     @GetMapping("/{accountNumber}")
     public ResponseEntity<AccountResponseDTO> findByAccountNumber(
             @PathVariable String accountNumber,
             @RequestHeader(value = "X-Core-User-Id", required = false) Integer coreUserId) {
-        int coreId = coreUserId != null ? coreUserId : 1;
-        return ResponseEntity.ok(accountService.findByAccountNumber(accountNumber, coreId));
+        return ResponseEntity.ok(accountService.findByAccountNumber(accountNumber, coreUserId));
     }
 
     @GetMapping("/customer/{customerId}/transactions")
     public ResponseEntity<List<TransactionResponseDTO>> findTransactionsByCustomerId(
             @PathVariable Integer customerId,
             @RequestHeader(value = "X-Core-User-Id", required = false) Integer coreUserId) {
-        int coreId = coreUserId != null ? coreUserId : 1;
-        return ResponseEntity.ok(accountService.findTransactionsByCustomerId(customerId, coreId));
+        return ResponseEntity.ok(accountService.findTransactionsByCustomerId(customerId, coreUserId));
     }
 
     @PostMapping
     public ResponseEntity<AccountResponseDTO> create(
             @RequestBody AccountRequestDTO request,
             @RequestHeader(value = "X-Core-User-Id", required = false) Integer coreUserId) {
-        int coreId = coreUserId != null ? coreUserId : 1;
-        return ResponseEntity.status(HttpStatus.CREATED).body(accountService.create(request, coreId));
+        return ResponseEntity.status(HttpStatus.CREATED).body(accountService.create(request, coreUserId));
     }
 
     @PatchMapping("/{accountNumber}/inactivate")
     public ResponseEntity<AccountResponseDTO> inactivate(
             @PathVariable String accountNumber,
             @RequestHeader(value = "X-Core-User-Id", required = false) Integer coreUserId) {
-        int coreId = coreUserId != null ? coreUserId : 1;
-        return ResponseEntity.ok(accountService.inactivate(accountNumber, coreId));
+        return ResponseEntity.ok(accountService.inactivate(accountNumber, coreUserId));
     }
 
     @PatchMapping("/{accountNumber}/block")
     public ResponseEntity<AccountResponseDTO> block(
             @PathVariable String accountNumber,
             @RequestHeader(value = "X-Core-User-Id", required = false) Integer coreUserId) {
-        int coreId = coreUserId != null ? coreUserId : 1;
-        return ResponseEntity.ok(accountService.block(accountNumber, coreId));
+        return ResponseEntity.ok(accountService.block(accountNumber, coreUserId));
     }
 
     @PatchMapping("/{accountNumber}/suspend")
     public ResponseEntity<AccountResponseDTO> suspend(
             @PathVariable String accountNumber,
             @RequestHeader(value = "X-Core-User-Id", required = false) Integer coreUserId) {
-        int coreId = coreUserId != null ? coreUserId : 1;
-        return ResponseEntity.ok(accountService.suspend(accountNumber, coreId));
+        return ResponseEntity.ok(accountService.suspend(accountNumber, coreUserId));
     }
 
     @PatchMapping("/{accountNumber}/activate")
     public ResponseEntity<AccountResponseDTO> activate(
             @PathVariable String accountNumber,
             @RequestHeader(value = "X-Core-User-Id", required = false) Integer coreUserId) {
-        int coreId = coreUserId != null ? coreUserId : 1;
-        return ResponseEntity.ok(accountService.activate(accountNumber, coreId));
+        return ResponseEntity.ok(accountService.activate(accountNumber, coreUserId));
     }
 
     @PostMapping("/{accountNumber}/credit")

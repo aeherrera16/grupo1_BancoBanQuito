@@ -193,7 +193,7 @@ public class AccountService implements IAccountService {
 
         log.info("CoreUser {} cambia cuenta {} a {}", coreUserId, accountNumber, status);
 
-        if (status == AccountStatusEnum.BLOQUEADO || status == AccountStatusEnum.SUSPENDIDO) {
+        if (status == AccountStatusEnum.BLOQUEADO || status == AccountStatusEnum.SUSPENDIDO || status == AccountStatusEnum.ACTIVO) {
             String email = savedAccount.getCustomer().getEmail();
 
             if (email != null && !email.isBlank()) {

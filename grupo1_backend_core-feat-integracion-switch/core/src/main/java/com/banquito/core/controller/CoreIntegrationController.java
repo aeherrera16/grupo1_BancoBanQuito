@@ -61,7 +61,7 @@ public class CoreIntegrationController {
         public ResponseEntity<Map<String, Object>> getFavoriteAccountByRuc(@PathVariable String ruc) {
         return customerRepository.findByIdentificationTypeAndIdentification("RUC", ruc)
             .map(customer -> accountRepository.findByCustomer_IdAndIsFavoriteTrue(customer.getId())
-                .map(account -> ResponseEntity.ok(Map.of("accountNumber", account.getAccountNumber())))
+                .map(account -> ResponseEntity.ok(Map.<String, Object>of("accountNumber", account.getAccountNumber())))
                 .orElseGet(() -> ResponseEntity.notFound().build()))
             .orElseGet(() -> ResponseEntity.notFound().build());
         }

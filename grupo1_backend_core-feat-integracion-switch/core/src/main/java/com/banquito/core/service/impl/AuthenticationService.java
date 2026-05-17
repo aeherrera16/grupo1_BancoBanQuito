@@ -142,6 +142,11 @@ public class AuthenticationService implements IAuthenticationService {
     @Override
     @Transactional(readOnly = true)
     public void validateActiveCoreUser(Integer coreUserId) {
+        // If no coreUserId provided, allow operation (used by internal calls or unauthenticated requests)
+        if (coreUserId == null) {
+            return;
+        }
+
         CoreUser coreUser = coreUserRepository.findById(coreUserId)
                 .orElseThrow(() -> new SecurityException("CoreUser no autorizado: " + coreUserId));
         if (coreUser.getStatus() != CommonStatusEnum.ACTIVO) {
