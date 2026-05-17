@@ -17,9 +17,9 @@ async function loadBatches() {
 
   try {
     const batches = await loadBatchesApi();
-    setState({ batches });
+    setState({ batches, paymentBatches: batches });
   } catch (error: any) {
-    setState({ batches: [] });
+    setState({ batches: [], paymentBatches: [] });
     $('#batchesTable').innerHTML = `<div class="empty-state">${escapeHtml(error.message)}</div>`;
   }
 
@@ -70,18 +70,19 @@ async function loadCompanyAccount() {
 function renderBatches() {
   const state = getState();
   const batchesMetric = $('#batchesMetric');
-  if (batchesMetric) batchesMetric.textContent = state.batches.length;
+  const paymentBatches = state.paymentBatches || [];
+  if (batchesMetric) batchesMetric.textContent = paymentBatches.length;
   const table = $('#batchesTable');
   const recent = $('#recentBatches');
 
-  if (!state.batches.length) {
+  if (!paymentBatches.length) {
     const empty = '<div class="empty-state">Sin lotes cargados todavia.</div>';
     table.innerHTML = empty;
     if (recent) recent.innerHTML = empty;
     return;
   }
 
-  const rows = state.batches
+  const rows = paymentBatches
     .slice()
     .sort((a: any, b: any) => (b.id || 0) - (a.id || 0))
     .map((batch: any) => `
