@@ -1,4 +1,4 @@
-import { loadBatches as loadBatchesApi, scheduleQueuedBatches } from '../services/api';
+import { api, scheduleQueuedBatches } from '../services/api';
 import { getState, setState } from '../hooks/useState';
 import { formatMoney, statusClass, escapeHtml, setMessage, formatDate } from '../helpers/formatters';
 
@@ -15,7 +15,7 @@ async function loadSftpBatches(silent = false) {
   }
 
   try {
-    const batches = await loadBatchesApi();
+    const batches = await api('/api/switch/v1/payment-batch');
     const companyRuc = state.session?.identification;
     const filteredBatches = batches.filter(
       (batch: any) =>
