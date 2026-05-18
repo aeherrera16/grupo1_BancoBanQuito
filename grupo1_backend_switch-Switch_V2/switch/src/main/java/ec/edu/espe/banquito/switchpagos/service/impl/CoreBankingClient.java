@@ -1,12 +1,10 @@
 package ec.edu.espe.banquito.switchpagos.service.impl;
 
 import java.math.BigDecimal;
-import java.time.Duration;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.web.client.ClientHttpRequestFactories;
-import org.springframework.boot.web.client.ClientHttpRequestFactorySettings;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
@@ -20,13 +18,12 @@ public class CoreBankingClient implements ICoreBankingClient {
     private final RestClient restClient;
 
     public CoreBankingClient(@Value("${app.core.base-url}") String coreBaseUrl) {
-        var requestFactory = ClientHttpRequestFactories.get(
-                ClientHttpRequestFactorySettings.DEFAULTS
-                        .withConnectTimeout(Duration.ofSeconds(5))
-                        .withReadTimeout(Duration.ofSeconds(15)));
+        SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
+        factory.setConnectTimeout(5000);
+        factory.setReadTimeout(15000);
         this.restClient = RestClient.builder()
                 .baseUrl(coreBaseUrl)
-                .requestFactory(requestFactory)
+                .requestFactory(factory)
                 .build();
     }
 
