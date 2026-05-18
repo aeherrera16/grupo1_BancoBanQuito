@@ -8,8 +8,8 @@ import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestClientException;
 
@@ -61,7 +61,8 @@ public class PaymentBatchProcessingService implements IPaymentBatchProcessingSer
     }
 
     @Override
-    public PaymentBatch process(PaymentBatch batch, List<PaymentDetail> details) {
+    @Async
+    public void process(PaymentBatch batch, List<PaymentDetail> details) {
         logger.info("Processing batch {} with {} details", batch.getId(), details.size());
 
         try {
@@ -94,21 +95,18 @@ public class PaymentBatchProcessingService implements IPaymentBatchProcessingSer
 
             recordBatchStatusChange(batch, batch.getStatus(), BatchStatusEnum.PROCESSED);
             batch.setStatus(BatchStatusEnum.PROCESSED);
-            batch = paymentBatchRepository.save(batch);
+            paymentBatchRepository.save(batch);
 
             logger.info("Batch {} processed successfully", batch.getId());
-            return batch;
 
         } catch (Exception e) {
             logger.error("Error processing batch {}: {}", batch.getId(), e.getMessage());
             try {
                 recordBatchStatusChange(batch, batch.getStatus(), BatchStatusEnum.REJECTED);
                 batch.setStatus(BatchStatusEnum.REJECTED);
-                return paymentBatchRepository.save(batch);
+                paymentBatchRepository.save(batch);
             } catch (Exception saveEx) {
                 logger.error("Could not persist REJECTED status for batch {}: {}", batch.getId(), saveEx.getMessage());
-                batch.setStatus(BatchStatusEnum.REJECTED);
-                return batch;
             }
         }
     }
