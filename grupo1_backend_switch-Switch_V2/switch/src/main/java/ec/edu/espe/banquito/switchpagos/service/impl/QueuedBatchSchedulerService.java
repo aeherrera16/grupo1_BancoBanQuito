@@ -102,19 +102,27 @@ public class QueuedBatchSchedulerService {
                 Optional<BatchStatusLog> lastProcessingLog = batchStatusLogRepository
                         .findTopByPaymentBatchIdAndNewStatusOrderByChangedAtDesc(batch.getId(), "PROCESSING");
 
-                if (lastProcessingLog.isEmpty() || lastProcessingLog.get().getChangedAt().isAfter(stuckThreshold)) {
+                LocalDateTime processingStart = lastProcessingLog.isPresent()
+                        ? lastProcessingLog.get().getChangedAt()
+                        : batch.getReceivedAt();
+
+                if (processingStart == null || processingStart.isAfter(stuckThreshold)) {
                     continue;
                 }
 
-                LOG.warn("Recovering stuck batch {} (PROCESSING since {})", batch.getId(),
-                        lastProcessingLog.get().getChangedAt());
+                LOG.warn("Recovering stuck batch {} (PROCESSING since {})", batch.getId(), processingStart);
 
                 List<PaymentDetail> details = paymentDetailRepository.findByPaymentBatchIdOrderByLineNumberAsc(batch.getId());
+                boolean allPending = details.stream().allMatch(d -> d.getStatus() == PaymentDetailStatusEnum.PENDING);
                 boolean hasPending = details.stream().anyMatch(d ->
                         d.getStatus() != PaymentDetailStatusEnum.SUCCESS
                         && d.getStatus() != PaymentDetailStatusEnum.REJECTED);
 
-                if (hasPending) {
+                if (allPending) {
+                    LOG.warn("Batch {} never processed — resetting to ENCOLADO for retry", batch.getId());
+                    batch.setStatus(BatchStatusEnum.ENCOLADO);
+                    paymentBatchRepository.save(batch);
+                } else if (hasPending) {
                     LOG.warn("Batch {} has pending details — marking REJECTED", batch.getId());
                     batch.setStatus(BatchStatusEnum.REJECTED);
                     paymentBatchRepository.save(batch);
