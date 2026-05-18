@@ -23,7 +23,7 @@ public class EmailService implements IEmailService {
     @Value("${app.mail.from-name}")
     private String mailFromName;
 
-    @Async
+    @Async("emailTaskExecutor")
     @Override
     public void sendTransactionNotificationEmail(String to, String accountNumber, String movementType,
                                                   java.math.BigDecimal amount, java.math.BigDecimal balance,
@@ -61,7 +61,7 @@ public class EmailService implements IEmailService {
         }
     }
 
-    @Async
+    @Async("emailTaskExecutor")
     @Override
     public void sendStatusChangeEmail(String to, String accountNumber, String newStatus) {
         try {
