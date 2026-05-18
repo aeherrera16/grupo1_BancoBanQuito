@@ -100,6 +100,12 @@ async function uploadCsv(file: File) {
   form.append('file', file);
   form.append('channel', 'PORTAL');
 
+  const state = getState();
+  const session = state.session;
+  if (session && session.identification) {
+    form.append('ruc', session.identification);
+  }
+
   return api('/api/switch/v1/payment-batch/upload-csv', {
     method: 'POST',
     body: form,
