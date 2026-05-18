@@ -50,7 +50,8 @@ public class BranchService implements IBranchService {
                 branch.getId(),
                 branch.getBranchCode(),
                 branch.getName(),
-                branch.getCity()
+                branch.getCity(),
+                branch.getCreationDate()
         );
     }
 }

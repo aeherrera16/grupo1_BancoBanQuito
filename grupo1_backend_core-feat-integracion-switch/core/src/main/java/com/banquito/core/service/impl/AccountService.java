@@ -268,6 +268,11 @@ public class AccountService implements IAccountService {
             throw new InactiveAccountException(accountNumber);
         }
 
+        if (account.getStatus() == AccountStatusEnum.INACTIVO) {
+            account.setStatus(AccountStatusEnum.ACTIVO);
+            log.info("Cuenta {} reactivada automaticamente por deposito", accountNumber);
+        }
+
         account.setAvailableBalance(account.getAvailableBalance().add(amount));
         account.setAccountingBalance(account.getAccountingBalance().add(amount));
         account.setLastUpdate(LocalDateTime.now());

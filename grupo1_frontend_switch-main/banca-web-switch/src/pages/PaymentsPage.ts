@@ -87,6 +87,7 @@ function renderBatches() {
     .slice()
     .filter((batch: any) => !batch.channel || !(batch.channel + '').toLowerCase().includes('sftp'))
     .filter((batch: any) => !companyRuc || batch.ruc === companyRuc)
+    .filter((batch: any) => !['PROGRAMADO', 'SCHEDULED'].includes((batch.status || '').toUpperCase()))
     .sort((a: any, b: any) => (b.id || 0) - (a.id || 0))
     .map((batch: any) => `
       <tr>

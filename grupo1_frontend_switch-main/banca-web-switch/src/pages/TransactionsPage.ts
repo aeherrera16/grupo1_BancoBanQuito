@@ -33,33 +33,42 @@ function renderTransactions() {
     return;
   }
 
+  const statusLabel = (s: string) => {
+    const up = (s || '').toUpperCase();
+    if (up === 'COMPLETADA') return 'Exitoso';
+    if (up === 'RECHAZADA') return 'Rechazado';
+    return s || 'N/D';
+  };
+
   const rows = state.transactions
-    .map((transaction: any) => `
-    <tr>
-      <td>${escapeHtml(transaction.accountNumber || 'N/D')}</td>
-      <td><span class="badge ${movementClass(transaction.movementType)}">${escapeHtml(transaction.movementType || 'N/D')}</span></td>
-      <td>${formatMoney(transaction.amount)}</td>
-      <td>${formatMoney(transaction.resultingBalance)}</td>
-      <td><span class="badge ${statusClass(transaction.status)}">${escapeHtml(transaction.status || 'N/D')}</span></td>
-      <td>${formatDate(transaction.transactionDate)}</td>
-      <td>${escapeHtml(transaction.message || 'N/D')}</td>
-      <td><span title="${escapeHtml(transaction.transactionUuid || 'N/D')}">${escapeHtml(shortId(transaction.transactionUuid))}</span></td>
-    </tr>
-  `)
+    .map((transaction: any) => {
+      const isDebit = (transaction.movementType || '').toUpperCase() === 'DEBITO';
+      return `
+      <tr>
+        <td>${isDebit ? escapeHtml(transaction.accountNumber || 'N/D') : '—'}</td>
+        <td>${!isDebit ? escapeHtml(transaction.accountNumber || 'N/D') : '—'}</td>
+        <td><span class="badge ${movementClass(transaction.movementType)}">${escapeHtml(transaction.movementType || 'N/D')}</span></td>
+        <td>${formatMoney(transaction.amount)}</td>
+        <td>${formatMoney(transaction.resultingBalance)}</td>
+        <td><span class="badge ${statusClass(transaction.status)}">${escapeHtml(statusLabel(transaction.status))}</span></td>
+        <td>${formatDate(transaction.transactionDate)}</td>
+        <td>${escapeHtml(transaction.message || 'N/D')}</td>
+      </tr>
+    `})
     .join('');
 
   const markup = `
     <table>
       <thead>
         <tr>
-          <th>Cuenta</th>
+          <th>Cuenta Origen</th>
+          <th>Cuenta Destino</th>
           <th>Movimiento</th>
           <th>Monto</th>
           <th>Saldo resultante</th>
           <th>Estado</th>
           <th>Fecha</th>
           <th>Descripcion</th>
-          <th>UUID</th>
         </tr>
       </thead>
       <tbody>${rows}</tbody>
