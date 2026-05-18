@@ -17,7 +17,9 @@ async function loadBatches() {
 
   try {
     const batches = await loadBatchesApi();
-    setState({ batches, paymentBatches: batches });
+    const companyRuc = state.session?.identification;
+    const filtered = batches.filter((b: any) => !companyRuc || b.ruc === companyRuc);
+    setState({ batches: filtered, paymentBatches: filtered });
   } catch (error: any) {
     setState({ batches: [], paymentBatches: [] });
     $('#batchesTable').innerHTML = `<div class="empty-state">${escapeHtml(error.message)}</div>`;
