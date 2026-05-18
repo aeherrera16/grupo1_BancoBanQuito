@@ -55,6 +55,12 @@ public class CustomerService implements ICustomerService {
     public CustomerResponseDTO create(CustomerRequestDTO request) {
         validateCustomerRequest(request);
 
+        if (customerRepository.findByIdentificationTypeAndIdentification(
+                request.getIdentificationType(), request.getIdentification()).isPresent()) {
+            throw new IllegalArgumentException(
+                    "Ya existe un cliente con " + request.getIdentificationType() + " " + request.getIdentification());
+        }
+
         CustomerSubtype subtype = customerSubtypeRepository.findById(request.getCustomerSubtypeId())
                 .orElseThrow(() -> new RuntimeException(
                         "Subtipo de cliente no encontrado: " + request.getCustomerSubtypeId()));
