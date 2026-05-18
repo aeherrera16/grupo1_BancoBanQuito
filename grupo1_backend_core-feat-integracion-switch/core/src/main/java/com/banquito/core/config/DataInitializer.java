@@ -107,6 +107,7 @@ public class DataInitializer implements CommandLineRunner {
         initMassiveCustomers();
         initMassiveAccounts();
         initDemoData();
+        initMissingWebCredentials();
 
         log.info("Datos de prueba cargados correctamente");
     }
@@ -574,7 +575,8 @@ public class DataInitializer implements CommandLineRunner {
                 company.setRegistrationDate(LocalDateTime.now());
                 company.setStatus(CustomerStatusEnum.ACTIVO);
 
-                customerRepository.save(company);
+                Customer savedCompany = customerRepository.save(company);
+                authenticationService.createInitialWebCredential(savedCompany);
                 corporateCount++;
             }
 
@@ -582,6 +584,18 @@ public class DataInitializer implements CommandLineRunner {
         }
 
         log.info("Clientes masivos creados o verificados");
+    }
+
+    private void initMissingWebCredentials() {
+        List<Customer> all = customerRepository.findAll();
+        int created = 0;
+        for (Customer c : all) {
+            if (CustomerStatusEnum.ACTIVO.equals(c.getStatus())) {
+                authenticationService.createInitialWebCredential(c);
+                created++;
+            }
+        }
+        log.info("initMissingWebCredentials: revisados {} clientes activos", created);
     }
 
     private void initMassiveAccounts() {
