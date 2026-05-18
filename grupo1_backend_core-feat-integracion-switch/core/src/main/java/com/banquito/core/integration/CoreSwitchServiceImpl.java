@@ -139,6 +139,16 @@ public class CoreSwitchServiceImpl implements CoreSwitchService {
         }
         Account account = accountRepository.findByAccountNumber(destinationAccount)
                 .orElseThrow(() -> new IllegalArgumentException("Destination account not found: " + destinationAccount));
+
+        if (account.getStatus() == AccountStatusEnum.BLOQUEADO) {
+            throw new IllegalArgumentException(
+                    "Destination account is blocked and cannot receive deposits: " + destinationAccount);
+        }
+        if (account.getStatus() == AccountStatusEnum.INACTIVO) {
+            throw new IllegalArgumentException(
+                    "Destination account is inactive and cannot receive deposits: " + destinationAccount);
+        }
+
         Customer customer = account.getCustomer();
         if (customer == null || customer.getIdentification() == null
                 || !customer.getIdentification().equals(beneficiaryIdentification.trim())) {
