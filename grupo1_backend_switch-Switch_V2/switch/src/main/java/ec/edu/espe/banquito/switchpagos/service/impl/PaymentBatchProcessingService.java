@@ -176,6 +176,9 @@ public class PaymentBatchProcessingService implements IPaymentBatchProcessingSer
     }
 
     private void notifySuccessfulPayment(PaymentBatch batch, PaymentDetail detail, String companyName) {
+        if ("SENT".equals(detail.getNotificationStatus())) {
+            return;
+        }
         detail.setNotificationStatus("PENDING");
 
         if (!StringUtils.hasText(detail.getBeneficiaryEmail())) {
