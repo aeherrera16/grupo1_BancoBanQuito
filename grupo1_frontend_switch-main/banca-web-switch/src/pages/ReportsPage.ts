@@ -438,13 +438,25 @@ async function runReportHandler(type: string) {
     showReportState(renderReportDocument(type, batchId, batch, data));
   } catch (error: any) {
     const msg = error.message || '';
+    const batch = currentBatch();
+    const batchStatus = (batch?.status || '').toUpperCase();
+    const isProcessed = ['PROCESADO', 'EXITOSO', 'PROCESSED', 'SUCCESS'].includes(batchStatus);
     if (msg.includes('No service charge found') || msg.includes('No hay cargo')) {
-      showReportState(`
-        <div class="report-empty">
-          <strong>Lote en espera de procesamiento</strong>
-          <span>Este lote se encuentra en estado ENCOLADO o PROGRAMADO. El reporte estará disponible automáticamente una vez que el banco procese la operación (en el siguiente corte o día hábil).</span>
-        </div>
-      `, 'info');
+      if (isProcessed) {
+        showReportState(`
+          <div class="report-empty">
+            <strong>Información de cargo no disponible</strong>
+            <span>El lote fue procesado pero no se generó un cargo de servicio registrado. Contacte al administrador del sistema para más detalles.</span>
+          </div>
+        `, 'info');
+      } else {
+        showReportState(`
+          <div class="report-empty">
+            <strong>Lote en espera de procesamiento</strong>
+            <span>Este lote se encuentra en estado ${escapeHtml(batch?.status || 'PENDIENTE')}. El reporte estará disponible automáticamente una vez que el banco procese la operación.</span>
+          </div>
+        `, 'info');
+      }
       return;
     }
     showReportState(`<div class="report-empty"><strong>No se pudo consultar el reporte.</strong><span>${escapeHtml(error.message)}</span></div>`, 'error');
@@ -470,13 +482,25 @@ async function runDownloadHandler(type: string) {
     `, 'success');
   } catch (error: any) {
     const msg = error.message || '';
+    const batch = currentBatch();
+    const batchStatus = (batch?.status || '').toUpperCase();
+    const isProcessed = ['PROCESADO', 'EXITOSO', 'PROCESSED', 'SUCCESS'].includes(batchStatus);
     if (msg.includes('No service charge found') || msg.includes('No hay cargo')) {
-      showReportState(`
-        <div class="report-empty">
-          <strong>Comprobante aún no generado</strong>
-          <span>El lote aún no ha sido procesado por el sistema contable del banco. Podrás descargar el comprobante PDF una vez que el lote pase a estado EXITOSO.</span>
-        </div>
-      `, 'info');
+      if (isProcessed) {
+        showReportState(`
+          <div class="report-empty">
+            <strong>Archivo no disponible</strong>
+            <span>El lote fue procesado pero el archivo solicitado no está disponible. Contacte al administrador del sistema.</span>
+          </div>
+        `, 'info');
+      } else {
+        showReportState(`
+          <div class="report-empty">
+            <strong>Comprobante aún no generado</strong>
+            <span>El lote aún no ha sido procesado. Estará disponible una vez que el lote pase a estado EXITOSO.</span>
+          </div>
+        `, 'info');
+      }
       return;
     }
     showReportState(`<div class="report-empty"><strong>No se pudo generar la descarga.</strong><span>${escapeHtml(error.message)}</span></div>`, 'error');

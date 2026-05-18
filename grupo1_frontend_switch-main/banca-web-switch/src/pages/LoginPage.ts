@@ -135,6 +135,12 @@ function renderProfile() {
   const customerName = session.customerName || 'Informacion del cliente';
   const identification = `${session.identificationType || 'ID'} ${session.identification || ''}`.trim();
 
+  const statusPriority = ['SUSPENDIDO', 'BLOQUEADO', 'INACTIVO', 'ACTIVO'];
+  const accounts: any[] = state.accounts || [];
+  const accountStatus = statusPriority.find((s) => accounts.some((a: any) => a.status === s)) || accounts[0]?.status || session.status || 'N/D';
+  const accountStatusLabel = accountStatus;
+  const accountStatusBadgeClass = accountStatus === 'ACTIVO' ? 'is-success' : accountStatus === 'SUSPENDIDO' ? 'is-danger' : accountStatus === 'BLOQUEADO' ? 'is-danger' : 'is-neutral';
+
   $('#profileName').textContent = session.customerName || 'Informacion del cliente';
   $('#profileDetails').innerHTML = `
     <section class="client-identity-card">
@@ -144,7 +150,7 @@ function renderProfile() {
         <strong>${escapeHtml(customerName)}</strong>
         <small>${escapeHtml(identification || 'Identificacion no disponible')}</small>
       </div>
-      <em class="badge ${session.status === 'ACTIVO' ? 'is-success' : 'is-neutral'}">${escapeHtml(session.status || 'N/D')}</em>
+      <em class="badge ${accountStatusBadgeClass}">${escapeHtml(accountStatusLabel)}</em>
     </section>
 
     <section class="bank-reference-card">
@@ -181,6 +187,7 @@ function renderProfile() {
 
 async function refreshAll() {
   await loadAccounts();
+  renderProfile();
 }
 
 export {

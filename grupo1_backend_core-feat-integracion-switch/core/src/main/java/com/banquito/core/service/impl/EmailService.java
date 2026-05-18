@@ -25,6 +25,44 @@ public class EmailService implements IEmailService {
 
     @Async
     @Override
+    public void sendTransactionNotificationEmail(String to, String accountNumber, String movementType,
+                                                  java.math.BigDecimal amount, java.math.BigDecimal balance,
+                                                  String description) {
+        try {
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+
+            helper.setFrom(mailFrom, mailFromName);
+            helper.setTo(to);
+
+            boolean isDebit = "DEBITO".equalsIgnoreCase(movementType);
+            String subject = isDebit
+                    ? "BanQuito: Débito registrado en su cuenta"
+                    : "BanQuito: Crédito registrado en su cuenta";
+
+            String maskedAccount = "***" + accountNumber.substring(Math.max(0, accountNumber.length() - 4));
+            String tipoMovimiento = isDebit ? "débito" : "crédito";
+            String signo = isDebit ? "-" : "+";
+
+            String text = "Estimado cliente,\n\n" +
+                    "Se ha registrado un " + tipoMovimiento + " en su cuenta terminada en " + maskedAccount + ":\n\n" +
+                    "  Monto: " + signo + " $" + amount.setScale(2, java.math.RoundingMode.HALF_UP) + "\n" +
+                    "  Saldo disponible: $" + balance.setScale(2, java.math.RoundingMode.HALF_UP) + "\n" +
+                    (description != null && !description.isBlank() ? "  Descripcion: " + description + "\n" : "") +
+                    "\nSi usted no reconoce esta transaccion, comuniquese de inmediato con soporte.\n\n" +
+                    "Atentamente,\nBanco BanQuito S.A.";
+
+            helper.setText(text, false);
+            helper.setSubject(subject);
+            mailSender.send(message);
+            log.info("Notificacion de {} enviada a {}", tipoMovimiento, to);
+        } catch (Exception e) {
+            log.error("Error al enviar notificacion de transaccion a {}: {}", to, e.getMessage());
+        }
+    }
+
+    @Async
+    @Override
     public void sendStatusChangeEmail(String to, String accountNumber, String newStatus) {
         try {
             MimeMessage message = mailSender.createMimeMessage();
