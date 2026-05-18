@@ -1,5 +1,6 @@
 package com.banquito.core.repository;
 
+import com.banquito.core.enums.MovementTypeEnum;
 import com.banquito.core.model.AccountTransaction;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
@@ -12,6 +13,8 @@ import java.util.Optional;
 public interface AccountTransactionRepository extends JpaRepository<AccountTransaction, Long> {
 
     Optional<AccountTransaction> findByTransactionUuid(String transactionUuid);
+
+    Optional<AccountTransaction> findByTransactionUuidAndMovementType(String transactionUuid, MovementTypeEnum movementType);
 
     boolean existsByTransactionUuid(String transactionUuid);
 

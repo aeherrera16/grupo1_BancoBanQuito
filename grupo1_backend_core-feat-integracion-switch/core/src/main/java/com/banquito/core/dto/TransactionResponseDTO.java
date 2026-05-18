@@ -14,6 +14,7 @@ public class TransactionResponseDTO {
 
     private Long id;
     private String accountNumber;
+    private String counterpartAccountNumber;
     private MovementTypeEnum movementType;
     private BigDecimal amount;
     private BigDecimal resultingBalance;

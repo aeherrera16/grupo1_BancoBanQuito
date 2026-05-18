@@ -229,7 +229,7 @@ public class DataInitializer implements CommandLineRunner {
             norte.setBranchCode("001");
             norte.setName("Sucursal Norte");
             norte.setCity("Quito");
-            norte.setCreationDate(LocalDateTime.now());
+            norte.setCreationDate(LocalDateTime.of(2015, 3, 1, 8, 0));
             branchRepository.save(norte);
         }
 
@@ -238,7 +238,7 @@ public class DataInitializer implements CommandLineRunner {
             sur.setBranchCode("002");
             sur.setName("Sucursal Sur");
             sur.setCity("Quito");
-            sur.setCreationDate(LocalDateTime.now());
+            sur.setCreationDate(LocalDateTime.of(2016, 7, 15, 8, 0));
             branchRepository.save(sur);
         }
 
@@ -247,7 +247,7 @@ public class DataInitializer implements CommandLineRunner {
             centro.setBranchCode("003");
             centro.setName("Sucursal Centro");
             centro.setCity("Quito");
-            centro.setCreationDate(LocalDateTime.now());
+            centro.setCreationDate(LocalDateTime.of(2018, 2, 20, 8, 0));
             branchRepository.save(centro);
         }
 
@@ -256,7 +256,7 @@ public class DataInitializer implements CommandLineRunner {
             valles.setBranchCode("004");
             valles.setName("Sucursal Valles");
             valles.setCity("Quito");
-            valles.setCreationDate(LocalDateTime.now());
+            valles.setCreationDate(LocalDateTime.of(2020, 5, 10, 8, 0));
             branchRepository.save(valles);
         }
 
@@ -265,7 +265,7 @@ public class DataInitializer implements CommandLineRunner {
             digital.setBranchCode("005");
             digital.setName("Sucursal Digital");
             digital.setCity("Digital");
-            digital.setCreationDate(LocalDateTime.now());
+            digital.setCreationDate(LocalDateTime.of(2022, 1, 15, 8, 0));
             branchRepository.save(digital);
         }
 

@@ -146,11 +146,11 @@ export const TransactionHistoryPage = () => {
                     </td>
 
                     <td className="p-3 font-mono text-xs text-gray-700">
-                      {isDebit ? (tx.accountNumber || '—') : '—'}
+                      {isDebit ? (tx.accountNumber || '—') : (tx.counterpartAccountNumber || '—')}
                     </td>
 
                     <td className="p-3 font-mono text-xs text-gray-700">
-                      {!isDebit ? (tx.accountNumber || '—') : '—'}
+                      {!isDebit ? (tx.accountNumber || '—') : (tx.counterpartAccountNumber || '—')}
                     </td>
 
                     <td className="p-3"><span className={statusCls}>{statusLabel}</span></td>

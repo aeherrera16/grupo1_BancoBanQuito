@@ -43,10 +43,11 @@ function renderTransactions() {
   const rows = state.transactions
     .map((transaction: any) => {
       const isDebit = (transaction.movementType || '').toUpperCase() === 'DEBITO';
+      const counterpart = transaction.counterpartAccountNumber || '—';
       return `
       <tr>
-        <td>${isDebit ? escapeHtml(transaction.accountNumber || 'N/D') : '—'}</td>
-        <td>${!isDebit ? escapeHtml(transaction.accountNumber || 'N/D') : '—'}</td>
+        <td>${isDebit ? escapeHtml(transaction.accountNumber || 'N/D') : escapeHtml(counterpart)}</td>
+        <td>${!isDebit ? escapeHtml(transaction.accountNumber || 'N/D') : escapeHtml(counterpart)}</td>
         <td><span class="badge ${movementClass(transaction.movementType)}">${escapeHtml(transaction.movementType || 'N/D')}</span></td>
         <td>${formatMoney(transaction.amount)}</td>
         <td>${formatMoney(transaction.resultingBalance)}</td>

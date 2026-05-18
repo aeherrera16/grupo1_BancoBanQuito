@@ -229,8 +229,8 @@ export const AccountDetailPage = () => {
                               {movType}
                             </span>
                           </td>
-                          <td className="p-3 font-mono text-xs">{isDebit ? (tx.accountNumber || accountNumber) : '—'}</td>
-                          <td className="p-3 font-mono text-xs">{!isDebit ? (tx.accountNumber || accountNumber) : '—'}</td>
+                          <td className="p-3 font-mono text-xs">{isDebit ? (tx.accountNumber || accountNumber) : (tx.counterpartAccountNumber || '—')}</td>
+                          <td className="p-3 font-mono text-xs">{!isDebit ? (tx.accountNumber || accountNumber) : (tx.counterpartAccountNumber || '—')}</td>
                           <td className="p-3">{formatCurrency(tx.amount)}</td>
                           <td className="p-3">{formatCurrency(tx.resultingBalance)}</td>
                           <td className="p-3"><span className={statusCls}>{statusLabel}</span></td>
