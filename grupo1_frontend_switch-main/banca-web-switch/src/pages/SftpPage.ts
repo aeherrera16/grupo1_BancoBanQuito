@@ -16,11 +16,8 @@ async function loadSftpBatches(silent = false) {
 
   try {
     const batches = await api('/api/switch/v1/payment-batch');
-    const companyRuc = state.session?.identification;
     const filteredBatches = batches.filter(
-      (batch: any) =>
-        (batch.channel + '').toLowerCase().includes('sftp') &&
-        (!companyRuc || batch.ruc === companyRuc)
+      (batch: any) => (batch.channel + '').toLowerCase().includes('sftp')
     );
     setState({ sftpBatches: filteredBatches });
     renderSftpBatches();
