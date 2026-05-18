@@ -116,7 +116,7 @@ public class PaymentBatchController {
             PaymentBatch batch = parseResult.getBatch();
             batch.setChannel(channel);
             batch.setReceivedAt(dateTimeProvider.now());
-            batch.setScheduledDate(scheduledDate != null ? scheduledDate : java.time.LocalDateTime.now());
+            batch.setScheduledDate(scheduledDate != null ? scheduledDate : dateTimeProvider.now());
             if (ruc != null && !ruc.isEmpty()) {
                 batch.setRuc(ruc);
             }
