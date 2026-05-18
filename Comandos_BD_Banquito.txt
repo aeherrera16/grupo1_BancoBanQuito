@@ -1,0 +1,155 @@
+*************************COMANDO PARA MARIADB*********************
+Comando 1: 
+echo "=== CORE (MariaDB) ===" && \
+cat /etc/systemd/system/banquito-core.service 2>/dev/null | grep -E "DB_|Environment" && \
+cat /etc/systemd/system/banquito-core.service.d/override.conf 2>/dev/null | grep -E "DB_|Environment"
+Respuesta 1: 
+anahyyherrera@banquito:~$ echo "=== CORE (MariaDB) ===" && \
+cat /etc/systemd/system/banquito-core.service 2>/dev/null | grep -E "DB_|Environment" && \
+cat /etc/systemd/system/banquito-core.service.d/override.conf 2>/dev/null | grep -E "DB_|Environment"
+=== CORE (MariaDB) ===
+Environment=SPRING_PROFILES_ACTIVE=prod
+Environment="DB_URL=jdbc:mariadb://127.0.0.1:3306/banquito_core?serverTimezone=America/Guayaquil"
+Environment="DB_USERNAME=root"
+Environment="DB_PASSWORD=root"
+Environment="SPRING_MAIL_HOST=smtp.gmail.com"
+Environment="SPRING_MAIL_PORT=587"
+Environment="SPRING_MAIL_USERNAME=anahyyherrera@gmail.com"
+Environment="SPRING_MAIL_PASSWORD=lutezbjmwsluvgsj"
+Environment="SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH=true"
+Environment="SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE=true"
+Environment="APP_MAIL_FROM=anahyyherrera@gmail.com"
+Environment="APP_MAIL_FROM_NAME=Banco BanQuito"
+anahyyherrera@banquito:~$ 
+
+*************************COMANDO PARA POSTGRES*********************
+Comando 2:
+# Credenciales de PostgreSQL (Switch)
+echo "=== SWITCH (PostgreSQL) ===" && \
+cat /etc/systemd/system/banquito-switch.service 2>/dev/null | grep -E "DB_|Environment" && \
+cat /etc/systemd/system/banquito-switch.service.d/override.conf 2>/dev/null | grep -E "DB_|Environment"
+Respuesta 2: 
+anahyyherrera@banquito:~$ echo "=== SWITCH (PostgreSQL) ===" && \
+cat /etc/systemd/system/banquito-switch.service 2>/dev/null | grep -E "DB_|Environment" && \
+cat /etc/systemd/system/banquito-switch.service.d/override.conf 2>/dev/null | grep -E "DB_|Environment"
+=== SWITCH (PostgreSQL) ===
+Environment="APP_SFTP_INBOX_DIR=/var/banquito/pagos/ingesta"
+anahyyherrera@banquito:~$ 
+
+*************************Para conectarse a la BD*********************
+sudo mysql -u root -proot banquito_core
+SHOW TABLES;
+
+
+*************************SELECTS*********************
+-- ① RESUMEN GENERAL
+SELECT
+  (SELECT COUNT(*) FROM customer WHERE customer_type = 'NATURAL')  AS clientes_naturales,
+  (SELECT COUNT(*) FROM customer WHERE customer_type = 'JURIDICO') AS empresas_corporativas,
+  (SELECT COUNT(*) FROM customer)                                   AS total_clientes,
+  (SELECT COUNT(*) FROM account  WHERE status = 'ACTIVO')           AS total_cuentas_activas,
+  (SELECT COUNT(*) FROM branch)                                     AS sucursales;
+
+-- ② CUENTAS POR TIPO
+SELECT
+  ast.code        AS codigo,
+  ast.name        AS tipo_cuenta,
+  COUNT(a.id)     AS total_cuentas,
+  ROUND(COUNT(a.id) * 100.0 / (SELECT COUNT(*) FROM account WHERE status='ACTIVO'), 1) AS porcentaje
+FROM account a
+JOIN account_subtype ast ON a.account_subtype_id = ast.id
+WHERE a.status = 'ACTIVO'
+GROUP BY ast.code, ast.name
+ORDER BY ast.code;
+
+-- ③ NATURALES CON 2 CUENTAS (debe ser ~100 = 20% de 500)
+SELECT
+  (SELECT COUNT(*) FROM customer WHERE customer_type='NATURAL') AS total_naturales,
+  COUNT(*) AS naturales_con_2_cuentas,
+  ROUND(COUNT(*) * 100.0 / (SELECT COUNT(*) FROM customer WHERE customer_type='NATURAL'), 1) AS porcentaje
+FROM customer c
+WHERE c.customer_type = 'NATURAL'
+  AND (SELECT COUNT(*) FROM account a WHERE a.customer_id = c.id) = 2;
+
+
+-- ④ CUENTAS POR EMPRESA (deben tener exactamente 3 mínimo)
+SELECT
+  c.legal_name AS empresa,
+  COUNT(a.id)  AS total_cuentas,
+  GROUP_CONCAT(ast.code ORDER BY ast.code SEPARATOR ', ') AS tipos
+FROM customer c
+JOIN account a           ON a.customer_id         = c.id
+JOIN account_subtype ast ON a.account_subtype_id   = ast.id
+WHERE c.customer_type = 'JURIDICO'
+GROUP BY c.id, c.legal_name
+ORDER BY c.legal_name;
+
+
+-- ⑤ SUCURSALES
+SELECT branch_code, name, city FROM branch ORDER BY branch_code;
+
+
+-- ⑥ MUESTRA DE CLIENTES NATURALES (incluye Anahy)
+SELECT
+  c.identification                     AS cedula,
+  CONCAT(c.first_name,' ',c.last_name) AS nombre,
+  c.email,
+  a.account_number                     AS numero_cuenta,
+  ast.name                             AS tipo_cuenta,
+  b.name                               AS sucursal,
+  a.available_balance                  AS saldo
+FROM customer c
+JOIN account a           ON a.customer_id         = c.id
+JOIN account_subtype ast ON a.account_subtype_id   = ast.id
+JOIN branch b            ON a.branch_id            = b.id
+WHERE c.customer_type = 'NATURAL'
+ORDER BY c.identification
+LIMIT 20;
+
+-- ⑦ DEMO: VERIFICAR ANAHY
+SELECT
+  c.identification,
+  CONCAT(c.first_name,' ',c.last_name) AS nombre,
+  c.email,
+  a.account_number,
+  ast.name AS tipo_cuenta,
+  a.available_balance AS saldo
+FROM customer c
+JOIN account a           ON a.customer_id         = c.id
+JOIN account_subtype ast ON a.account_subtype_id   = ast.id
+WHERE c.identification = '1750285577';
+
+
+
+************************POSTGRES*********************
+psql -h localhost -U switch_user -d switch_pagos
+Contraseña: SwitchP4ss
+
+*****************Ver tablas***************
+\dt
+
+
+*****************Estado de lotes por canal:****************
+SELECT
+  channel              AS canal,
+  status               AS estado,
+  COUNT(*)             AS total_lotes,
+  SUM(header_total_amount) AS monto_total_usd
+FROM payment_batch
+GROUP BY channel, status
+ORDER BY channel, status;
+
+
+*****************Totales generales****************
+SELECT
+  (SELECT COUNT(*) FROM payment_batch)  AS total_lotes,
+  (SELECT COUNT(*) FROM payment_detail) AS total_registros_pago;
+
+*****************Últimos 10 lotes procesados****************
+SELECT
+  id, file_name, ruc, channel, status,
+  header_total_records, header_total_amount, received_at
+FROM payment_batch
+ORDER BY received_at DESC
+LIMIT 10;
+
