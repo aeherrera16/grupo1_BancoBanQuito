@@ -34,4 +34,6 @@ public interface PaymentBatchRepository extends JpaRepository<PaymentBatch, Inte
     List<PaymentBatch> findByStatusOrderByReceivedAtAsc(BatchStatusEnum status);
 
     List<PaymentBatch> findByStatus(BatchStatusEnum status);
+
+    List<PaymentBatch> findByRucOrderByReceivedAtDesc(String ruc);
 }

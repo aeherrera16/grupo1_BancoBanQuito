@@ -79,7 +79,10 @@ async function loadTransactions(customerId: string, coreUserId: number) {
 }
 
 async function loadBatches() {
-  return api('/api/switch/v1/payment-batch');
+  const state = getState();
+  const ruc = state.session?.identification;
+  const url = ruc ? `/api/switch/v1/payment-batch?ruc=${encodeURIComponent(ruc)}` : '/api/switch/v1/payment-batch';
+  return api(url);
 }
 
 async function loadCharges() {
