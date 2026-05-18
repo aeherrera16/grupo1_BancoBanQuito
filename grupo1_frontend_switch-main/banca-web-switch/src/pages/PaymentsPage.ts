@@ -127,6 +127,30 @@ function renderBatches() {
   syncReportBatchOptions();
 }
 
+const TERMINAL_STATUSES = ['PROCESADO', 'PROCESSED', 'REJECTED', 'RECHAZADO'];
+
+function pollBatchUntilDone(uploadMessage: any, batchId: number) {
+  let attempts = 0;
+  const timer = setInterval(async () => {
+    attempts++;
+    try {
+      await refreshCompanyData();
+      const batch = getState().batches.find((b: any) => Number(b.id) === batchId);
+      const status = (batch?.status || '').toUpperCase();
+      if (batch && TERMINAL_STATUSES.includes(status)) {
+        clearInterval(timer);
+        const isOk = ['PROCESADO', 'PROCESSED'].includes(status);
+        setMessage(uploadMessage, `Procesamiento completado. Estado final: ${batch.status}`, isOk ? 'success' : 'error');
+        return;
+      }
+    } catch (_) {}
+    if (attempts >= 40) {
+      clearInterval(timer);
+      setMessage(uploadMessage, 'El procesamiento está tomando más tiempo del esperado. Actualiza la lista manualmente.', 'error');
+    }
+  }, 2000);
+}
+
 async function uploadCsvHandler(event: SubmitEvent) {
   event.preventDefault();
   const uploadMessage = $('#uploadMessage');
@@ -143,11 +167,21 @@ async function uploadCsvHandler(event: SubmitEvent) {
     return;
   }
 
-  setMessage(uploadMessage, 'Procesando archivo de pagos...');
+  setMessage(uploadMessage, 'Enviando archivo de pagos...');
   try {
     const response = await uploadCsv(file);
-    setMessage(uploadMessage, `Resultado: ${response.validationResult || 'procesado'} | Estado: ${response.batchStatus || 'N/D'}`, 'success');
     await refreshCompanyData();
+
+    const batchId = Number(response.batchId);
+    const batchStatus = (response.batchStatus || '').toUpperCase();
+
+    if (TERMINAL_STATUSES.includes(batchStatus)) {
+      const isOk = ['PROCESADO', 'PROCESSED'].includes(batchStatus);
+      setMessage(uploadMessage, `Resultado: ${response.validationResult || 'procesado'} | Estado: ${response.batchStatus}`, isOk ? 'success' : 'error');
+    } else {
+      setMessage(uploadMessage, `Lote recibido. Procesando pagos automáticamente... ⏳`);
+      pollBatchUntilDone(uploadMessage, batchId);
+    }
   } catch (error: any) {
     setMessage(uploadMessage, error.message || 'No se pudo cargar el CSV.', 'error');
   }
