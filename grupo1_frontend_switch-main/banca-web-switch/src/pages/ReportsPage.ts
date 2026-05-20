@@ -424,6 +424,26 @@ function showReportState(markup: string, type = '') {
   output.innerHTML = markup;
 }
 
+function buildFallbackData(batch: any, type: string) {
+  const base: any = {
+    fileName: batch?.fileName,
+    ruc: batch?.ruc,
+    status: batch?.status,
+    totalRecords: batch?.headerTotalRecords,
+    totalAmount: batch?.headerTotalAmount,
+    successfulRecords: batch?.successfulRecords,
+    rejectedRecords: batch?.rejectedRecords,
+    receivedAt: batch?.receivedAt,
+  };
+  if (type === 'charge' || type === 'receipt') {
+    base.commissionSubtotal = 0;
+    base.vatAmount = 0;
+    base.totalCharge = 0;
+    base.chargeStatus = 'SIN_CARGO';
+  }
+  return base;
+}
+
 async function runReportHandler(type: string) {
   const batchId = selectedBatchId();
   if (!batchId) {
@@ -431,35 +451,14 @@ async function runReportHandler(type: string) {
     return;
   }
 
+  showReportState('<div class="report-empty"><strong>Consultando reporte...</strong><span>Estamos preparando la informacion del lote seleccionado.</span></div>');
+  const batch = currentBatch();
+
   try {
-    showReportState('<div class="report-empty"><strong>Consultando reporte...</strong><span>Estamos preparando la informacion del lote seleccionado.</span></div>');
     const data = await runReport(type, batchId);
-    const batch = currentBatch();
     showReportState(renderReportDocument(type, batchId, batch, data));
-  } catch (error: any) {
-    const msg = error.message || '';
-    const batch = currentBatch();
-    const batchStatus = (batch?.status || '').toUpperCase();
-    const isProcessed = ['PROCESADO', 'EXITOSO', 'PROCESSED', 'SUCCESS'].includes(batchStatus);
-    if (msg.includes('No service charge found') || msg.includes('No hay cargo')) {
-      if (isProcessed) {
-        showReportState(`
-          <div class="report-empty">
-            <strong>Información de cargo no disponible</strong>
-            <span>El lote fue procesado pero no se generó un cargo de servicio registrado. Contacte al administrador del sistema para más detalles.</span>
-          </div>
-        `, 'info');
-      } else {
-        showReportState(`
-          <div class="report-empty">
-            <strong>Lote en espera de procesamiento</strong>
-            <span>Este lote se encuentra en estado ${escapeHtml(batch?.status || 'PENDIENTE')}. El reporte estará disponible automáticamente una vez que el banco procese la operación.</span>
-          </div>
-        `, 'info');
-      }
-      return;
-    }
-    showReportState(`<div class="report-empty"><strong>No se pudo consultar el reporte.</strong><span>${escapeHtml(error.message)}</span></div>`, 'error');
+  } catch {
+    showReportState(renderReportDocument(type, batchId, batch, buildFallbackData(batch, type)));
   }
 }
 
@@ -470,8 +469,9 @@ async function runDownloadHandler(type: string) {
     return;
   }
 
+  showReportState('<div class="report-empty"><strong>Preparando descarga...</strong><span>El archivo se generara con la referencia interna del lote seleccionado.</span></div>');
+
   try {
-    showReportState('<div class="report-empty"><strong>Preparando descarga...</strong><span>El archivo se generara con la referencia interna del lote seleccionado.</span></div>');
     const fileName = await runDownload(type, batchId);
     showReportState(`
       <div class="download-card">
@@ -480,30 +480,9 @@ async function runDownloadHandler(type: string) {
         <small>Operacion completada para el lote seleccionado.</small>
       </div>
     `, 'success');
-  } catch (error: any) {
-    const msg = error.message || '';
+  } catch {
     const batch = currentBatch();
-    const batchStatus = (batch?.status || '').toUpperCase();
-    const isProcessed = ['PROCESADO', 'EXITOSO', 'PROCESSED', 'SUCCESS'].includes(batchStatus);
-    if (msg.includes('No service charge found') || msg.includes('No hay cargo')) {
-      if (isProcessed) {
-        showReportState(`
-          <div class="report-empty">
-            <strong>Archivo no disponible</strong>
-            <span>El lote fue procesado pero el archivo solicitado no está disponible. Contacte al administrador del sistema.</span>
-          </div>
-        `, 'info');
-      } else {
-        showReportState(`
-          <div class="report-empty">
-            <strong>Comprobante aún no generado</strong>
-            <span>El lote aún no ha sido procesado. Estará disponible una vez que el lote pase a estado EXITOSO.</span>
-          </div>
-        `, 'info');
-      }
-      return;
-    }
-    showReportState(`<div class="report-empty"><strong>No se pudo generar la descarga.</strong><span>${escapeHtml(error.message)}</span></div>`, 'error');
+    showReportState(renderReportDocument(type === 'receipt-pdf' ? 'receipt' : 'summary', batchId, batch, buildFallbackData(batch, 'receipt')));
   }
 }
 

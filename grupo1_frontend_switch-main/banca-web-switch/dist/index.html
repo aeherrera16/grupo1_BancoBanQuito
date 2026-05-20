@@ -4,8 +4,8 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>BanQuito Banca Web</title>
-    <script type="module" crossorigin src="/assets/index-BfuMJ44Z.js"></script>
-    <link rel="stylesheet" crossorigin href="/assets/index-k8DcUUiI.css">
+    <script type="module" crossorigin src="/assets/index-CeRODDhN.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-Ba_lnT1C.css">
   </head>
   <body>
     <main id="app" class="app-shell">
@@ -252,42 +252,74 @@
           <section class="section-panel is-hidden company-only" data-section-panel="sftp">
             <div class="business-hero" style="background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);">
               <div>
-                <p class="eyebrow">Buzón SFTP y Programación Automática</p>
-                <h2>Servidor SFTP y Automatización</h2>
-                <p>Configura tu cliente externo (como Cyberduck o FileZilla) para subir archivos de pagos masivos directamente al buzón o prográmalos desde esta pestaña para su efectivización automática en fechas futuras.</p>
+                <p class="eyebrow">Buzón SFTP — Pagos masivos automáticos</p>
+                <h2>Monitoreo de Buzón SFTP</h2>
+                <p>Sube tu archivo CSV al servidor SFTP o prográmalo aquí directamente para su procesamiento automático.</p>
               </div>
-              <div class="hero-balance">
-                <span>SFTP Servidor</span>
-                <strong>localhost:2222</strong>
-                <small>Protocolo de Seguridad SSH</small>
+              <div style="display: flex; flex-direction: column; gap: 4px; text-align: right; background: rgba(255,255,255,0.1); padding: 0.75rem 1.25rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.15);">
+                <span style="font-size: 0.7rem; text-transform: uppercase; color: #a5c5eb; font-weight: bold; letter-spacing: 0.05em;">Hora del Switch (GMT-5)</span>
+                <span id="switchServerClock" style="font-size: 1.6rem; font-weight: 800; font-family: monospace; color: white; display: block; line-height: 1;">--:--:--</span>
+                <small style="color: #9cc4ff; font-size: 0.65rem;">Corte cutoff: 18:00</small>
               </div>
             </div>
 
+            <!-- Panel informativo de conexion -->
+            <div style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 1rem 1.5rem; border-radius: var(--radius-md); margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center; font-size: 0.9rem;">
+              <span><strong>Servidor SFTP:</strong> 136.115.142.160:2222 | Protocolo SSH seguro</span>
+              <span style="color: #64748b; font-size: 0.8rem; font-weight: bold;">● PROCESADOR ACTIVO (10s)</span>
+            </div>
+
+            <!-- Formulario de programación (Restaurado) -->
             <div class="lookup-panel" style="margin-bottom: 2rem; padding: 2rem; border-radius: var(--radius-lg); background: var(--bg-surface); border: 1px solid var(--border-color);">
               <form id="sftpUploadForm" style="display: flex; flex-direction: column; gap: 1.5rem;">
                 <div>
-                  <h3 style="margin: 0; font-size: 1.25rem; font-weight: 600;">Programar Lote SFTP Automático</h3>
-                  <p class="text-muted" style="margin: 0.25rem 0 0 0; font-size: 0.875rem;">Sube tu archivo de pagos masivos y selecciona la fecha exacta de efectivización para que se procese automáticamente.</p>
+                  <h3 style="margin: 0; font-size: 1.1rem; font-weight: 600;">Programar lote para efectivización automática</h3>
+                  <p class="text-muted" style="margin: 0.25rem 0 0 0; font-size: 0.875rem;">
+                    Selecciona el archivo CSV y la fecha exacta. El sistema lo ejecutará automáticamente cuando llegue el momento.
+                  </p>
                 </div>
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem;">
-                  <label class="file-picker" style="margin: 0;">
-                    <input id="sftpCsvFile" name="file" type="file" accept=".csv,text/csv" required />
-                    <span id="sftpFileName">Seleccionar CSV</span>
-                  </label>
+                  <div style="margin:0; display:flex; flex-direction:column; gap:6px;">
+                    <strong>Nota:</strong>
+                    <span>Sube tus archivos CSV únicamente mediante SFTP al servidor indicado. Aquí puedes programar la ejecución de los archivos ya existentes en el buzón.</span>
+                  </div>
                   <label class="field" style="margin: 0;">
                     <span>Fecha y hora de efectivización</span>
                     <input id="sftpScheduledDate" type="datetime-local" required style="width: 100%;" />
                   </label>
                 </div>
-                <button class="primary-button fit-button" type="submit" style="align-self: flex-start;">Programar ejecución</button>
+                <div id="sftpScheduleSummary" style="display:none; padding: 0.75rem 1rem; border-radius: 8px; background: #eef4ff; border: 1px solid #c7daf7; font-size: 0.875rem; color: #1e3c72;"></div>
+                <button class="primary-button fit-button" type="submit" style="align-self: flex-start;">Programar ejecución automática</button>
                 <p id="sftpUploadMessage" class="message" role="status" style="margin: 0;"></p>
               </form>
             </div>
 
+            <script>
+              (function() {
+                function updateClock() {
+                  const clockEl = document.getElementById('switchServerClock');
+                  if (clockEl) {
+                    const now = new Date();
+                    // Ajuste a la zona horaria de Ecuador (America/Guayaquil, GMT-5)
+                    const ecTimeStr = now.toLocaleString("en-US", { timeZone: "America/Guayaquil" });
+                    const ecTime = new Date(ecTimeStr);
+                    const hours = String(ecTime.getHours()).padStart(2, '0');
+                    const minutes = String(ecTime.getMinutes()).padStart(2, '0');
+                    const seconds = String(ecTime.getSeconds()).padStart(2, '0');
+                    clockEl.textContent = hours + ":" + minutes + ":" + seconds;
+                  }
+                }
+                updateClock();
+                setInterval(updateClock, 1000);
+              })();
+            </script>
+
+
+            <!-- Tabla de archivos en espera / procesados del buzón -->
             <div class="table-panel">
               <div class="panel-heading">
-                <h2>Lotes Programados y Procesados del Buzón</h2>
-                <button id="loadSftpBatchesButton" class="secondary-button" type="button">⟳ Actualizar Buzón</button>
+                <h2>Archivos en el buzón</h2>
+                <button id="loadSftpBatchesButton" class="secondary-button" type="button">⟳ Actualizar</button>
               </div>
               <div id="sftpBatchesTable" class="table-wrap"></div>
             </div>
