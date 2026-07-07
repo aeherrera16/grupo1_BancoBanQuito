@@ -4,8 +4,8 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>BanQuito Banca Web</title>
-    <script type="module" crossorigin src="/assets/index-CeRODDhN.js"></script>
-    <link rel="stylesheet" crossorigin href="/assets/index-Ba_lnT1C.css">
+    <script type="module" crossorigin src="/assets/index-B7y7Oc8f.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-yvAEeFn8.css">
   </head>
   <body>
     <main id="app" class="app-shell">
@@ -209,6 +209,18 @@
                 <h2>Transacciones realizadas</h2>
                 <span>Historial de movimientos</span>
               </div>
+              <div class="date-filter-bar">
+                <label>
+                  Desde
+                  <input id="transactionsFromDate" type="date" />
+                </label>
+                <label>
+                  Hasta
+                  <input id="transactionsToDate" type="date" />
+                </label>
+                <button id="applyTransactionsFilterButton" class="secondary-button" type="button">Filtrar</button>
+                <button id="clearTransactionsFilterButton" class="secondary-button" type="button">Limpiar</button>
+              </div>
               <div id="transactionsTable" class="table-wrap"></div>
             </div>
           </section>
@@ -238,6 +250,17 @@
               </label>
               <button class="primary-button fit-button" type="submit">Procesar archivo</button>
               <p id="uploadMessage" class="message" role="status"></p>
+
+              <div id="uploadProgressPanel" class="upload-progress is-hidden">
+                <div class="progress-header">
+                  <span>Tiempo transcurrido: <strong id="uploadTimer">00:00</strong></span>
+                  <span id="uploadCounts">0 / 0 procesadas</span>
+                </div>
+                <div class="progress-bar-track">
+                  <div id="uploadProgressBar" class="progress-bar-fill" style="width:0%"></div>
+                </div>
+                <div id="uploadLiveRows" class="table-wrap compact-table"></div>
+              </div>
             </form>
 
             <div class="table-panel">

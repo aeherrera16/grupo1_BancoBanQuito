@@ -38,6 +38,7 @@ import ec.edu.espe.banquito.switchpagos.repository.SwitchParameterRepository;
 public class BillingService {
 
     private static final Logger logger = LoggerFactory.getLogger(BillingService.class);
+    private static final BigDecimal VAT_RATE = new BigDecimal("0.15");
 
     private final ServiceFeeRuleRepository serviceFeeRuleRepository;
     private final ServiceChargeRepository serviceChargeRepository;
@@ -111,15 +112,6 @@ public class BillingService {
             return;
         }
 
-        List<ServiceCharge> existingCharges = serviceChargeRepository.findAllByPaymentBatchId(batch.getId());
-        if (!existingCharges.isEmpty()) {
-            logger.info("ServiceCharge already exists for batch ID: {} — skipping duplicate charge generation", batch.getId());
-            batch.setSuccessfulRecords(successful);
-            batch.setRejectedRecords(rejected);
-            paymentBatchRepository.save(batch);
-            return;
-        }
-
         Optional<ServiceFeeRule> ruleOpt = serviceFeeRuleRepository.findRuleByTransactionCount(BigDecimal.valueOf(successful));
         if (ruleOpt.isEmpty()) {
             logger.warn("No fee rule found for {} transactions — skipping commission charge", successful);
@@ -140,8 +132,8 @@ public class BillingService {
                 .reduce(BigDecimal.ZERO, BigDecimal::add)
                 .setScale(2, RoundingMode.HALF_UP);
 
-        BigDecimal vatAmount = BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP);
-        BigDecimal total = dispersedAmount.add(subtotal).setScale(2, RoundingMode.HALF_UP);
+        BigDecimal vatAmount = subtotal.multiply(VAT_RATE).setScale(2, RoundingMode.HALF_UP);
+        BigDecimal total = subtotal.add(vatAmount).setScale(2, RoundingMode.HALF_UP);
 
         logger.info("Commission breakdown - Disbursed: {}, Subtotal: {}, VAT: {}, Total: {}",
                 dispersedAmount, subtotal, vatAmount, total);
@@ -196,13 +188,7 @@ public class BillingService {
         logger.info("Generating summary for batch ID: {}", batchId);
         PaymentBatch batch = paymentBatchRepository.findById(batchId)
                 .orElseThrow(() -> new ResourceNotFoundException("Batch not found: " + batchId));
-        Optional<ServiceCharge> chargeOpt;
-        try {
-            chargeOpt = serviceChargeRepository.findFirstByPaymentBatchIdOrderByIdDesc(batchId);
-        } catch (Exception e) {
-            logger.warn("Could not fetch service charge for batch {} — showing summary without charge data: {}", batchId, e.getMessage());
-            chargeOpt = Optional.empty();
-        }
+        Optional<ServiceCharge> chargeOpt = serviceChargeRepository.findFirstByPaymentBatchIdOrderByIdDesc(batchId);
 
         BatchSummaryDTO summary = new BatchSummaryDTO();
         summary.setBatchId(batch.getId());
@@ -241,24 +227,13 @@ public class BillingService {
         logger.info("Fetching service charge for batch ID: {}", batchId);
         paymentBatchRepository.findById(batchId)
                 .orElseThrow(() -> new ResourceNotFoundException("Batch not found: " + batchId));
-        try {
-            return serviceChargeRepository.findFirstByPaymentBatchIdOrderByIdDesc(batchId);
-        } catch (Exception e) {
-            logger.warn("Could not fetch service charge for batch {} — returning empty: {}", batchId, e.getMessage());
-            return Optional.empty();
-        }
+        return serviceChargeRepository.findFirstByPaymentBatchIdOrderByIdDesc(batchId);
     }
 
     public Map<String, Object> generateSettlementReceipt(Integer batchId) {
         PaymentBatch batch = paymentBatchRepository.findById(batchId)
                 .orElseThrow(() -> new ResourceNotFoundException("Batch not found: " + batchId));
-        Optional<ServiceCharge> chargeOpt;
-        try {
-            chargeOpt = serviceChargeRepository.findFirstByPaymentBatchIdOrderByIdDesc(batchId);
-        } catch (Exception e) {
-            logger.warn("Could not fetch service charge for batch {} — generating receipt without charge data: {}", batchId, e.getMessage());
-            chargeOpt = Optional.empty();
-        }
+        Optional<ServiceCharge> chargeOpt = serviceChargeRepository.findFirstByPaymentBatchIdOrderByIdDesc(batchId);
         List<PaymentDetail> details = paymentDetailRepository.findByPaymentBatchId(batchId);
 
         BigDecimal dispersedAmount = details.stream()

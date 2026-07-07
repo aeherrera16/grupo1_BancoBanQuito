@@ -1,4 +1,4 @@
-import { loadBatches as loadBatchesApi, loadCharges as loadChargesApi, loadCompanyAccount as loadCompanyAccountApi, uploadCsv, processBatch } from '../services/api';
+import { loadBatches as loadBatchesApi, loadCharges as loadChargesApi, loadBatchDetail, loadCompanyAccount as loadCompanyAccountApi, uploadCsv, processBatch } from '../services/api';
 import { getState, setState } from '../hooks/useState';
 import { formatMoney, statusClass, escapeHtml, setMessage, compactAccount, formatDate } from '../helpers/formatters';
 import { syncReportBatchOptions } from './ReportsPage';
@@ -128,24 +128,92 @@ function renderBatches() {
 }
 
 const TERMINAL_STATUSES = ['PROCESADO', 'PROCESSED', 'REJECTED', 'RECHAZADO'];
+const TERMINAL_DETAIL_STATUSES = ['SUCCESS', 'REJECTED'];
+
+function formatElapsed(ms: number) {
+  const totalSeconds = Math.floor(ms / 1000);
+  const minutes = Math.floor(totalSeconds / 60).toString().padStart(2, '0');
+  const seconds = (totalSeconds % 60).toString().padStart(2, '0');
+  return `${minutes}:${seconds}`;
+}
+
+function renderLiveDetail(details: any[]) {
+  const total = details.length;
+  const success = details.filter((d: any) => (d.status || '').toUpperCase() === 'SUCCESS').length;
+  const rejected = details.filter((d: any) => (d.status || '').toUpperCase() === 'REJECTED').length;
+  const done = success + rejected;
+
+  const countsEl = $('#uploadCounts');
+  if (countsEl) countsEl.textContent = `${done} / ${total} procesadas (${success} exitosas, ${rejected} rechazadas)`;
+
+  const barEl = $('#uploadProgressBar');
+  if (barEl) barEl.style.width = total ? `${Math.round((done / total) * 100)}%` : '0%';
+
+  const rowsEl = $('#uploadLiveRows');
+  if (!rowsEl) return;
+
+  const recentResolved = details
+    .filter((d: any) => TERMINAL_DETAIL_STATUSES.includes((d.status || '').toUpperCase()))
+    .slice(-15)
+    .reverse();
+
+  if (!recentResolved.length) {
+    rowsEl.innerHTML = '<div class="empty-state">Analizando líneas del archivo...</div>';
+    return;
+  }
+
+  rowsEl.innerHTML = `
+    <table>
+      <thead>
+        <tr><th>Línea</th><th>Cuenta destino</th><th>Monto</th><th>Estado</th></tr>
+      </thead>
+      <tbody>
+        ${recentResolved.map((d: any) => `
+          <tr>
+            <td>${escapeHtml(d.lineNumber)}</td>
+            <td>${escapeHtml(d.destinationAccountNumber)}</td>
+            <td>${formatMoney(d.amount)}</td>
+            <td><span class="badge ${statusClass(d.status)}">${escapeHtml(d.status)}</span></td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>
+  `;
+}
 
 function pollBatchUntilDone(uploadMessage: any, batchId: number) {
+  const panel = $('#uploadProgressPanel');
+  const timerEl = $('#uploadTimer');
+  panel?.classList.remove('is-hidden');
+  if (timerEl) timerEl.textContent = '00:00';
+
+  const startTime = Date.now();
+  const timerInterval = setInterval(() => {
+    if (timerEl) timerEl.textContent = formatElapsed(Date.now() - startTime);
+  }, 1000);
+
   let attempts = 0;
-  const timer = setInterval(async () => {
+  const poll = setInterval(async () => {
     attempts++;
     try {
-      await refreshCompanyData();
+      const [details] = await Promise.all([loadBatchDetail(batchId), refreshCompanyData()]);
+      renderLiveDetail(details);
+
       const batch = getState().batches.find((b: any) => Number(b.id) === batchId);
       const status = (batch?.status || '').toUpperCase();
       if (batch && TERMINAL_STATUSES.includes(status)) {
-        clearInterval(timer);
+        clearInterval(poll);
+        clearInterval(timerInterval);
+        const elapsed = formatElapsed(Date.now() - startTime);
+        if (timerEl) timerEl.textContent = elapsed;
         const isOk = ['PROCESADO', 'PROCESSED'].includes(status);
-        setMessage(uploadMessage, `Procesamiento completado. Estado final: ${batch.status}`, isOk ? 'success' : 'error');
+        setMessage(uploadMessage, `Procesamiento completado en ${elapsed}. Estado final: ${batch.status}`, isOk ? 'success' : 'error');
         return;
       }
     } catch (_) {}
-    if (attempts >= 40) {
-      clearInterval(timer);
+    if (attempts >= 600) {
+      clearInterval(poll);
+      clearInterval(timerInterval);
       setMessage(uploadMessage, 'El procesamiento está tomando más tiempo del esperado. Actualiza la lista manualmente.', 'error');
     }
   }, 2000);
@@ -166,6 +234,15 @@ async function uploadCsvHandler(event: SubmitEvent) {
     setMessage(uploadMessage, 'Selecciona un archivo CSV.', 'error');
     return;
   }
+
+  const progressPanel = $('#uploadProgressPanel');
+  progressPanel?.classList.add('is-hidden');
+  const liveRows = $('#uploadLiveRows');
+  if (liveRows) liveRows.innerHTML = '';
+  const countsEl = $('#uploadCounts');
+  if (countsEl) countsEl.textContent = '0 / 0 procesadas';
+  const barEl = $('#uploadProgressBar');
+  if (barEl) barEl.style.width = '0%';
 
   setMessage(uploadMessage, 'Enviando archivo de pagos...');
   try {

@@ -4,6 +4,44 @@ import { formatMoney, statusClass, movementClass, escapeHtml, formatDate } from 
 
 const $ = (selector: string): any => document.querySelector(selector);
 
+let dateFilter: { from: string | null; to: string | null } = { from: null, to: null };
+
+function applyTransactionsFilter() {
+  const fromInput = $('#transactionsFromDate');
+  const toInput = $('#transactionsToDate');
+  dateFilter = {
+    from: fromInput?.value || null,
+    to: toInput?.value || null,
+  };
+  renderTransactions();
+}
+
+function clearTransactionsFilter() {
+  const fromInput = $('#transactionsFromDate');
+  const toInput = $('#transactionsToDate');
+  if (fromInput) fromInput.value = '';
+  if (toInput) toInput.value = '';
+  dateFilter = { from: null, to: null };
+  renderTransactions();
+}
+
+function filterByDate(transactions: any[]) {
+  if (!dateFilter.from && !dateFilter.to) return transactions;
+
+  const fromTime = dateFilter.from ? new Date(`${dateFilter.from}T00:00:00`).getTime() : null;
+  const toTime = dateFilter.to ? new Date(`${dateFilter.to}T23:59:59.999`).getTime() : null;
+
+  return transactions.filter((transaction: any) => {
+    const raw = transaction.transactionDate;
+    if (!raw) return false;
+    const time = new Date(raw).getTime();
+    if (Number.isNaN(time)) return false;
+    if (fromTime !== null && time < fromTime) return false;
+    if (toTime !== null && time > toTime) return false;
+    return true;
+  });
+}
+
 async function loadTransactions() {
   const state = getState();
   if (!state.session?.customerId) return;
@@ -21,15 +59,18 @@ async function loadTransactions() {
 
 function renderTransactions() {
   const state = getState();
+  const filtered = filterByDate(state.transactions || []);
   const metric = $('#transactionsMetric');
   if (metric) metric.textContent = state.transactions.length;
   const recent = $('#recentTransactions');
   const table = $('#transactionsTable');
 
-  if (!state.transactions.length) {
-    const empty = '<div class="empty-state">Sin transacciones registradas.</div>';
-    if (recent) recent.innerHTML = empty;
+  if (!filtered.length) {
+    const empty = state.transactions.length
+      ? '<div class="empty-state">Sin movimientos en el periodo seleccionado.</div>'
+      : '<div class="empty-state">Sin transacciones registradas.</div>';
     table.innerHTML = empty;
+    if (recent && !state.transactions.length) recent.innerHTML = empty;
     return;
   }
 
@@ -40,7 +81,7 @@ function renderTransactions() {
     return s || 'N/D';
   };
 
-  const rows = state.transactions
+  const rows = filtered
     .map((transaction: any) => {
       const isDebit = (transaction.movementType || '').toUpperCase() === 'DEBITO';
       const counterpart = transaction.counterpartAccountNumber || '—';
@@ -88,4 +129,6 @@ function shortId(value: any) {
 export {
   loadTransactions,
   renderTransactions,
+  applyTransactionsFilter,
+  clearTransactionsFilter,
 };

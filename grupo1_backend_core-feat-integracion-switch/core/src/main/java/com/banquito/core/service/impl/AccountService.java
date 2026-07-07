@@ -119,6 +119,12 @@ public class AccountService implements IAccountService {
             throw new IllegalArgumentException("El saldo inicial no puede ser negativo");
         }
 
+        BigDecimal minimumBalance = resolveMinimumInitialBalance(subtype.getId());
+        if (initialBalance.compareTo(minimumBalance) < 0) {
+            throw new IllegalArgumentException(
+                    "El saldo inicial minimo para este tipo de cuenta es $" + minimumBalance.toPlainString());
+        }
+
         if (Boolean.TRUE.equals(request.getIsFavorite())) {
             accountRepository.findByCustomer_IdAndIsFavoriteTrue(customer.getId())
                     .ifPresent(acc -> {
@@ -439,6 +445,17 @@ public class AccountService implements IAccountService {
         if (subtype.getStatus() != CommonStatusEnum.ACTIVO) {
             throw new IllegalArgumentException("El subtipo de cuenta no esta activo");
         }
+    }
+
+    private BigDecimal resolveMinimumInitialBalance(Integer accountSubtypeId) {
+        if (accountSubtypeId == null) {
+            return BigDecimal.ZERO;
+        }
+        return switch (accountSubtypeId) {
+            case 1 -> new BigDecimal("10");
+            case 2 -> new BigDecimal("100");
+            default -> BigDecimal.ZERO;
+        };
     }
 
     private void validateAmount(BigDecimal amount) {

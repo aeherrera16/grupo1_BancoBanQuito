@@ -9,6 +9,7 @@ import com.banquito.core.enums.CustomerSubtypeStatusEnum;
 import com.banquito.core.enums.CustomerTypeEnum;
 import com.banquito.core.enums.MovementTypeEnum;
 import com.banquito.core.enums.TransactionStatusEnum;
+import com.banquito.core.exception.InsufficientBalanceException;
 import com.banquito.core.model.Account;
 import com.banquito.core.model.AccountTransaction;
 import com.banquito.core.model.Customer;
@@ -168,7 +169,7 @@ public class CoreSwitchServiceImpl implements CoreSwitchService {
     ) {
         try {
             validatePositive(commissionSubtotal, "Commission subtotal");
-            validatePositive(vatAmount, "VAT amount");
+            validateNonNegative(vatAmount, "VAT amount");
             validatePositive(totalAmount, "Total commission");
             if (commissionSubtotal.add(vatAmount).compareTo(totalAmount) != 0) {
                 throw new IllegalArgumentException("Commission subtotal + VAT does not match total");
@@ -181,17 +182,16 @@ public class CoreSwitchServiceImpl implements CoreSwitchService {
 
             TransactionSubtype subtype = getActiveSubtype("COMISION");
 
+            if (companyAccount.getAvailableBalance().compareTo(totalAmount) < 0) {
+                throw new InsufficientBalanceException(companyAccountNumber);
+            }
+
             companyAccount.setAvailableBalance(companyAccount.getAvailableBalance().subtract(totalAmount));
             companyAccount.setAccountingBalance(companyAccount.getAccountingBalance().subtract(totalAmount));
             companyAccount.setLastUpdate(LocalDateTime.now());
             accountRepository.save(companyAccount);
             registerCompanyMovement(companyAccount, totalAmount, uuid, subtype,
                     "Global debit for mass payment service");
-
-            if (companyAccount.getAccountingBalance().compareTo(BigDecimal.ZERO) < 0) {
-                log.warn("Company account {} entered overdraft after commission debit. Resulting balance: {}",
-                        companyAccountNumber, companyAccount.getAccountingBalance());
-            }
 
             creditInstitutionalAccount(MASS_SERVICE_INCOME_ACCOUNT, commissionSubtotal);
             creditInstitutionalAccount(VAT_PAYABLE_ACCOUNT, vatAmount);
@@ -205,6 +205,12 @@ public class CoreSwitchServiceImpl implements CoreSwitchService {
     private void validatePositive(BigDecimal amount, String fieldName) {
         if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
             throw new IllegalArgumentException(fieldName + " must be greater than zero");
+        }
+    }
+
+    private void validateNonNegative(BigDecimal amount, String fieldName) {
+        if (amount == null || amount.compareTo(BigDecimal.ZERO) < 0) {
+            throw new IllegalArgumentException(fieldName + " must not be negative");
         }
     }
 

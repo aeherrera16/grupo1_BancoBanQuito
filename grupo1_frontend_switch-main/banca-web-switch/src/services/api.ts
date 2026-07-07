@@ -90,6 +90,11 @@ async function loadCharges() {
   return response.cargos || [];
 }
 
+async function loadBatchDetail(batchId: number) {
+  const response = await api(`/api/switch/v1/billing/batches/${batchId}/detail`);
+  return response.detalles || [];
+}
+
 async function loadCompanyAccount() {
   const response = await api('/api/switch/v1/billing/empresa-account');
   return response.cuentaEmpresa || null;
@@ -188,6 +193,7 @@ export {
   loadTransactions,
   loadBatches,
   loadCharges,
+  loadBatchDetail,
   loadCompanyAccount,
   uploadCsv,
   uploadScheduledCsv,

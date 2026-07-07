@@ -72,6 +72,65 @@ button {
   display: none !important;
 }
 
+.date-filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.date-filter-bar label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.8rem;
+  color: #475569;
+}
+
+.date-filter-bar input[type="date"] {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  font-size: 0.9rem;
+}
+
+.upload-progress {
+  margin-top: 1rem;
+  padding: 1rem;
+  border: 1px solid #e2e8f0;
+  border-radius: var(--radius-md, 8px);
+  background: #f8fafc;
+}
+
+.upload-progress .progress-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.9rem;
+  margin-bottom: 0.5rem;
+}
+
+.upload-progress .progress-bar-track {
+  width: 100%;
+  height: 8px;
+  border-radius: 999px;
+  background: #e2e8f0;
+  overflow: hidden;
+  margin-bottom: 0.75rem;
+}
+
+.upload-progress .progress-bar-fill {
+  height: 100%;
+  background: #2a5298;
+  transition: width 0.3s ease;
+}
+
+.upload-progress .table-wrap {
+  max-height: 260px;
+  overflow-y: auto;
+}
+
 .login-view {
   display: grid;
   grid-template-columns: minmax(0, 1.12fr) minmax(360px, 460px);
