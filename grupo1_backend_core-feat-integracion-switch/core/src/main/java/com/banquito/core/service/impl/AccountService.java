@@ -119,10 +119,10 @@ public class AccountService implements IAccountService {
             throw new IllegalArgumentException("El saldo inicial no puede ser negativo");
         }
 
-        BigDecimal minimumBalance = resolveMinimumInitialBalance(subtype.getId());
+        BigDecimal minimumBalance = resolveMinimumInitialBalance(customer.getCustomerType());
         if (initialBalance.compareTo(minimumBalance) < 0) {
             throw new IllegalArgumentException(
-                    "El saldo inicial minimo para este tipo de cuenta es $" + minimumBalance.toPlainString());
+                    "El saldo inicial minimo para este tipo de cliente es $" + minimumBalance.toPlainString());
         }
 
         if (Boolean.TRUE.equals(request.getIsFavorite())) {
@@ -447,15 +447,11 @@ public class AccountService implements IAccountService {
         }
     }
 
-    private BigDecimal resolveMinimumInitialBalance(Integer accountSubtypeId) {
-        if (accountSubtypeId == null) {
-            return BigDecimal.ZERO;
+    private BigDecimal resolveMinimumInitialBalance(com.banquito.core.enums.CustomerTypeEnum customerType) {
+        if (customerType == com.banquito.core.enums.CustomerTypeEnum.JURIDICO) {
+            return new BigDecimal("100");
         }
-        return switch (accountSubtypeId) {
-            case 1 -> new BigDecimal("10");
-            case 2 -> new BigDecimal("100");
-            default -> BigDecimal.ZERO;
-        };
+        return new BigDecimal("10");
     }
 
     private void validateAmount(BigDecimal amount) {
@@ -476,14 +472,31 @@ public class AccountService implements IAccountService {
         }
     }
 
-    private String resolveAccountNumber(String requestedAccountNumber, Branch branch) {
+    private static final String ACCOUNT_NUMBER_PREFIX = "10101";
+    private static final int ACCOUNT_SEQUENCE_LENGTH = 5;
+    private final java.util.concurrent.atomic.AtomicInteger accountSequenceCounter =
+            new java.util.concurrent.atomic.AtomicInteger(-1);
+
+    /**
+     * Numero de cuenta consecutivo (no aleatorio): prefijo institucional fijo
+     * "10101" + consecutivo de 5 digitos (00000-19999). El sexto digito llega a
+     * ser 0 o 1 simplemente por el desborde del consecutivo de 9999 a 10000.
+     */
+    private synchronized String resolveAccountNumber(String requestedAccountNumber, Branch branch) {
+        if (accountSequenceCounter.get() < 0) {
+            int lastSequence = accountRepository
+                    .findTopByAccountNumberStartingWithOrderByAccountNumberDesc(ACCOUNT_NUMBER_PREFIX)
+                    .map(acc -> acc.getAccountNumber().substring(ACCOUNT_NUMBER_PREFIX.length()))
+                    .map(Integer::parseInt)
+                    .orElse(-1);
+            accountSequenceCounter.set(lastSequence);
+        }
+
         String accountNumber;
-        java.util.Random rnd = new java.util.Random();
-
         do {
-
-            accountNumber = branch.getBranchCode()
-                    + String.format("%07d", rnd.nextInt(9_000_000) + 1_000_000);
+            int nextSequence = accountSequenceCounter.incrementAndGet();
+            accountNumber = ACCOUNT_NUMBER_PREFIX
+                    + String.format("%0" + ACCOUNT_SEQUENCE_LENGTH + "d", nextSequence);
         } while (accountRepository.findByAccountNumber(accountNumber).isPresent());
 
         return accountNumber;
