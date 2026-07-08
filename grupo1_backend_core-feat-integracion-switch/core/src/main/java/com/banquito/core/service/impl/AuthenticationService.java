@@ -142,7 +142,6 @@ public class AuthenticationService implements IAuthenticationService {
     @Override
     @Transactional(readOnly = true)
     public void validateActiveCoreUser(Integer coreUserId) {
-        // If no coreUserId provided, allow operation (used for internal calls or unauthenticated requests)
         if (coreUserId == null) {
             return;
         }

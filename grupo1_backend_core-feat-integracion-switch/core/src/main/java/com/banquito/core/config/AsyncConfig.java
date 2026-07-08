@@ -20,7 +20,6 @@ public class AsyncConfig {
         executor.setQueueCapacity(200);
         executor.setKeepAliveSeconds(60);
         executor.setThreadNamePrefix("email-async-");
-        // Discard oldest queued task when pool + queue are full (don't block caller)
         executor.setRejectedExecutionHandler(new ThreadPoolExecutor.DiscardOldestPolicy());
         executor.initialize();
         return executor;

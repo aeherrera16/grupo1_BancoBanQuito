@@ -501,11 +501,7 @@ public class AccountService implements IAccountService {
     private final java.util.concurrent.atomic.AtomicInteger accountSequenceCounter =
             new java.util.concurrent.atomic.AtomicInteger(-1);
 
-    /**
-     * Numero de cuenta consecutivo (no aleatorio): prefijo institucional fijo
-     * "10101" + consecutivo de 5 digitos (00000-19999). El sexto digito llega a
-     * ser 0 o 1 simplemente por el desborde del consecutivo de 9999 a 10000.
-     */
+    
     private synchronized String resolveAccountNumber(String requestedAccountNumber, Branch branch) {
         if (accountSequenceCounter.get() < 0) {
             int lastSequence = accountRepository

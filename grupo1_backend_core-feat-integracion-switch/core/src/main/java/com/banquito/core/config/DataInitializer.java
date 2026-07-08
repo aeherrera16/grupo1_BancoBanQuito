@@ -665,9 +665,9 @@ public class DataInitializer implements CommandLineRunner {
             while (accountRepository.findByCustomer_Id(company.getId()).size() < 3) {
                 int currentCount = accountRepository.findByCustomer_Id(company.getId()).size();
                 AccountSubtype subtype;
-                if (currentCount == 0) subtype = corriente;   // Cuenta Operativa
-                else if (currentCount == 1) subtype = nomina; // Cuenta Nómina
-                else subtype = ahorros;                       // Cuenta Impuestos/Reservas
+                if (currentCount == 0) subtype = corriente;
+                else if (currentCount == 1) subtype = nomina;
+                else subtype = ahorros;
 
                 createSeedAccount(company, branch, subtype, accountSequence++);
             }

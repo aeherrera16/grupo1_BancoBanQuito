@@ -128,8 +128,6 @@ function renderBatches() {
 
 const TERMINAL_STATUSES = ['PROCESADO', 'PROCESSED', 'REJECTED', 'RECHAZADO'];
 
-// La API devuelve el estado de cada linea ya traducido (p.ej. "Exitoso", "Rechazado"),
-// no las claves del enum en ingles, por eso se compara por contenido en vez de igualdad exacta.
 function isSuccessDetail(status: any) {
   const s = (status || '').toString().toUpperCase();
   return s.includes('EXITO') || s === 'SUCCESS';
