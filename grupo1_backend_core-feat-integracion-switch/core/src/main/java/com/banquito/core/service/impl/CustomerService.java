@@ -112,6 +112,13 @@ public class CustomerService implements ICustomerService {
             customer.setAddress(request.getAddress());
         }
 
+        if (request.getCustomerSubtypeId() != null) {
+            CustomerSubtype subtype = customerSubtypeRepository.findById(request.getCustomerSubtypeId())
+                    .orElseThrow(() -> new RuntimeException(
+                            "Subtipo de cliente no encontrado: " + request.getCustomerSubtypeId()));
+            customer.setCustomerSubtype(subtype);
+        }
+
         log.info("Actualizando datos del cliente con ID: {}", id);
         return toResponse(customerRepository.save(customer));
     }
