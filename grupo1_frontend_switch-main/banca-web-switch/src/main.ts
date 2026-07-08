@@ -3,7 +3,7 @@ import { checkServices, checkSwitchService } from './services/api';
 import { restoreSession as restoreSessionHook, getState, setState } from './hooks/useState';
 import { login, logout, showDashboard, activateSection, renderProfile, refreshAll } from './pages/LoginPage';
 import { loadAccounts, renderAccounts } from './pages/AccountsPage';
-import { loadTransactions, renderTransactions, applyTransactionsFilter, clearTransactionsFilter } from './pages/TransactionsPage';
+import { loadTransactions, renderTransactions, applyTransactionsFilter, clearTransactionsFilter, nextTransactionsPage, prevTransactionsPage } from './pages/TransactionsPage';
 import { loadBatches, uploadCsvHandler, processBatchHandler, refreshCompanyData, showBatchDuration } from './pages/PaymentsPage';
 import { runReportHandler, runDownloadHandler, renderBatchPreview, currentBatch, syncReportBatchOptions } from './pages/ReportsPage';
 import { filterVisibleRows } from './pages/DashboardPage';
@@ -123,6 +123,12 @@ function bindEvents() {
 
     const batchDurationButton = event.target.closest('[data-batch-duration]');
     if (batchDurationButton) showBatchDuration(batchDurationButton.dataset.batchDuration);
+
+    const prevTransactionsButton = event.target.closest('[data-transactions-prev]');
+    if (prevTransactionsButton && !prevTransactionsButton.disabled) prevTransactionsPage();
+
+    const nextTransactionsButton = event.target.closest('[data-transactions-next]');
+    if (nextTransactionsButton && !nextTransactionsButton.disabled) nextTransactionsPage();
   });
 }
 

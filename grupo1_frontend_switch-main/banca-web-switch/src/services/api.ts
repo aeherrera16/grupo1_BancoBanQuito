@@ -78,6 +78,12 @@ async function loadTransactions(customerId: string, coreUserId: number) {
   });
 }
 
+async function loadTransactionsPaged(customerId: string, coreUserId: number, page: number, size: number) {
+  return api(`/api/core/v1/accounts/customer/${customerId}/transactions/paged?page=${page}&size=${size}`, {
+    headers: { 'X-Core-User-Id': String(coreUserId || 1) },
+  });
+}
+
 async function loadBatches() {
   const state = getState();
   const ruc = state.session?.identification;
@@ -196,6 +202,7 @@ export {
   changePassword,
   loadAccounts,
   loadTransactions,
+  loadTransactionsPaged,
   loadBatches,
   loadCharges,
   loadBatchDetail,

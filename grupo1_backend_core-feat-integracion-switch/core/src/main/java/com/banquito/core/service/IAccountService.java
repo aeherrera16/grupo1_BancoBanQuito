@@ -6,6 +6,7 @@ import java.util.List;
 import com.banquito.core.dto.AccountRequestDTO;
 import com.banquito.core.dto.AccountResponseDTO;
 import com.banquito.core.dto.BalanceDTO;
+import com.banquito.core.dto.TransactionPageResponseDTO;
 import com.banquito.core.dto.TransactionResponseDTO;
 
 public interface IAccountService {
@@ -15,6 +16,9 @@ public interface IAccountService {
     List<AccountResponseDTO> findByCustomerId(Integer customerId, Integer coreUserId);
 
     List<TransactionResponseDTO> findTransactionsByCustomerId(Integer customerId, Integer coreUserId);
+
+    TransactionPageResponseDTO findTransactionsByCustomerId(
+            Integer customerId, Integer coreUserId, int page, int size);
 
     AccountResponseDTO create(AccountRequestDTO request, Integer coreUserId);
 

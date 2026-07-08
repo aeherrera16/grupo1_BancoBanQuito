@@ -76,22 +76,46 @@ public class AccountService implements IAccountService {
         authenticationService.validateActiveCoreUser(coreUserId);
         return transactionRepository.findTop10ByAccount_Customer_IdOrderByTransactionDateDesc(customerId)
                 .stream()
-                .map(transaction -> {
-                    MovementTypeEnum counterpartType = transaction.getMovementType() == MovementTypeEnum.DEBITO
-                            ? MovementTypeEnum.CREDITO
-                            : MovementTypeEnum.DEBITO;
-                    String counterpart = transactionRepository
-                            .findByTransactionUuidAndMovementType(transaction.getTransactionUuid(), counterpartType)
-                            .map(cp -> cp.getAccount().getAccountNumber())
-                            .orElse(null);
-                    TransactionResponseDTO dto = toTransactionResponse(
-                            transaction,
-                            transaction.getAccount().getAccountNumber(),
-                            transaction.getDescription());
-                    dto.setCounterpartAccountNumber(counterpart);
-                    return dto;
-                })
+                .map(this::mapToTransactionResponse)
                 .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    @Override
+    public com.banquito.core.dto.TransactionPageResponseDTO findTransactionsByCustomerId(
+            Integer customerId, Integer coreUserId, int page, int size) {
+        authenticationService.validateActiveCoreUser(coreUserId);
+
+        int safePage = Math.max(page, 0);
+        int safeSize = size <= 0 ? 10 : Math.min(size, 200);
+
+        org.springframework.data.domain.Page<com.banquito.core.model.AccountTransaction> result =
+                transactionRepository.findByAccount_Customer_IdOrderByTransactionDateDesc(
+                        customerId,
+                        org.springframework.data.domain.PageRequest.of(safePage, safeSize));
+
+        List<TransactionResponseDTO> content = result.getContent().stream()
+                .map(this::mapToTransactionResponse)
+                .collect(Collectors.toList());
+
+        return new com.banquito.core.dto.TransactionPageResponseDTO(
+                content, safePage, safeSize, result.getTotalElements(), result.getTotalPages());
+    }
+
+    private TransactionResponseDTO mapToTransactionResponse(com.banquito.core.model.AccountTransaction transaction) {
+        MovementTypeEnum counterpartType = transaction.getMovementType() == MovementTypeEnum.DEBITO
+                ? MovementTypeEnum.CREDITO
+                : MovementTypeEnum.DEBITO;
+        String counterpart = transactionRepository
+                .findByTransactionUuidAndMovementType(transaction.getTransactionUuid(), counterpartType)
+                .map(cp -> cp.getAccount().getAccountNumber())
+                .orElse(null);
+        TransactionResponseDTO dto = toTransactionResponse(
+                transaction,
+                transaction.getAccount().getAccountNumber(),
+                transaction.getDescription());
+        dto.setCounterpartAccountNumber(counterpart);
+        return dto;
     }
 
     @Transactional

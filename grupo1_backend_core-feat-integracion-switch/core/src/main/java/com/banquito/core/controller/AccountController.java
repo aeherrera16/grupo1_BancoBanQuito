@@ -44,6 +44,15 @@ public class AccountController {
         return ResponseEntity.ok(accountService.findTransactionsByCustomerId(customerId, coreUserId));
     }
 
+    @GetMapping("/customer/{customerId}/transactions/paged")
+    public ResponseEntity<com.banquito.core.dto.TransactionPageResponseDTO> findTransactionsByCustomerIdPaged(
+            @PathVariable Integer customerId,
+            @RequestHeader(value = "X-Core-User-Id", required = false) Integer coreUserId,
+            @RequestParam(value = "page", defaultValue = "0") int page,
+            @RequestParam(value = "size", defaultValue = "10") int size) {
+        return ResponseEntity.ok(accountService.findTransactionsByCustomerId(customerId, coreUserId, page, size));
+    }
+
     @PostMapping
     public ResponseEntity<AccountResponseDTO> create(
             @RequestBody AccountRequestDTO request,
