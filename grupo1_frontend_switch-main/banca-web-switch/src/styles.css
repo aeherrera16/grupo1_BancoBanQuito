@@ -72,6 +72,12 @@ button {
   display: none !important;
 }
 
+.batch-duration-result {
+  margin-top: 0.35rem;
+  font-size: 0.8rem;
+  color: #475569;
+}
+
 .date-filter-bar {
   display: flex;
   flex-wrap: wrap;

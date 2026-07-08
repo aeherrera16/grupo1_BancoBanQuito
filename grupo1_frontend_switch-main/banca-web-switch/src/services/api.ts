@@ -95,6 +95,11 @@ async function loadBatchDetail(batchId: number) {
   return response.detalles || [];
 }
 
+async function loadBatchHistory(batchId: number) {
+  const response = await api(`/api/switch/v1/billing/batches/${batchId}/history`);
+  return response.historial || [];
+}
+
 async function loadCompanyAccount() {
   const response = await api('/api/switch/v1/billing/empresa-account');
   return response.cuentaEmpresa || null;
@@ -194,6 +199,7 @@ export {
   loadBatches,
   loadCharges,
   loadBatchDetail,
+  loadBatchHistory,
   loadCompanyAccount,
   uploadCsv,
   uploadScheduledCsv,

@@ -1,4 +1,4 @@
-import { loadBatches as loadBatchesApi, loadCharges as loadChargesApi, loadBatchDetail, loadCompanyAccount as loadCompanyAccountApi, uploadCsv, processBatch } from '../services/api';
+import { loadBatches as loadBatchesApi, loadCharges as loadChargesApi, loadBatchDetail, loadBatchHistory, loadCompanyAccount as loadCompanyAccountApi, uploadCsv, processBatch } from '../services/api';
 import { getState, setState } from '../hooks/useState';
 import { formatMoney, statusClass, escapeHtml, setMessage, compactAccount, formatDate } from '../helpers/formatters';
 import { syncReportBatchOptions } from './ReportsPage';
@@ -95,7 +95,10 @@ function renderBatches() {
         <td>${escapeHtml(batch.headerTotalRecords || 0)}</td>
         <td>${formatMoney(batch.headerTotalAmount)}</td>
         <td>${formatDate(batch.receivedAt)}</td>
-
+        <td>
+          <button class="secondary-button" type="button" data-batch-duration="${batch.id}">Ver tiempo</button>
+          <div id="batchDuration-${batch.id}" class="batch-duration-result"></div>
+        </td>
       </tr>
     `)
     .join('');
@@ -111,6 +114,7 @@ function renderBatches() {
           <th>Registros</th>
           <th>Monto</th>
           <th>Recibido</th>
+          <th>Tiempo de proceso</th>
         </tr>
       </thead>
       <tbody>${rows}</tbody>
@@ -133,6 +137,34 @@ function isSuccessDetail(status: any) {
 function isRejectedDetail(status: any) {
   const s = (status || '').toString().toUpperCase();
   return s.includes('RECHAZ') || s === 'REJECTED';
+}
+
+async function showBatchDuration(batchId: string) {
+  const target = $(`#batchDuration-${batchId}`);
+  if (!target) return;
+  target.textContent = 'Consultando...';
+
+  try {
+    const history = await loadBatchHistory(Number(batchId));
+    const start = history.find((h: any) => (h.newStatus || '').toUpperCase() === 'PROCESSING');
+    const terminal = history
+      .filter((h: any) => ['PROCESSED', 'REJECTED'].includes((h.newStatus || '').toUpperCase()))
+      .sort((a: any, b: any) => new Date(b.changedAt).getTime() - new Date(a.changedAt).getTime())[0];
+
+    if (!start) {
+      target.textContent = 'Aun no ha comenzado a procesar';
+      return;
+    }
+    if (!terminal) {
+      target.textContent = 'Todavia esta procesando...';
+      return;
+    }
+
+    const ms = new Date(terminal.changedAt).getTime() - new Date(start.changedAt).getTime();
+    target.textContent = `${formatElapsed(ms)} (mm:ss)`;
+  } catch (error: any) {
+    target.textContent = 'No se pudo obtener el tiempo';
+  }
 }
 
 function formatElapsed(ms: number) {
@@ -296,4 +328,5 @@ export {
   uploadCsvHandler,
   processBatchHandler,
   refreshCompanyData,
+  showBatchDuration,
 };

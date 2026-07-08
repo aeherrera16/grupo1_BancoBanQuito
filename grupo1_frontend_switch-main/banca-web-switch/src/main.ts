@@ -4,7 +4,7 @@ import { restoreSession as restoreSessionHook, getState, setState } from './hook
 import { login, logout, showDashboard, activateSection, renderProfile, refreshAll } from './pages/LoginPage';
 import { loadAccounts, renderAccounts } from './pages/AccountsPage';
 import { loadTransactions, renderTransactions, applyTransactionsFilter, clearTransactionsFilter } from './pages/TransactionsPage';
-import { loadBatches, uploadCsvHandler, processBatchHandler, refreshCompanyData } from './pages/PaymentsPage';
+import { loadBatches, uploadCsvHandler, processBatchHandler, refreshCompanyData, showBatchDuration } from './pages/PaymentsPage';
 import { runReportHandler, runDownloadHandler, renderBatchPreview, currentBatch, syncReportBatchOptions } from './pages/ReportsPage';
 import { filterVisibleRows } from './pages/DashboardPage';
 import { loadSftpBatches, uploadScheduledCsvHandler, updateScheduleSummary } from './pages/SftpPage';
@@ -120,6 +120,9 @@ function bindEvents() {
 
     const comingSoonButton = event.target.closest('[data-feature-coming-soon]');
     if (comingSoonButton) alert('Estamos trabajando para tu futuro');
+
+    const batchDurationButton = event.target.closest('[data-batch-duration]');
+    if (batchDurationButton) showBatchDuration(batchDurationButton.dataset.batchDuration);
   });
 }
 
