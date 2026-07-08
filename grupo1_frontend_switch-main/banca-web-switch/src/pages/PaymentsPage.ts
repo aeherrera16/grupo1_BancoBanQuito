@@ -26,11 +26,6 @@ async function loadBatches() {
   }
 
   renderBatches();
-
-  const table = document.getElementById('batchesTable');
-  if (table) {
-    table.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  }
 }
 
 async function loadCharges() {
