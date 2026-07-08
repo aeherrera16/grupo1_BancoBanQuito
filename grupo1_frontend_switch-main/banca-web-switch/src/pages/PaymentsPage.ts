@@ -128,7 +128,17 @@ function renderBatches() {
 }
 
 const TERMINAL_STATUSES = ['PROCESADO', 'PROCESSED', 'REJECTED', 'RECHAZADO'];
-const TERMINAL_DETAIL_STATUSES = ['SUCCESS', 'REJECTED'];
+
+// La API devuelve el estado de cada linea ya traducido (p.ej. "Exitoso", "Rechazado"),
+// no las claves del enum en ingles, por eso se compara por contenido en vez de igualdad exacta.
+function isSuccessDetail(status: any) {
+  const s = (status || '').toString().toUpperCase();
+  return s.includes('EXITO') || s === 'SUCCESS';
+}
+function isRejectedDetail(status: any) {
+  const s = (status || '').toString().toUpperCase();
+  return s.includes('RECHAZ') || s === 'REJECTED';
+}
 
 function formatElapsed(ms: number) {
   const totalSeconds = Math.floor(ms / 1000);
@@ -139,8 +149,8 @@ function formatElapsed(ms: number) {
 
 function renderLiveDetail(details: any[]) {
   const total = details.length;
-  const success = details.filter((d: any) => (d.status || '').toUpperCase() === 'SUCCESS').length;
-  const rejected = details.filter((d: any) => (d.status || '').toUpperCase() === 'REJECTED').length;
+  const success = details.filter((d: any) => isSuccessDetail(d.status)).length;
+  const rejected = details.filter((d: any) => isRejectedDetail(d.status)).length;
   const done = success + rejected;
 
   const countsEl = $('#uploadCounts');
@@ -153,7 +163,7 @@ function renderLiveDetail(details: any[]) {
   if (!rowsEl) return;
 
   const recentResolved = details
-    .filter((d: any) => TERMINAL_DETAIL_STATUSES.includes((d.status || '').toUpperCase()))
+    .filter((d: any) => isSuccessDetail(d.status) || isRejectedDetail(d.status))
     .slice(-15)
     .reverse();
 
