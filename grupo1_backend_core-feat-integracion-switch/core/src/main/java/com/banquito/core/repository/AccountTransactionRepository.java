@@ -1,6 +1,9 @@
 package com.banquito.core.repository;
 
+import com.banquito.core.enums.MovementTypeEnum;
 import com.banquito.core.model.AccountTransaction;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -13,6 +16,8 @@ public interface AccountTransactionRepository extends JpaRepository<AccountTrans
 
     Optional<AccountTransaction> findByTransactionUuid(String transactionUuid);
 
+    Optional<AccountTransaction> findByTransactionUuidAndMovementType(String transactionUuid, MovementTypeEnum movementType);
+
     boolean existsByTransactionUuid(String transactionUuid);
 
     boolean existsByTransactionUuidAndTransactionDateBetween(
@@ -24,4 +29,6 @@ public interface AccountTransactionRepository extends JpaRepository<AccountTrans
     List<AccountTransaction> findTop10ByAccount_IdOrderByTransactionDateDesc(Integer accountId);
 
     List<AccountTransaction> findTop10ByAccount_Customer_IdOrderByTransactionDateDesc(Integer customerId);
+
+    Page<AccountTransaction> findByAccount_Customer_IdOrderByTransactionDateDesc(Integer customerId, Pageable pageable);
 }

@@ -18,7 +18,7 @@ function formatDate(value: any) {
 
 function statusClass(value: any) {
   const normalized = String(value || '').toUpperCase();
-  if (['ACTIVO', 'COMPLETADA', 'SUCCESS', 'PROCESADO', 'APROBADO'].some((item) => normalized.includes(item))) {
+  if (['ACTIVO', 'COMPLETADA', 'SUCCESS', 'EXITO', 'PROCESADO', 'APROBADO'].some((item) => normalized.includes(item))) {
     return 'is-success';
   }
   if (['ERROR', 'RECHAZ', 'REJECT', 'FALL', 'BLOQUEADO', 'INACTIVO'].some((item) => normalized.includes(item))) {

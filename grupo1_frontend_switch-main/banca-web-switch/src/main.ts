@@ -3,16 +3,31 @@ import { checkServices, checkSwitchService } from './services/api';
 import { restoreSession as restoreSessionHook, getState, setState } from './hooks/useState';
 import { login, logout, showDashboard, activateSection, renderProfile, refreshAll } from './pages/LoginPage';
 import { loadAccounts, renderAccounts } from './pages/AccountsPage';
-import { loadTransactions, renderTransactions } from './pages/TransactionsPage';
-import { loadBatches, uploadCsvHandler, processBatchHandler, refreshCompanyData } from './pages/PaymentsPage';
+import { loadTransactions, renderTransactions, applyTransactionsFilter, clearTransactionsFilter, nextTransactionsPage, prevTransactionsPage } from './pages/TransactionsPage';
+import { loadBatches, uploadCsvHandler, processBatchHandler, refreshCompanyData, showBatchDuration } from './pages/PaymentsPage';
 import { runReportHandler, runDownloadHandler, renderBatchPreview, currentBatch, syncReportBatchOptions } from './pages/ReportsPage';
 import { filterVisibleRows } from './pages/DashboardPage';
+import { loadSftpBatches, uploadScheduledCsvHandler, updateScheduleSummary } from './pages/SftpPage';
 
 const $ = (selector: string): any => document.querySelector(selector);
 const $$ = (selector: string): any[] => Array.from(document.querySelectorAll(selector));
 
 if ('scrollRestoration' in history) {
   history.scrollRestoration = 'manual';
+}
+
+let sftpAutoRefreshTimer: ReturnType<typeof setInterval> | null = null;
+
+function startSftpAutoRefresh() {
+  stopSftpAutoRefresh();
+  sftpAutoRefreshTimer = setInterval(() => loadSftpBatches(true), 3000);
+}
+
+function stopSftpAutoRefresh() {
+  if (sftpAutoRefreshTimer !== null) {
+    clearInterval(sftpAutoRefreshTimer);
+    sftpAutoRefreshTimer = null;
+  }
 }
 
 async function checkServicesStatus() {
@@ -27,6 +42,7 @@ async function checkServicesStatus() {
 }
 
 async function activateSectionWithData(section: string) {
+  stopSftpAutoRefresh();
   activateSection(section);
   if (section === 'transactions') {
     await loadTransactions();
@@ -34,6 +50,10 @@ async function activateSectionWithData(section: string) {
   if (section === 'payments' || section === 'reports') {
     await refreshCompanyData();
     if (section === 'reports') syncReportBatchOptions();
+  }
+  if (section === 'sftp') {
+    await loadSftpBatches();
+    startSftpAutoRefresh();
   }
 }
 
@@ -58,14 +78,24 @@ function bindEvents() {
       await refreshCompanyData();
       if (activeSection === 'reports') syncReportBatchOptions();
     }
+    if (activeSection === 'sftp') {
+      await loadSftpBatches();
+    }
   });
   $('#globalSearch').addEventListener('input', (event: any) => filterVisibleRows(event.target.value));
+  $('#applyTransactionsFilterButton').addEventListener('click', applyTransactionsFilter);
+  $('#clearTransactionsFilterButton').addEventListener('click', clearTransactionsFilter);
   $('#uploadForm').addEventListener('submit', uploadCsvHandler);
   $('#loadBatchesButton').addEventListener('click', loadBatches);
   $('#batchSelector').addEventListener('change', () => renderBatchPreview(currentBatch()));
   $('#csvFile').addEventListener('change', (event: any) => {
     $('#fileName').textContent = event.target.files[0]?.name || 'Seleccionar CSV';
   });
+
+  $('#sftpUploadForm').addEventListener('submit', uploadScheduledCsvHandler);
+  $('#loadSftpBatchesButton').addEventListener('click', loadSftpBatches);
+  $('#sftpScheduledDate').addEventListener('input', updateScheduleSummary);
+  // File selection is handled via SFTP client; form only schedules execution of existing files in the buzón.
 
   $$('.nav-item').forEach((button: any) => {
     button.addEventListener('click', () => activateSectionWithData(button.dataset.section));
@@ -90,6 +120,15 @@ function bindEvents() {
 
     const comingSoonButton = event.target.closest('[data-feature-coming-soon]');
     if (comingSoonButton) alert('Estamos trabajando para tu futuro');
+
+    const batchDurationButton = event.target.closest('[data-batch-duration]');
+    if (batchDurationButton) showBatchDuration(batchDurationButton.dataset.batchDuration);
+
+    const prevTransactionsButton = event.target.closest('[data-transactions-prev]');
+    if (prevTransactionsButton && !prevTransactionsButton.disabled) prevTransactionsPage();
+
+    const nextTransactionsButton = event.target.closest('[data-transactions-next]');
+    if (nextTransactionsButton && !nextTransactionsButton.disabled) nextTransactionsPage();
   });
 }
 

@@ -11,9 +11,6 @@ import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
-/**
- * RF-01: Checks business days in Core.
- */
 @Component
 public class CoreCalendarClient {
 
@@ -27,9 +24,6 @@ public class CoreCalendarClient {
     @Value("${app.core.calendar.is-business-day-endpoint}")
     private String isBusinessDayEndpoint;
 
-    /**
-     * Returns true when Core marks the date as business day.
-     */
     public Boolean isBusinessDay(LocalDate date) {
         String url = UriComponentsBuilder.fromUriString(coreBaseUrl)
                 .path(isBusinessDayEndpoint)

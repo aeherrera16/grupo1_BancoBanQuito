@@ -10,14 +10,14 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import ec.edu.espe.banquito.switchpagos.service.ICutoffTimeService;
-import ec.edu.espe.banquito.switchpagos.util.DateTimeProvider;
+import ec.edu.espe.banquito.switchpagos.provider.DateTimeProvider;
 
 @Service
 public class CutoffTimeService implements ICutoffTimeService {
 
     private static final Logger logger = LoggerFactory.getLogger(CutoffTimeService.class);
 
-    @Value("${app.ingest.cutoff-hour:18}")
+    @Value("${app.ingest.cutoff-hour}")
     private int cutoffHour;
 
     private final BusinessDayService businessDayService;
@@ -45,11 +45,11 @@ public class CutoffTimeService implements ICutoffTimeService {
         return time.isBefore(LocalTime.of(cutoffHour, 0));
     }
 
-    // RF-01 queue rule: after cutoff, weekend, or holiday.
     public boolean shouldQueue() {
         LocalDate today = dateTimeProvider.today();
         if (!isWithinIngestionWindow()) {
-            logger.info("Current time is outside ingestion window (cutoff: {}). Batch will be queued.", getCutoffTime());
+            logger.info("Current time is outside ingestion window (cutoff: {}). Batch will be queued.",
+                    getCutoffTime());
             return true;
         }
         if (isWeekendOrHoliday(today)) {

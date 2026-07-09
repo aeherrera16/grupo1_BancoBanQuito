@@ -28,6 +28,7 @@ loadEnvFile(path.join(__dirname, ".env"));
 const PORT = Number(process.env.PORT || 4173);
 const CORE_BASE_URL = process.env.CORE_BASE_URL || "http://localhost:8080";
 const SWITCH_BASE_URL = process.env.SWITCH_BASE_URL || "http://localhost:8081";
+const BUZON_BASE_URL = process.env.BUZON_BASE_URL || "http://localhost:8082";
 
 const DIST_DIR = path.join(__dirname, "dist");
 const PUBLIC_DIR = path.join(__dirname, "public");
@@ -98,6 +99,13 @@ function mapProxyTarget(req) {
     };
   }
 
+  if (req.url.startsWith("/api/buzon/")) {
+    return {
+      baseUrl: BUZON_BASE_URL,
+      path: req.url.replace("/api/buzon", "")
+    };
+  }
+
   return null;
 }
 
@@ -154,6 +162,7 @@ const server = http.createServer((req, res) => {
 
 server.listen(PORT, () => {
   console.log(`Banca Web Switch disponible en http://localhost:${PORT}`);
-  console.log(`Core: ${CORE_BASE_URL}`);
-  console.log(`Switch: ${SWITCH_BASE_URL}`);
+  console.log(`Core:    ${CORE_BASE_URL}`);
+  console.log(`Switch:  ${SWITCH_BASE_URL}`);
+  console.log(`Buzón:   ${BUZON_BASE_URL}`);
 });

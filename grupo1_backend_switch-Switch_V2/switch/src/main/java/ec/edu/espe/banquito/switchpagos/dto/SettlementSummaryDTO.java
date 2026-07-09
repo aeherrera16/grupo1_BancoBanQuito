@@ -19,7 +19,6 @@ public class SettlementSummaryDTO {
     private BigDecimal totalAmount;
     private Integer ruleId;
     private BigDecimal ivaAmount;
-    // Accessors.
 
     public Integer getSuccessfulTransactions() {
         return successfulTransactions;

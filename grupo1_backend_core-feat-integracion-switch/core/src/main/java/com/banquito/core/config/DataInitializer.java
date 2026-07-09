@@ -14,7 +14,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
-
+import com.banquito.core.service.IAuthenticationService;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -24,6 +24,59 @@ import java.util.List;
 @Component
 @RequiredArgsConstructor
 public class DataInitializer implements CommandLineRunner {
+
+    private static final String[] COMPANY_NAMES = {
+        "Inversiones Andinas del Ecuador S.A.",
+        "Comercializadora Pichincha Cía. Ltda.",
+        "Grupo Empresarial Pacífico S.A.",
+        "Importadora Continental Cía. Ltda.",
+        "Distribuciones Sierra Verde S.A.",
+        "Tecnologías Innovación Ecuador S.A.",
+        "Construcciones Metropolitanas S.A.",
+        "Agroindustrial Cóndor Cía. Ltda.",
+        "Transportes Nacionales Unidos S.A.",
+        "Soluciones Corporativas Andes S.A.",
+        "Industrias Alimenticias del Norte Cía. Ltda.",
+        "Grupo Logístico Manabí S.A.",
+        "Servicios Financieros Austral Cía. Ltda.",
+        "Exportadora Amazónica S.A.",
+        "Consultora Empresarial Cuenca Cía. Ltda.",
+        "Manufactura Especializada Guayas S.A.",
+        "Telecomunicaciones Nacionales S.A.",
+        "Inmobiliaria Capital Norte Cía. Ltda.",
+        "Seguridad Integral Ecuatoriana S.A.",
+        "Farmacéutica Andina Cía. Ltda.",
+        "Energía Renovable del Ecuador S.A.",
+        "Textiles del Oriente Cía. Ltda.",
+        "Automotriz Nacional S.A.",
+        "Hotelería y Turismo Galápagos Cía. Ltda.",
+        "Alimentos Procesados del Sur S.A.",
+        "Ingeniería Civil y Arquitectura Cía. Ltda.",
+        "Servicios de Salud Integral S.A.",
+        "Tecnología Agropecuaria Nacional Cía. Ltda.",
+        "Retail y Comercio Especializado S.A.",
+        "Grupo Empresarial Tungurahua Cía. Ltda.",
+        "Distribuciones Comerciales Loja S.A.",
+        "Petroquímica Ecuatoriana Cía. Ltda.",
+        "Ganadería y Producción Agropecuaria S.A.",
+        "Centro Comercial Metropolitano Cía. Ltda.",
+        "Producción Audiovisual Nacional S.A.",
+        "Gestión Ambiental Sostenible Cía. Ltda.",
+        "Industria Plástica Especializada S.A.",
+        "Operaciones Mineras del Norte Cía. Ltda.",
+        "Desarrollo Inmobiliario Moderno S.A.",
+        "Servicios Informáticos Avanzados Cía. Ltda.",
+        "Exportaciones Marítimas Ecuatorianas S.A.",
+        "Procesadora de Alimentos Nativos Cía. Ltda.",
+        "Construcciones Viales Nacionales S.A.",
+        "Servicios Educativos Superiores Cía. Ltda.",
+        "Distribución Eléctrica Nacional S.A.",
+        "Laboratorios del Austro Cía. Ltda.",
+        "Corporación Manufacturera del Pacífico S.A.",
+        "Recursos Naturales Amazónicos Cía. Ltda.",
+        "Innovación Biotecnológica Ecuador S.A.",
+        "Servicios Portuarios Nacionales Cía. Ltda.",
+    };
 
     private final CustomerSubtypeRepository customerSubtypeRepository;
     private final BranchRepository branchRepository;
@@ -35,7 +88,7 @@ public class DataInitializer implements CommandLineRunner {
     private final AccountTransactionRepository transactionRepository;
     private final InstitutionalAccountRepository institutionalAccountRepository;
     private final CoreUserRepository coreUserRepository;
-    private final WebCredentialRepository webCredentialRepository;
+    private final IAuthenticationService authenticationService;
     private final PasswordEncoder passwordEncoder;
 
     @Override
@@ -53,9 +106,87 @@ public class DataInitializer implements CommandLineRunner {
 
         initMassiveCustomers();
         initMassiveAccounts();
-        initWebCredentials();
+        initDemoData();
+        initMissingWebCredentials();
 
         log.info("Datos de prueba cargados correctamente");
+    }
+
+    private void initDemoData() {
+        CustomerSubtype personal = customerSubtypeRepository.findAll().stream()
+                .filter(s -> "PERSONAL".equals(s.getName()))
+                .findFirst().orElseThrow();
+
+        CustomerSubtype empresaSubtype = customerSubtypeRepository.findAll().stream()
+                .filter(s -> "EMPRESA_PAGOS_MASIVOS".equals(s.getName()))
+                .findFirst().orElseThrow();
+
+        Object[][] personas = {
+            {"1750285577", "Anahy",     "Herrera Morales",  LocalDate.of(2002, 9, 8),  "anahyherrera09082002@gmail.com",      "0992832595", "Av. Simon Bolivar"},
+            {"1724356789", "Carlos",    "Mendoza Rios",     LocalDate.of(1990, 3,15),  "carlos.mendoza@banquito.fin.ec",     "0987123456", "Av. 10 de Agosto N22-54"},
+            {"1712034567", "Maria",     "Salazar Vega",     LocalDate.of(1985, 7,22),  "maria.salazar@banquito.fin.ec",      "0998234567", "Calle Sucre 103"},
+            {"1738901234", "Luis",      "Ortega Caicedo",   LocalDate.of(1995, 1, 5),  "luis.ortega@banquito.fin.ec",        "0976345678", "Av. Amazonas 4532"},
+            {"1745678901", "Gabriela",  "Torres Espinoza",  LocalDate.of(1998,11,30),  "gabriela.torres@banquito.fin.ec",   "0969456789", "Juan Leon Mera 1200"},
+            {"1752345678", "Diego",     "Castro Paredes",   LocalDate.of(1988, 6,12),  "diego.castro@banquito.fin.ec",       "0995567890", "Av. Shyris N36-188"},
+            {"1761234567", "Valeria",   "Guerrero Acosta",  LocalDate.of(2000, 4,18),  "valeria.guerrero@banquito.fin.ec",  "0982678901", "Veintimilla E4-130"},
+            {"1768901234", "Sebastian", "Navarrete Ruiz",   LocalDate.of(1993, 8,25),  "sebastian.navarrete@banquito.fin.ec","0991789012","Av. Occidental km 2"},
+        };
+
+        for (Object[] p : personas) {
+            String cedula = (String) p[0];
+            if (customerRepository.findByIdentificationTypeAndIdentification("CEDULA", cedula).isEmpty()) {
+                Customer c = new Customer();
+                c.setCustomerSubtype(personal);
+                c.setCustomerType(CustomerTypeEnum.NATURAL);
+                c.setIdentificationType("CEDULA");
+                c.setIdentification(cedula);
+                c.setFirstName((String) p[1]);
+                c.setLastName((String) p[2]);
+                c.setBirthDate((LocalDate) p[3]);
+                c.setEmail((String) p[4]);
+                c.setMobilePhone((String) p[5]);
+                c.setAddress((String) p[6]);
+                c.setRegistrationDate(LocalDateTime.now());
+                c.setStatus(CustomerStatusEnum.ACTIVO);
+                Customer saved = customerRepository.save(c);
+                authenticationService.createInitialWebCredential(saved);
+                log.info("Demo cliente natural creado: {} {}", p[1], p[2]);
+            }
+        }
+
+        Object[][] empresas = {
+            {"1757158215001", "TechSolutions Ecuador S.A.",       "2015-03-12", "info@techsolutions.ec",       "022345678", "Av. Republica del Salvador N34-183"},
+            {"1791234567001", "Importadora Andina Cía. Ltda.",    "2010-07-08", "contacto@importandina.ec",    "024567890", "Av. De la Prensa N47-321"},
+            {"1791765432001", "Distribuidora El Comercio S.A.",   "2008-11-20", "gerencia@distcomercio.ec",   "022876543", "Panamericana Norte km 5"},
+        };
+
+        Customer repLegal = customerRepository
+                .findByIdentificationTypeAndIdentification("CEDULA", "1750285577")
+                .orElse(null);
+
+        for (Object[] e : empresas) {
+            String ruc = (String) e[0];
+            if (customerRepository.findByIdentificationTypeAndIdentification("RUC", ruc).isEmpty()) {
+                Customer empresa = new Customer();
+                empresa.setCustomerSubtype(empresaSubtype);
+                empresa.setCustomerType(CustomerTypeEnum.JURIDICO);
+                empresa.setIdentificationType("RUC");
+                empresa.setIdentification(ruc);
+                empresa.setLegalName((String) e[1]);
+                empresa.setConstitutionDate(LocalDate.parse((String) e[2]));
+                empresa.setLegalRepresentative(repLegal);
+                empresa.setEmail((String) e[3]);
+                empresa.setMobilePhone((String) e[4]);
+                empresa.setAddress((String) e[5]);
+                empresa.setRegistrationDate(LocalDateTime.now());
+                empresa.setStatus(CustomerStatusEnum.ACTIVO);
+                Customer saved = customerRepository.save(empresa);
+                authenticationService.createInitialWebCredential(saved);
+                log.info("Demo empresa creada: {}", e[1]);
+            }
+        }
+
+        log.info("Datos de demostración inicializados correctamente");
     }
 
     private void initCustomerSubtypes() {
@@ -98,7 +229,7 @@ public class DataInitializer implements CommandLineRunner {
             norte.setBranchCode("001");
             norte.setName("Sucursal Norte");
             norte.setCity("Quito");
-            norte.setCreationDate(LocalDateTime.now());
+            norte.setCreationDate(LocalDateTime.of(2015, 3, 1, 8, 0));
             branchRepository.save(norte);
         }
 
@@ -107,7 +238,7 @@ public class DataInitializer implements CommandLineRunner {
             sur.setBranchCode("002");
             sur.setName("Sucursal Sur");
             sur.setCity("Quito");
-            sur.setCreationDate(LocalDateTime.now());
+            sur.setCreationDate(LocalDateTime.of(2016, 7, 15, 8, 0));
             branchRepository.save(sur);
         }
 
@@ -116,7 +247,7 @@ public class DataInitializer implements CommandLineRunner {
             centro.setBranchCode("003");
             centro.setName("Sucursal Centro");
             centro.setCity("Quito");
-            centro.setCreationDate(LocalDateTime.now());
+            centro.setCreationDate(LocalDateTime.of(2018, 2, 20, 8, 0));
             branchRepository.save(centro);
         }
 
@@ -125,7 +256,7 @@ public class DataInitializer implements CommandLineRunner {
             valles.setBranchCode("004");
             valles.setName("Sucursal Valles");
             valles.setCity("Quito");
-            valles.setCreationDate(LocalDateTime.now());
+            valles.setCreationDate(LocalDateTime.of(2020, 5, 10, 8, 0));
             branchRepository.save(valles);
         }
 
@@ -134,7 +265,7 @@ public class DataInitializer implements CommandLineRunner {
             digital.setBranchCode("005");
             digital.setName("Sucursal Digital");
             digital.setCity("Digital");
-            digital.setCreationDate(LocalDateTime.now());
+            digital.setCreationDate(LocalDateTime.of(2022, 1, 15, 8, 0));
             branchRepository.save(digital);
         }
 
@@ -340,41 +471,6 @@ public class DataInitializer implements CommandLineRunner {
         log.info("CoreUsers creados con ID: {}", saved.getId());
     }
 
-    private void initWebCredentials() {
-        List<Customer> naturalCustomers = customerRepository.findAll().stream()
-                .filter(c -> CustomerTypeEnum.NATURAL.equals(c.getCustomerType()))
-                .limit(10)
-                .toList();
-
-        if (naturalCustomers.isEmpty()) {
-            log.info("No existen clientes naturales para crear credenciales web");
-            return;
-        }
-
-        String defaultPasswordHash = passwordEncoder.encode("Password123");
-        int sequence = 1;
-
-        for (Customer customer : naturalCustomers) {
-            String username = "cliente." + String.format("%03d", sequence++);
-
-            if (webCredentialRepository.findByUsername(username).isPresent()
-                    || webCredentialRepository.findByCustomer_Id(customer.getId()).isPresent()) {
-                continue;
-            }
-
-            WebCredential credential = new WebCredential();
-            credential.setCustomer(customer);
-            credential.setUsername(username);
-            credential.setPasswordHash(defaultPasswordHash);
-            credential.setStatus(CommonStatusEnum.ACTIVO);
-            credential.setCreationDate(LocalDateTime.now());
-
-            webCredentialRepository.save(credential);
-        }
-
-        log.info("WebCredentials creadas o verificadas");
-    }
-
     private void initMassiveCustomers() {
         CustomerSubtype personal = customerSubtypeRepository.findAll().stream()
                 .filter(s -> "PERSONAL".equals(s.getName()))
@@ -450,17 +546,6 @@ public class DataInitializer implements CommandLineRunner {
             throw new IllegalStateException("No existen clientes naturales para asignar representantes legales");
         }
 
-        String[] nombresEmpresas = {
-                "Andes", "Pacifico", "Equinoccio", "Pichincha", "Amazonas",
-                "Sierra", "Condor", "Galapagos", "Capital", "Libertad"
-        };
-
-        String[] actividadesEmpresas = {
-                "Servicios Corporativos", "Soluciones Financieras", "Comercializadora",
-                "Logistica Empresarial", "Consultoria Integral", "Tecnologia Aplicada",
-                "Gestion Administrativa", "Servicios Industriales"
-        };
-
         long corporateCount = customerRepository.findAll().stream()
                 .filter(c -> CustomerTypeEnum.JURIDICO.equals(c.getCustomerType()))
                 .count();
@@ -470,9 +555,7 @@ public class DataInitializer implements CommandLineRunner {
             String ruc = generateCompanyRuc(corporateIndex);
 
             if (customerRepository.findByIdentificationTypeAndIdentification("RUC", ruc).isEmpty()) {
-                String legalName = nombresEmpresas[corporateIndex % nombresEmpresas.length] + " "
-                        + actividadesEmpresas[corporateIndex % actividadesEmpresas.length] + " "
-                        + String.format("%03d", corporateIndex) + " S.A.";
+                String legalName = COMPANY_NAMES[(corporateIndex - 1) % COMPANY_NAMES.length];
 
                 Customer company = new Customer();
                 company.setCustomerSubtype(empresaPagosMasivosSubtype);
@@ -492,7 +575,8 @@ public class DataInitializer implements CommandLineRunner {
                 company.setRegistrationDate(LocalDateTime.now());
                 company.setStatus(CustomerStatusEnum.ACTIVO);
 
-                customerRepository.save(company);
+                Customer savedCompany = customerRepository.save(company);
+                authenticationService.createInitialWebCredential(savedCompany);
                 corporateCount++;
             }
 
@@ -500,6 +584,18 @@ public class DataInitializer implements CommandLineRunner {
         }
 
         log.info("Clientes masivos creados o verificados");
+    }
+
+    private void initMissingWebCredentials() {
+        List<Customer> all = customerRepository.findAll();
+        int created = 0;
+        for (Customer c : all) {
+            if (CustomerStatusEnum.ACTIVO.equals(c.getStatus())) {
+                authenticationService.createInitialWebCredential(c);
+                created++;
+            }
+        }
+        log.info("initMissingWebCredentials: revisados {} clientes activos", created);
     }
 
     private void initMassiveAccounts() {
@@ -525,11 +621,18 @@ public class DataInitializer implements CommandLineRunner {
 
         List<Customer> naturalCustomers = customerRepository.findAll().stream()
                 .filter(c -> CustomerTypeEnum.NATURAL.equals(c.getCustomerType()))
+                .sorted(java.util.Comparator.comparing(Customer::getIdentification))
                 .toList();
 
         List<Customer> corporateCustomers = customerRepository.findAll().stream()
                 .filter(c -> CustomerTypeEnum.JURIDICO.equals(c.getCustomerType()))
+                .sorted(java.util.Comparator.comparing(Customer::getIdentification))
                 .toList();
+
+        AccountSubtype nomina = accountSubtypeRepository.findAll().stream()
+                .filter(s -> "NOM".equals(s.getCode()))
+                .findFirst()
+                .orElseThrow(() -> new IllegalStateException("Subtipo NOM no encontrado"));
 
         int accountSequence = 1;
 
@@ -557,12 +660,14 @@ public class DataInitializer implements CommandLineRunner {
 
         for (int i = 0; i < corporateCustomers.size(); i++) {
             Customer company = corporateCustomers.get(i);
+            Branch branch = branches.get(i % branches.size());
 
             while (accountRepository.findByCustomer_Id(company.getId()).size() < 3) {
-                Branch branch = branches.get(i % branches.size());
-                AccountSubtype subtype = accountRepository.findByCustomer_Id(company.getId()).size() % 2 == 0
-                        ? corriente
-                        : ahorros;
+                int currentCount = accountRepository.findByCustomer_Id(company.getId()).size();
+                AccountSubtype subtype;
+                if (currentCount == 0) subtype = corriente;
+                else if (currentCount == 1) subtype = nomina;
+                else subtype = ahorros;
 
                 createSeedAccount(company, branch, subtype, accountSequence++);
             }

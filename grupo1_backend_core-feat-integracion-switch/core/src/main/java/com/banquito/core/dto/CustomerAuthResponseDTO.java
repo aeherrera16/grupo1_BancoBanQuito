@@ -23,6 +23,7 @@ public class CustomerAuthResponseDTO {
     private String address;
     private CommonStatusEnum status;
     private LocalDateTime lastLogin;
+    private Boolean passwordChangeRequired;
 
     public CustomerAuthResponseDTO() {
     }
@@ -40,7 +41,7 @@ public class CustomerAuthResponseDTO {
     public CustomerAuthResponseDTO(Integer credentialId, Integer customerId, CustomerTypeEnum customerType,
                                    String username, String customerName, String identificationType,
                                    String identification, String email, String mobilePhone, String address,
-                                   CommonStatusEnum status, LocalDateTime lastLogin) {
+                                   CommonStatusEnum status, LocalDateTime lastLogin, Boolean passwordChangeRequired) {
         this.credentialId = credentialId;
         this.customerId = customerId;
         this.customerType = customerType;
@@ -53,5 +54,6 @@ public class CustomerAuthResponseDTO {
         this.address = address;
         this.status = status;
         this.lastLogin = lastLogin;
+        this.passwordChangeRequired = passwordChangeRequired;
     }
 }

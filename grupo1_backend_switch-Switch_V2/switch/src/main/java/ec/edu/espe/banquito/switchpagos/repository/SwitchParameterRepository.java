@@ -6,5 +6,5 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface SwitchParameterRepository extends JpaRepository<SwitchParameter, String> {
-    // Uses String PK.
+
 }

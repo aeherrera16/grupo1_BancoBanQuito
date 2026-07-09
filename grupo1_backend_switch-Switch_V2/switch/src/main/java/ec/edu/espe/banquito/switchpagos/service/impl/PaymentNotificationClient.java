@@ -56,7 +56,6 @@ public class PaymentNotificationClient implements IPaymentNotificationClient {
         }
     }
 
-    // RF-05: builds the immediate beneficiary email payload.
     private String buildEmailBody(PaymentSuccessNotificationRequestDTO request) {
         StringBuilder body = new StringBuilder();
         body.append("Dear ").append(request.getBeneficiaryName()).append(",\n\n");

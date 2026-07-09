@@ -41,6 +41,40 @@
         </form>
       </section>
 
+      <section class="login-view is-hidden" data-view="password-change">
+        <div class="brand-panel">
+          <p class="eyebrow">Seguridad BanQuito</p>
+          <h1>Actualiza tu contraseña para continuar</h1>
+          <p class="brand-copy">
+            Por tu seguridad, solicitamos que cambies la contraseña asignada inicialmente
+            antes de acceder a tu banca web. Elige una clave segura y privada.
+          </p>
+        </div>
+
+        <form id="passwordChangeForm" class="login-card">
+          <div class="login-heading">
+            <p class="eyebrow">Cambio obligatorio</p>
+            <h2>Nueva contraseña</h2>
+            <span>Define tu clave personal de acceso</span>
+          </div>
+
+          <label class="field">
+            <span>Contraseña actual</span>
+            <input id="currentPassword" name="currentPassword" type="password" autocomplete="current-password" required />
+          </label>
+          <label class="field">
+            <span>Nueva contraseña</span>
+            <input id="newPassword" name="newPassword" type="password" autocomplete="new-password" required />
+          </label>
+          <label class="field">
+            <span>Confirmar nueva contraseña</span>
+            <input id="confirmPassword" name="confirmPassword" type="password" autocomplete="new-password" required />
+          </label>
+          <button class="primary-button" type="submit">Actualizar y entrar</button>
+          <p id="passwordChangeMessage" class="message" role="status"></p>
+        </form>
+      </section>
+
       <section class="dashboard is-hidden" data-view="dashboard">
         <aside class="sidebar">
           <div class="bank-mark">
@@ -62,7 +96,7 @@
             </label>
             <div>
               <span class="version-pill">V1</span>
-              <button id="refreshButton" class="secondary-button" type="button">Actualizar</button>
+              <button id="refreshButton" class="secondary-button" type="button" title="Sincronizar datos desde el servidor">⟳ Sincronizar</button>
             </div>
           </div>
           <nav class="nav-list" aria-label="Secciones">
@@ -73,6 +107,7 @@
             <button class="nav-item" data-section="accounts"><span class="nav-icon">CT</span><span>Cuentas</span></button>
             <button class="nav-item" data-section="transactions"><span class="nav-icon">TR</span><span>Transacciones</span></button>
             <button class="nav-item company-only" data-section="payments"><span class="nav-icon">PM</span><span>Pagos masivos</span></button>
+            <button class="nav-item company-only" data-section="sftp"><span class="nav-icon">SF</span><span>Buzón SFTP</span></button>
             <button class="nav-item company-only" data-section="reports"><span class="nav-icon">RP</span><span>Reportes</span></button>
           </nav>
           <div class="sidebar-foot">
@@ -120,35 +155,25 @@
                   <span id="portalCoreStatus">Servicios disponibles</span>
                 </div>
                 <div class="quick-actions service-grid">
-                  <button class="quick-card" data-feature-coming-soon type="button">
-                    <span>PS</span>
-                    <strong>Pago de servicios</strong>
-                    <small>Luz, agua, telefonia e internet desde tu banca.</small>
-                  </button>
-                  <button class="quick-card" data-feature-coming-soon type="button">
-                    <span>TF</span>
-                    <strong>Transferencias</strong>
-                    <small>Envios entre cuentas propias, terceros y otros bancos.</small>
-                  </button>
-                  <button class="quick-card" data-feature-coming-soon type="button">
-                    <span>TC</span>
-                    <strong>Tarjetas</strong>
-                    <small>Consulta consumos, cupos y pagos pendientes.</small>
-                  </button>
-                  <button class="quick-card" data-feature-coming-soon type="button">
-                    <span>RB</span>
-                    <strong>Referencia bancaria</strong>
-                    <small>Genera certificados y referencias de tus productos.</small>
-                  </button>
                   <button class="quick-card" data-section-shortcut="transactions" type="button">
                     <span>TR</span>
                     <strong>Movimientos</strong>
-                    <small>Consulta el historial cuando lo necesites.</small>
+                    <small>Consulta el historial de transacciones de tus cuentas.</small>
+                  </button>
+                  <button class="quick-card" data-section-shortcut="accounts" type="button">
+                    <span>CT</span>
+                    <strong>Mis Cuentas</strong>
+                    <small>Revisa saldos disponibles y contables de tus productos.</small>
                   </button>
                   <button class="quick-card company-only" data-section-shortcut="payments" type="button">
                     <span>PM</span>
                     <strong>Pagos masivos</strong>
                     <small>Carga archivos corporativos desde el modulo empresarial.</small>
+                  </button>
+                  <button class="quick-card company-only" data-section-shortcut="reports" type="button">
+                    <span>RP</span>
+                    <strong>Reportes</strong>
+                    <small>Consulta reportes, comprobantes y novedades de cada lote.</small>
                   </button>
                 </div>
               </section>
@@ -167,11 +192,13 @@
           </section>
 
           <section class="section-panel is-hidden" data-section-panel="accounts">
-            <div class="panel-heading">
-              <h2>Cuentas y saldos</h2>
-              <span>Productos activos</span>
+            <div class="table-panel">
+              <div class="panel-heading">
+                <h2>Cuentas y saldos</h2>
+                <span>Productos activos</span>
+              </div>
+              <div id="accountsTable" class="table-wrap"></div>
             </div>
-            <div id="accountsList" class="card-grid"></div>
           </section>
 
           <section class="section-panel is-hidden" data-section-panel="transactions">
@@ -180,7 +207,20 @@
                 <h2>Transacciones realizadas</h2>
                 <span>Historial de movimientos</span>
               </div>
+              <div class="date-filter-bar">
+                <label>
+                  Desde
+                  <input id="transactionsFromDate" type="date" />
+                </label>
+                <label>
+                  Hasta
+                  <input id="transactionsToDate" type="date" />
+                </label>
+                <button id="applyTransactionsFilterButton" class="secondary-button" type="button">Filtrar</button>
+                <button id="clearTransactionsFilterButton" class="secondary-button" type="button">Limpiar</button>
+              </div>
               <div id="transactionsTable" class="table-wrap"></div>
+              <div id="transactionsPaginationControls"></div>
             </div>
           </section>
 
@@ -209,14 +249,101 @@
               </label>
               <button class="primary-button fit-button" type="submit">Procesar archivo</button>
               <p id="uploadMessage" class="message" role="status"></p>
+
+              <div id="uploadProgressPanel" class="upload-progress is-hidden">
+                <div class="progress-header">
+                  <span>Tiempo transcurrido: <strong id="uploadTimer">00:00</strong></span>
+                  <span id="uploadCounts">0 / 0 procesadas</span>
+                </div>
+                <div class="progress-bar-track">
+                  <div id="uploadProgressBar" class="progress-bar-fill" style="width:0%"></div>
+                </div>
+                <div id="uploadLiveRows" class="table-wrap compact-table"></div>
+              </div>
             </form>
 
             <div class="table-panel">
               <div class="panel-heading">
                 <h2>Lotes de pago</h2>
-                <button id="loadBatchesButton" class="secondary-button" type="button">Ver lotes</button>
+                <button id="loadBatchesButton" class="secondary-button" type="button">⟳ Actualizar lotes</button>
               </div>
               <div id="batchesTable" class="table-wrap"></div>
+            </div>
+          </section>
+
+          <section class="section-panel is-hidden company-only" data-section-panel="sftp">
+            <div class="business-hero" style="background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);">
+              <div>
+                <p class="eyebrow">Buzón SFTP — Pagos masivos automáticos</p>
+                <h2>Monitoreo de Buzón SFTP</h2>
+                <p>Sube tu archivo CSV al servidor SFTP o prográmalo aquí directamente para su procesamiento automático.</p>
+              </div>
+              <div style="display: flex; flex-direction: column; gap: 4px; text-align: right; background: rgba(255,255,255,0.1); padding: 0.75rem 1.25rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.15);">
+                <span style="font-size: 0.7rem; text-transform: uppercase; color: #a5c5eb; font-weight: bold; letter-spacing: 0.05em;">Hora del Switch (GMT-5)</span>
+                <span id="switchServerClock" style="font-size: 1.6rem; font-weight: 800; font-family: monospace; color: white; display: block; line-height: 1;">--:--:--</span>
+                <small style="color: #9cc4ff; font-size: 0.65rem;">Corte cutoff: 18:00</small>
+              </div>
+            </div>
+
+            <!-- Panel informativo de conexion -->
+            <div style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 1rem 1.5rem; border-radius: var(--radius-md); margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center; font-size: 0.9rem;">
+              <span><strong>Servidor SFTP:</strong> 136.115.142.160:2222 | Protocolo SSH seguro</span>
+              <span style="color: #64748b; font-size: 0.8rem; font-weight: bold;">● PROCESADOR ACTIVO (10s)</span>
+            </div>
+
+            <!-- Formulario de programación (Restaurado) -->
+            <div class="lookup-panel" style="margin-bottom: 2rem; padding: 2rem; border-radius: var(--radius-lg); background: var(--bg-surface); border: 1px solid var(--border-color);">
+              <form id="sftpUploadForm" style="display: flex; flex-direction: column; gap: 1.5rem;">
+                <div>
+                  <h3 style="margin: 0; font-size: 1.1rem; font-weight: 600;">Programar lote para efectivización automática</h3>
+                  <p class="text-muted" style="margin: 0.25rem 0 0 0; font-size: 0.875rem;">
+                    Selecciona el archivo CSV y la fecha exacta. El sistema lo ejecutará automáticamente cuando llegue el momento.
+                  </p>
+                </div>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem;">
+                  <div style="margin:0; display:flex; flex-direction:column; gap:6px;">
+                    <strong>Nota:</strong>
+                    <span>Sube tus archivos CSV únicamente mediante SFTP al servidor indicado. Aquí puedes programar la ejecución de los archivos ya existentes en el buzón.</span>
+                  </div>
+                  <label class="field" style="margin: 0;">
+                    <span>Fecha y hora de efectivización</span>
+                    <input id="sftpScheduledDate" type="datetime-local" required style="width: 100%;" />
+                  </label>
+                </div>
+                <div id="sftpScheduleSummary" style="display:none; padding: 0.75rem 1rem; border-radius: 8px; background: #eef4ff; border: 1px solid #c7daf7; font-size: 0.875rem; color: #1e3c72;"></div>
+                <button class="primary-button fit-button" type="submit" style="align-self: flex-start;">Programar ejecución automática</button>
+                <p id="sftpUploadMessage" class="message" role="status" style="margin: 0;"></p>
+              </form>
+            </div>
+
+            <script>
+              (function() {
+                function updateClock() {
+                  const clockEl = document.getElementById('switchServerClock');
+                  if (clockEl) {
+                    const now = new Date();
+                    // Ajuste a la zona horaria de Ecuador (America/Guayaquil, GMT-5)
+                    const ecTimeStr = now.toLocaleString("en-US", { timeZone: "America/Guayaquil" });
+                    const ecTime = new Date(ecTimeStr);
+                    const hours = String(ecTime.getHours()).padStart(2, '0');
+                    const minutes = String(ecTime.getMinutes()).padStart(2, '0');
+                    const seconds = String(ecTime.getSeconds()).padStart(2, '0');
+                    clockEl.textContent = hours + ":" + minutes + ":" + seconds;
+                  }
+                }
+                updateClock();
+                setInterval(updateClock, 1000);
+              })();
+            </script>
+
+
+            <!-- Tabla de archivos en espera / procesados del buzón -->
+            <div class="table-panel">
+              <div class="panel-heading">
+                <h2>Archivos en el buzón</h2>
+                <button id="loadSftpBatchesButton" class="secondary-button" type="button">⟳ Actualizar</button>
+              </div>
+              <div id="sftpBatchesTable" class="table-wrap"></div>
             </div>
           </section>
 
@@ -254,6 +381,17 @@
               </div>
 
               <div id="reportOutput" class="report-output">
+<style>
+.report-output.is-error {
+  border-color: rgba(231, 76, 60, 0.2);
+  background: rgba(231, 76, 60, 0.02);
+}
+
+.report-output.is-info {
+  border-color: rgba(52, 152, 219, 0.2);
+  background: rgba(52, 152, 219, 0.02);
+}
+</style>
                 <div class="report-empty">
                   <strong>Selecciona un lote para consultar.</strong>
                   <span>Los resultados se mostraran aqui con formato de reporte bancario.</span>

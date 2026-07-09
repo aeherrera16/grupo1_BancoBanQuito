@@ -76,11 +76,46 @@ public class AccountService implements IAccountService {
         authenticationService.validateActiveCoreUser(coreUserId);
         return transactionRepository.findTop10ByAccount_Customer_IdOrderByTransactionDateDesc(customerId)
                 .stream()
-                .map(transaction -> toTransactionResponse(
-                        transaction,
-                        transaction.getAccount().getAccountNumber(),
-                        transaction.getDescription()))
+                .map(this::mapToTransactionResponse)
                 .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    @Override
+    public com.banquito.core.dto.TransactionPageResponseDTO findTransactionsByCustomerId(
+            Integer customerId, Integer coreUserId, int page, int size) {
+        authenticationService.validateActiveCoreUser(coreUserId);
+
+        int safePage = Math.max(page, 0);
+        int safeSize = size <= 0 ? 10 : Math.min(size, 200);
+
+        org.springframework.data.domain.Page<com.banquito.core.model.AccountTransaction> result =
+                transactionRepository.findByAccount_Customer_IdOrderByTransactionDateDesc(
+                        customerId,
+                        org.springframework.data.domain.PageRequest.of(safePage, safeSize));
+
+        List<TransactionResponseDTO> content = result.getContent().stream()
+                .map(this::mapToTransactionResponse)
+                .collect(Collectors.toList());
+
+        return new com.banquito.core.dto.TransactionPageResponseDTO(
+                content, safePage, safeSize, result.getTotalElements(), result.getTotalPages());
+    }
+
+    private TransactionResponseDTO mapToTransactionResponse(com.banquito.core.model.AccountTransaction transaction) {
+        MovementTypeEnum counterpartType = transaction.getMovementType() == MovementTypeEnum.DEBITO
+                ? MovementTypeEnum.CREDITO
+                : MovementTypeEnum.DEBITO;
+        String counterpart = transactionRepository
+                .findByTransactionUuidAndMovementType(transaction.getTransactionUuid(), counterpartType)
+                .map(cp -> cp.getAccount().getAccountNumber())
+                .orElse(null);
+        TransactionResponseDTO dto = toTransactionResponse(
+                transaction,
+                transaction.getAccount().getAccountNumber(),
+                transaction.getDescription());
+        dto.setCounterpartAccountNumber(counterpart);
+        return dto;
     }
 
     @Transactional
@@ -108,6 +143,12 @@ public class AccountService implements IAccountService {
             throw new IllegalArgumentException("El saldo inicial no puede ser negativo");
         }
 
+        BigDecimal minimumBalance = resolveMinimumInitialBalance(customer.getCustomerType());
+        if (initialBalance.compareTo(minimumBalance) < 0) {
+            throw new IllegalArgumentException(
+                    "El saldo inicial minimo para este tipo de cliente es $" + minimumBalance.toPlainString());
+        }
+
         if (Boolean.TRUE.equals(request.getIsFavorite())) {
             accountRepository.findByCustomer_IdAndIsFavoriteTrue(customer.getId())
                     .ifPresent(acc -> {
@@ -115,7 +156,6 @@ public class AccountService implements IAccountService {
                         accountRepository.save(acc);
                     });
         }
-
 
         LocalDateTime now = LocalDateTime.now();
 
@@ -194,7 +234,7 @@ public class AccountService implements IAccountService {
 
         log.info("CoreUser {} cambia cuenta {} a {}", coreUserId, accountNumber, status);
 
-        if (status == AccountStatusEnum.BLOQUEADO || status == AccountStatusEnum.SUSPENDIDO) {
+        if (status == AccountStatusEnum.BLOQUEADO || status == AccountStatusEnum.SUSPENDIDO || status == AccountStatusEnum.ACTIVO) {
             String email = savedAccount.getCustomer().getEmail();
 
             if (email != null && !email.isBlank()) {
@@ -267,6 +307,11 @@ public class AccountService implements IAccountService {
 
         if (account.getStatus() == AccountStatusEnum.SUSPENDIDO) {
             throw new InactiveAccountException(accountNumber);
+        }
+
+        if (account.getStatus() == AccountStatusEnum.INACTIVO) {
+            account.setStatus(AccountStatusEnum.ACTIVO);
+            log.info("Cuenta {} reactivada automaticamente por deposito", accountNumber);
         }
 
         account.setAvailableBalance(account.getAvailableBalance().add(amount));
@@ -426,6 +471,13 @@ public class AccountService implements IAccountService {
         }
     }
 
+    private BigDecimal resolveMinimumInitialBalance(com.banquito.core.enums.CustomerTypeEnum customerType) {
+        if (customerType == com.banquito.core.enums.CustomerTypeEnum.JURIDICO) {
+            return new BigDecimal("100");
+        }
+        return new BigDecimal("10");
+    }
+
     private void validateAmount(BigDecimal amount) {
         if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
             throw new IllegalArgumentException("El monto debe ser mayor a cero");
@@ -444,12 +496,27 @@ public class AccountService implements IAccountService {
         }
     }
 
-    private String resolveAccountNumber(String requestedAccountNumber, Branch branch) {
-        String accountNumber;
+    private static final String ACCOUNT_NUMBER_PREFIX = "10101";
+    private static final int ACCOUNT_SEQUENCE_LENGTH = 5;
+    private final java.util.concurrent.atomic.AtomicInteger accountSequenceCounter =
+            new java.util.concurrent.atomic.AtomicInteger(-1);
 
+    
+    private synchronized String resolveAccountNumber(String requestedAccountNumber, Branch branch) {
+        if (accountSequenceCounter.get() < 0) {
+            int lastSequence = accountRepository
+                    .findTopByAccountNumberStartingWithOrderByAccountNumberDesc(ACCOUNT_NUMBER_PREFIX)
+                    .map(acc -> acc.getAccountNumber().substring(ACCOUNT_NUMBER_PREFIX.length()))
+                    .map(Integer::parseInt)
+                    .orElse(-1);
+            accountSequenceCounter.set(lastSequence);
+        }
+
+        String accountNumber;
         do {
-            accountNumber = branch.getBranchCode()
-                    + UUID.randomUUID().toString().replace("-", "").substring(0, 7).toUpperCase();
+            int nextSequence = accountSequenceCounter.incrementAndGet();
+            accountNumber = ACCOUNT_NUMBER_PREFIX
+                    + String.format("%0" + ACCOUNT_SEQUENCE_LENGTH + "d", nextSequence);
         } while (accountRepository.findByAccountNumber(accountNumber).isPresent());
 
         return accountNumber;

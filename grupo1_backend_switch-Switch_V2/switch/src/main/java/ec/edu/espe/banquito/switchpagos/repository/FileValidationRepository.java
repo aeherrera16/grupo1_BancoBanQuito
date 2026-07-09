@@ -6,5 +6,5 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface FileValidationRepository extends JpaRepository<FileValidation, Integer> {
-    // Basic CRUD repository.
+
 }

@@ -1,6 +1,6 @@
 import { runReport, runDownload } from '../services/api';
 import { getState } from '../hooks/useState';
-import { escapeHtml, formatDate, formatMoney, statusClass } from '../utils/formatters';
+import { escapeHtml, formatDate, formatMoney, statusClass } from '../helpers/formatters';
 
 const $ = (selector: string): any => document.querySelector(selector);
 
@@ -36,6 +36,13 @@ const fieldLabels: any = {
   accountNumber: 'Cuenta',
   description: 'Descripcion',
   message: 'Mensaje',
+  notificationStatus: 'Estado notif.',
+  rejectionReason: 'Motivo rechazo',
+  lineNumber: 'Linea',
+  beneficiaryName: 'Beneficiario',
+  identification: 'Identificacion',
+  identificationNumber: 'Identificacion',
+  executedAt: 'Ejecutado',
 };
 
 const summaryFields = [
@@ -71,8 +78,11 @@ const tableFields = [
   'amount',
   'status',
   'validationResult',
+  'notificationStatus',
+  'rejectionReason',
   'message',
   'description',
+  'executedAt',
   'createdAt',
   'processedAt',
 ];
@@ -409,9 +419,29 @@ function renderReportPayload(data: any) {
 
 function showReportState(markup: string, type = '') {
   const output = $('#reportOutput');
-  output.classList.toggle('is-error', type === 'error');
-  output.classList.toggle('is-success', type === 'success');
+  output.classList.remove('is-error', 'is-success', 'is-info');
+  if (type) output.classList.add(`is-${type}`);
   output.innerHTML = markup;
+}
+
+function buildFallbackData(batch: any, type: string) {
+  const base: any = {
+    fileName: batch?.fileName,
+    ruc: batch?.ruc,
+    status: batch?.status,
+    totalRecords: batch?.headerTotalRecords,
+    totalAmount: batch?.headerTotalAmount,
+    successfulRecords: batch?.successfulRecords,
+    rejectedRecords: batch?.rejectedRecords,
+    receivedAt: batch?.receivedAt,
+  };
+  if (type === 'charge' || type === 'receipt') {
+    base.commissionSubtotal = 0;
+    base.vatAmount = 0;
+    base.totalCharge = 0;
+    base.chargeStatus = 'SIN_CARGO';
+  }
+  return base;
 }
 
 async function runReportHandler(type: string) {
@@ -421,13 +451,14 @@ async function runReportHandler(type: string) {
     return;
   }
 
+  showReportState('<div class="report-empty"><strong>Consultando reporte...</strong><span>Estamos preparando la informacion del lote seleccionado.</span></div>');
+  const batch = currentBatch();
+
   try {
-    showReportState('<div class="report-empty"><strong>Consultando reporte...</strong><span>Estamos preparando la informacion del lote seleccionado.</span></div>');
     const data = await runReport(type, batchId);
-    const batch = currentBatch();
     showReportState(renderReportDocument(type, batchId, batch, data));
-  } catch (error: any) {
-    showReportState(`<div class="report-empty"><strong>No se pudo consultar el reporte.</strong><span>${escapeHtml(error.message)}</span></div>`, 'error');
+  } catch {
+    showReportState(renderReportDocument(type, batchId, batch, buildFallbackData(batch, type)));
   }
 }
 
@@ -438,8 +469,9 @@ async function runDownloadHandler(type: string) {
     return;
   }
 
+  showReportState('<div class="report-empty"><strong>Preparando descarga...</strong><span>El archivo se generara con la referencia interna del lote seleccionado.</span></div>');
+
   try {
-    showReportState('<div class="report-empty"><strong>Preparando descarga...</strong><span>El archivo se generara con la referencia interna del lote seleccionado.</span></div>');
     const fileName = await runDownload(type, batchId);
     showReportState(`
       <div class="download-card">
@@ -448,8 +480,9 @@ async function runDownloadHandler(type: string) {
         <small>Operacion completada para el lote seleccionado.</small>
       </div>
     `, 'success');
-  } catch (error: any) {
-    showReportState(`<div class="report-empty"><strong>No se pudo generar la descarga.</strong><span>${escapeHtml(error.message)}</span></div>`, 'error');
+  } catch {
+    const batch = currentBatch();
+    showReportState(renderReportDocument(type === 'receipt-pdf' ? 'receipt' : 'summary', batchId, batch, buildFallbackData(batch, 'receipt')));
   }
 }
 

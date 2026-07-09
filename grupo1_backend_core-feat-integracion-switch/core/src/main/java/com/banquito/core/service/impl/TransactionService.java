@@ -16,6 +16,7 @@ import com.banquito.core.model.TransactionSubtype;
 import com.banquito.core.repository.AccountRepository;
 import com.banquito.core.repository.AccountTransactionRepository;
 import com.banquito.core.repository.TransactionSubtypeRepository;
+import com.banquito.core.service.IEmailService;
 import com.banquito.core.service.ITransactionService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -38,6 +39,7 @@ public class TransactionService implements ITransactionService {
     private final AccountRepository accountRepository;
     private final AccountTransactionRepository transactionRepository;
     private final TransactionSubtypeRepository subtypeRepository;
+    private final IEmailService emailService;
 
     @Override
     @Transactional
@@ -57,6 +59,10 @@ public class TransactionService implements ITransactionService {
                 account, amount, MovementTypeEnum.DEBITO, uuid, subtypeCode, description
         );
         log.info("Debito exitoso: Cuenta {}, Monto {}, UUID {}", accountNumber, amount, uuid);
+        String debitEmail = account.getCustomer() != null ? account.getCustomer().getEmail() : null;
+        if (debitEmail != null && !debitEmail.isBlank()) {
+            emailService.sendTransactionNotificationEmail(debitEmail, accountNumber, "DEBITO", amount, account.getAvailableBalance(), description);
+        }
         return toResponse(transaction, "Debito procesado correctamente");
     }
 
@@ -75,6 +81,10 @@ public class TransactionService implements ITransactionService {
                 account, amount, MovementTypeEnum.CREDITO, uuid, subtypeCode, description
         );
         log.info("Crédito exitoso: Cuenta {}, Monto {}, UUID {}", accountNumber, amount, uuid);
+        String creditEmail = account.getCustomer() != null ? account.getCustomer().getEmail() : null;
+        if (creditEmail != null && !creditEmail.isBlank()) {
+            emailService.sendTransactionNotificationEmail(creditEmail, accountNumber, "CREDITO", amount, account.getAvailableBalance(), description);
+        }
         return toResponse(transaction, "Crédito procesado correctamente");
     }
 
@@ -99,7 +109,14 @@ public class TransactionService implements ITransactionService {
         validateIdempotency(destination.getId(), uuid);
 
         validateActive(origin, originAccountNumber);
-        validateActive(destination, destinationAccountNumber);
+        if (destination.getStatus() == AccountStatusEnum.SUSPENDIDO) {
+            throw new InactiveAccountException(destinationAccountNumber);
+        }
+        if (destination.getStatus() == AccountStatusEnum.INACTIVO) {
+            destination.setStatus(AccountStatusEnum.ACTIVO);
+            accountRepository.save(destination);
+            log.info("Cuenta destino {} reactivada automaticamente por transferencia entrante", destinationAccountNumber);
+        }
 
         if (origin.getAvailableBalance().compareTo(amount) < 0) {
             throw new InsufficientBalanceException(originAccountNumber);
@@ -116,9 +133,17 @@ public class TransactionService implements ITransactionService {
         log.info("Transferencia exitosa: Origen {}, Destino {}, Monto {}, UUID {}",
                 originAccountNumber, destinationAccountNumber, amount, uuid);
 
+        String originEmail = origin.getCustomer() != null ? origin.getCustomer().getEmail() : null;
+        if (originEmail != null && !originEmail.isBlank()) {
+            emailService.sendTransactionNotificationEmail(originEmail, originAccountNumber, "DEBITO", amount, origin.getAvailableBalance(), description);
+        }
+        String destEmail = destination.getCustomer() != null ? destination.getCustomer().getEmail() : null;
+        if (destEmail != null && !destEmail.isBlank()) {
+            emailService.sendTransactionNotificationEmail(destEmail, destinationAccountNumber, "CREDITO", amount, destination.getAvailableBalance(), description);
+        }
+
         return toResponse(debit, "Transferencia procesada correctamente");
     }
-
 
     private void validateUuid(String uuid) {
         if (uuid == null || uuid.isBlank()) {
@@ -246,16 +271,28 @@ public class TransactionService implements ITransactionService {
 
         return transactionRepository.findTop10ByAccount_IdOrderByTransactionDateDesc(account.getId())
                 .stream()
-                .map(transaction -> new TransactionHistoryDTO(
-                        transaction.getId(),
-                        transaction.getTransactionDate(),
-                        transaction.getMovementType(),
-                        transaction.getTransactionSubtype().getCode(),
-                        transaction.getTransactionSubtype().getName(),
-                        transaction.getDescription(),
-                        transaction.getAmount(),
-                        transaction.getResultingBalance()
-                ))
+                .map(transaction -> {
+                    MovementTypeEnum counterpartType = transaction.getMovementType() == MovementTypeEnum.DEBITO
+                            ? MovementTypeEnum.CREDITO
+                            : MovementTypeEnum.DEBITO;
+                    String counterpart = transactionRepository
+                            .findByTransactionUuidAndMovementType(transaction.getTransactionUuid(), counterpartType)
+                            .map(cp -> cp.getAccount().getAccountNumber())
+                            .orElse(null);
+                    return new TransactionHistoryDTO(
+                            transaction.getId(),
+                            transaction.getTransactionDate(),
+                            transaction.getMovementType(),
+                            transaction.getTransactionSubtype().getCode(),
+                            transaction.getTransactionSubtype().getName(),
+                            transaction.getDescription(),
+                            transaction.getAmount(),
+                            transaction.getResultingBalance(),
+                            transaction.getAccount().getAccountNumber(),
+                            counterpart,
+                            transaction.getStatus()
+                    );
+                })
                 .collect(Collectors.toList());
     }
 }

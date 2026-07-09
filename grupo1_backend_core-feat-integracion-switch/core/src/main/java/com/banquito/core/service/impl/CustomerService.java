@@ -9,6 +9,7 @@ import com.banquito.core.model.Customer;
 import com.banquito.core.model.CustomerSubtype;
 import com.banquito.core.repository.CustomerRepository;
 import com.banquito.core.repository.CustomerSubtypeRepository;
+import com.banquito.core.service.IAuthenticationService;
 import com.banquito.core.service.ICustomerService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -25,6 +26,7 @@ public class CustomerService implements ICustomerService {
 
     private final CustomerRepository customerRepository;
     private final CustomerSubtypeRepository customerSubtypeRepository;
+    private final IAuthenticationService authenticationService;
 
     @Transactional(readOnly = true)
     @Override
@@ -52,6 +54,12 @@ public class CustomerService implements ICustomerService {
     @Override
     public CustomerResponseDTO create(CustomerRequestDTO request) {
         validateCustomerRequest(request);
+
+        if (customerRepository.findByIdentificationTypeAndIdentification(
+                request.getIdentificationType(), request.getIdentification()).isPresent()) {
+            throw new IllegalArgumentException(
+                    "Ya existe un cliente con " + request.getIdentificationType() + " " + request.getIdentification());
+        }
 
         CustomerSubtype subtype = customerSubtypeRepository.findById(request.getCustomerSubtypeId())
                 .orElseThrow(() -> new RuntimeException(
@@ -81,7 +89,9 @@ public class CustomerService implements ICustomerService {
         customer.setRegistrationDate(LocalDateTime.now());
 
         log.info("Creando cliente con identificación: {}", customer.getIdentification());
-        return toResponse(customerRepository.save(customer));
+        Customer savedCustomer = customerRepository.save(customer);
+        authenticationService.createInitialWebCredential(savedCustomer);
+        return toResponse(savedCustomer);
     }
 
     @Transactional
@@ -100,6 +110,13 @@ public class CustomerService implements ICustomerService {
 
         if (request.getAddress() != null && !request.getAddress().isBlank()) {
             customer.setAddress(request.getAddress());
+        }
+
+        if (request.getCustomerSubtypeId() != null) {
+            CustomerSubtype subtype = customerSubtypeRepository.findById(request.getCustomerSubtypeId())
+                    .orElseThrow(() -> new RuntimeException(
+                            "Subtipo de cliente no encontrado: " + request.getCustomerSubtypeId()));
+            customer.setCustomerSubtype(subtype);
         }
 
         log.info("Actualizando datos del cliente con ID: {}", id);
@@ -188,6 +205,7 @@ public class CustomerService implements ICustomerService {
                 customer.getIdentification(),
                 customer.getFirstName(),
                 customer.getLastName(),
+                customer.getLegalName(),
                 customer.getEmail(),
                 customer.getMobilePhone(),
                 customer.getAddress(),

@@ -38,6 +38,7 @@ import ec.edu.espe.banquito.switchpagos.repository.SwitchParameterRepository;
 public class BillingService {
 
     private static final Logger logger = LoggerFactory.getLogger(BillingService.class);
+    private static final BigDecimal VAT_RATE = new BigDecimal("0.15");
 
     private final ServiceFeeRuleRepository serviceFeeRuleRepository;
     private final ServiceChargeRepository serviceChargeRepository;
@@ -95,7 +96,7 @@ public class BillingService {
     }
 
     @Transactional
-    // RF-06/RF-07: calculate service charge and send settlement to Core.
+
     public void generateCharge(PaymentBatch batch, List<PaymentDetail> details) {
         logger.info("Starting charge generation. Batch ID: {}, File: {}", batch.getId(), batch.getFileName());
 
@@ -113,8 +114,11 @@ public class BillingService {
 
         Optional<ServiceFeeRule> ruleOpt = serviceFeeRuleRepository.findRuleByTransactionCount(BigDecimal.valueOf(successful));
         if (ruleOpt.isEmpty()) {
-            logger.error("No fee rule found for {} transactions", successful);
-            throw new IllegalStateException("No applicable fee rule found for " + successful + " successful transactions");
+            logger.warn("No fee rule found for {} transactions — skipping commission charge", successful);
+            batch.setSuccessfulRecords(successful);
+            batch.setRejectedRecords(rejected);
+            paymentBatchRepository.save(batch);
+            return;
         }
 
         ServiceFeeRule rule = ruleOpt.get();
@@ -127,10 +131,9 @@ public class BillingService {
                 .map(PaymentDetail::getAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add)
                 .setScale(2, RoundingMode.HALF_UP);
-        // RF-06: VAT remains reported at 15%, but it is not charged yet.
-        // Future implementation: subtotal.multiply(IVA_RATE).
-        BigDecimal vatAmount = BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP);
-        BigDecimal total = dispersedAmount.add(subtotal).setScale(2, RoundingMode.HALF_UP);
+
+        BigDecimal vatAmount = subtotal.multiply(VAT_RATE).setScale(2, RoundingMode.HALF_UP);
+        BigDecimal total = subtotal.add(vatAmount).setScale(2, RoundingMode.HALF_UP);
 
         logger.info("Commission breakdown - Disbursed: {}, Subtotal: {}, VAT: {}, Total: {}",
                 dispersedAmount, subtotal, vatAmount, total);
@@ -185,7 +188,7 @@ public class BillingService {
         logger.info("Generating summary for batch ID: {}", batchId);
         PaymentBatch batch = paymentBatchRepository.findById(batchId)
                 .orElseThrow(() -> new ResourceNotFoundException("Batch not found: " + batchId));
-        Optional<ServiceCharge> chargeOpt = serviceChargeRepository.findByPaymentBatchId(batchId);
+        Optional<ServiceCharge> chargeOpt = serviceChargeRepository.findFirstByPaymentBatchIdOrderByIdDesc(batchId);
 
         BatchSummaryDTO summary = new BatchSummaryDTO();
         summary.setBatchId(batch.getId());
@@ -224,14 +227,13 @@ public class BillingService {
         logger.info("Fetching service charge for batch ID: {}", batchId);
         paymentBatchRepository.findById(batchId)
                 .orElseThrow(() -> new ResourceNotFoundException("Batch not found: " + batchId));
-        return serviceChargeRepository.findByPaymentBatchId(batchId);
+        return serviceChargeRepository.findFirstByPaymentBatchIdOrderByIdDesc(batchId);
     }
 
     public Map<String, Object> generateSettlementReceipt(Integer batchId) {
         PaymentBatch batch = paymentBatchRepository.findById(batchId)
                 .orElseThrow(() -> new ResourceNotFoundException("Batch not found: " + batchId));
-        ServiceCharge charge = serviceChargeRepository.findByPaymentBatchId(batchId)
-                .orElseThrow(() -> new ResourceNotFoundException("No service charge found for batch: " + batchId));
+        Optional<ServiceCharge> chargeOpt = serviceChargeRepository.findFirstByPaymentBatchIdOrderByIdDesc(batchId);
         List<PaymentDetail> details = paymentDetailRepository.findByPaymentBatchId(batchId);
 
         BigDecimal dispersedAmount = details.stream()
@@ -247,15 +249,27 @@ public class BillingService {
         receipt.put("sourceAccountNumber", batch.getSourceAccountNumber());
         receipt.put("batchStatus", batch.getStatus() != null ? batch.getStatus().name() : null);
         receipt.put("receivedAt", batch.getReceivedAt());
-        receipt.put("successfulTransactions", charge.getSuccessfulTransactions());
-        receipt.put("rejectedTransactions", batch.getRejectedRecords());
         receipt.put("successfulDispersedAmount", dispersedAmount);
-        receipt.put("unitFee", charge.getUnitFee());
-        receipt.put("commissionSubtotal", charge.getCommissionSubtotal());
-        receipt.put("vatAmount", charge.getVatAmount());
-        receipt.put("totalDebitedForServices", charge.getTotalCharge());
-        receipt.put("chargeStatus", charge.getChargeStatus() != null ? charge.getChargeStatus().name() : null);
-        receipt.put("chargedAt", charge.getChargedAt());
+        receipt.put("rejectedTransactions", batch.getRejectedRecords() != null ? batch.getRejectedRecords() : 0);
+
+        if (chargeOpt.isPresent()) {
+            ServiceCharge charge = chargeOpt.get();
+            receipt.put("successfulTransactions", charge.getSuccessfulTransactions());
+            receipt.put("unitFee", charge.getUnitFee());
+            receipt.put("commissionSubtotal", charge.getCommissionSubtotal());
+            receipt.put("vatAmount", charge.getVatAmount());
+            receipt.put("totalDebitedForServices", charge.getTotalCharge());
+            receipt.put("chargeStatus", charge.getChargeStatus() != null ? charge.getChargeStatus().name() : null);
+            receipt.put("chargedAt", charge.getChargedAt());
+        } else {
+            receipt.put("successfulTransactions", batch.getSuccessfulRecords() != null ? batch.getSuccessfulRecords() : 0);
+            receipt.put("unitFee", BigDecimal.ZERO.setScale(2));
+            receipt.put("commissionSubtotal", BigDecimal.ZERO.setScale(2));
+            receipt.put("vatAmount", BigDecimal.ZERO.setScale(2));
+            receipt.put("totalDebitedForServices", BigDecimal.ZERO.setScale(2));
+            receipt.put("chargeStatus", "SIN_CARGO");
+            receipt.put("chargedAt", null);
+        }
         return receipt;
     }
 

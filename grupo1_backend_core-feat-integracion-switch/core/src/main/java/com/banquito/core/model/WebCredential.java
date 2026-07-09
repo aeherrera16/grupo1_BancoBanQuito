@@ -49,6 +49,9 @@ public class WebCredential {
     @Column(name = "CREATION_DATE")
     private LocalDateTime creationDate;
 
+    @Column(name = "PASSWORD_CHANGE_REQUIRED", nullable = false)
+    private Boolean passwordChangeRequired = true;
+
     @Version
     @Column(name = "VERSION", nullable = false)
     private Integer version;

@@ -21,7 +21,6 @@ public class BatchStatusLog {
     @Column(name = "id", nullable = false)
     private Integer id;
 
-    // Batch relation.
     @ManyToOne
     @JoinColumn(name = "payment_batch_id", referencedColumnName = "id", nullable = false)
     private PaymentBatch paymentBatch;
@@ -35,16 +34,12 @@ public class BatchStatusLog {
     @Column(name = "changed_at")
     private LocalDateTime changedAt;
 
-    // JPA constructor.
     public BatchStatusLog() {
     }
 
-    // PK constructor.
     public BatchStatusLog(Integer id) {
         this.id = id;
     }
-
-    // Accessors.
 
     public Integer getId() {
         return id;
@@ -86,7 +81,6 @@ public class BatchStatusLog {
         this.changedAt = changedAt;
     }
 
-    // Equality by PK.
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -100,7 +94,6 @@ public class BatchStatusLog {
         return Objects.hashCode(id);
     }
 
-    // Debug output.
     @Override
     public String toString() {
         return "BatchStatusLog{" +

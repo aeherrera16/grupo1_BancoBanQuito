@@ -8,8 +8,8 @@ import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestClientException;
 
@@ -61,49 +61,69 @@ public class PaymentBatchProcessingService implements IPaymentBatchProcessingSer
     }
 
     @Override
-    @Transactional
-    // RF-03/RF-04: process lines sequentially and continue on line errors.
-    public PaymentBatch process(PaymentBatch batch, List<PaymentDetail> details) {
+    @Async
+    public void process(PaymentBatch batch, List<PaymentDetail> details) {
         logger.info("Processing batch {} with {} details", batch.getId(), details.size());
+        Integer batchId = batch.getId();
 
         try {
-            recordBatchStatusChange(batch, batch.getStatus(), BatchStatusEnum.PROCESSING);
-            batch.setStatus(BatchStatusEnum.PROCESSING);
-            batch = paymentBatchRepository.save(batch);
+            batch = updateBatchStatusWithRetry(batchId, BatchStatusEnum.PROCESSING);
+
+            BigDecimal maxAmount = resolveMaxAmountForTransfer(batch);
+            String companyName = resolveCompanyName(batch);
 
             for (PaymentDetail detail : details) {
                 try {
                     PaymentDetailStatusEnum previousStatus = detail.getStatus();
-                    processPaymentDetail(detail);
+                    processPaymentDetail(detail, maxAmount);
                     detail.setStatus(PaymentDetailStatusEnum.SUCCESS);
                     detail.setExecutedAt(LocalDateTime.now());
                     recordDetailStatusChange(detail, previousStatus, PaymentDetailStatusEnum.SUCCESS, null, null);
-                    notifySuccessfulPayment(batch, detail);
+                    notifySuccessfulPayment(batch, detail, companyName);
                 } catch (Exception e) {
                     logger.error("Error processing payment detail {}: {}", detail.getId(), e.getMessage());
                     PaymentDetailStatusEnum previousStatus = detail.getStatus();
                     detail.setStatus(PaymentDetailStatusEnum.REJECTED);
-                    detail.setRejectionReason(e.getMessage());
+                    detail.setRejectionReason(truncate(e.getMessage(), 255));
                     recordDetailStatusChange(detail, previousStatus, PaymentDetailStatusEnum.REJECTED, "LINE_REJECTED", e.getMessage());
                 }
                 paymentDetailRepository.save(detail);
             }
-            
+
             billingService.generateCharge(batch, details);
+            
+            updateBatchStatusWithRetry(batchId, BatchStatusEnum.PROCESSED);
 
-            recordBatchStatusChange(batch, batch.getStatus(), BatchStatusEnum.PROCESSED);
-            batch.setStatus(BatchStatusEnum.PROCESSED);
-            batch = paymentBatchRepository.save(batch);
-
-            logger.info("Batch {} processed successfully", batch.getId());
-            return batch;
+            logger.info("Batch {} processed successfully", batchId);
 
         } catch (Exception e) {
-            logger.error("Error processing batch {}: {}", batch.getId(), e.getMessage());
-            recordBatchStatusChange(batch, batch.getStatus(), BatchStatusEnum.REJECTED);
-            batch.setStatus(BatchStatusEnum.REJECTED);
-            return paymentBatchRepository.save(batch);
+            logger.error("Error processing batch {}: {}", batchId, e.getMessage());
+            try {
+                updateBatchStatusWithRetry(batchId, BatchStatusEnum.REJECTED);
+            } catch (Exception saveEx) {
+                logger.error("Could not persist REJECTED status for batch {}: {}", batchId, saveEx.getMessage());
+            }
         }
+    }
+
+    private PaymentBatch updateBatchStatusWithRetry(Integer batchId, BatchStatusEnum newStatus) {
+        final int maxAttempts = 5;
+        RuntimeException lastFailure = null;
+        for (int attempt = 1; attempt <= maxAttempts; attempt++) {
+            try {
+                PaymentBatch fresh = paymentBatchRepository.findById(batchId)
+                        .orElseThrow(() -> new IllegalStateException("Batch not found: " + batchId));
+                recordBatchStatusChange(fresh, fresh.getStatus(), newStatus);
+                fresh.setStatus(newStatus);
+                return paymentBatchRepository.save(fresh);
+            } catch (org.springframework.orm.ObjectOptimisticLockingFailureException e) {
+                lastFailure = e;
+                logger.warn("Optimistic lock conflict updating batch {} to {} (attempt {}/{}), retrying",
+                        batchId, newStatus, attempt, maxAttempts);
+            }
+        }
+        throw lastFailure != null ? lastFailure
+                : new IllegalStateException("Could not update batch " + batchId + " to " + newStatus);
     }
 
     private void recordBatchStatusChange(PaymentBatch batch, BatchStatusEnum previousStatus, BatchStatusEnum newStatus) {
@@ -130,20 +150,18 @@ public class PaymentBatchProcessingService implements IPaymentBatchProcessingSer
         detailStatusLogRepository.save(log);
     }
 
-    // RF-03: validate line limit and execute transfer in Core.
-    private void processPaymentDetail(PaymentDetail detail) {
+    private void processPaymentDetail(PaymentDetail detail, BigDecimal maxAmount) {
         if (detail.getAmount() == null || detail.getAmount().compareTo(BigDecimal.ZERO) <= 0) {
-            throw new IllegalArgumentException("Invalid amount");
+            throw new IllegalArgumentException("Monto invalido");
         }
 
-        BigDecimal maxAmount = resolveMaxAmountForTransfer(detail.getPaymentBatch());
         if (detail.getAmount().compareTo(maxAmount) > 0) {
-            throw new IllegalArgumentException("The line amount exceeds the maximum allowed limit: "
+            throw new IllegalArgumentException("El monto de la linea supera el limite maximo permitido: "
                     + maxAmount.toPlainString());
         }
 
         if (detail.getDestinationAccountNumber() == null || detail.getDestinationAccountNumber().trim().isEmpty()) {
-            throw new IllegalArgumentException("Destination account is required");
+            throw new IllegalArgumentException("La cuenta destino es obligatoria");
         }
 
         String originAccount = detail.getPaymentBatch().getSourceAccountNumber();
@@ -161,26 +179,32 @@ public class PaymentBatchProcessingService implements IPaymentBatchProcessingSer
         if (response == null || !Boolean.TRUE.equals(response.getSuccess())) {
             String reason = response != null && response.getMessage() != null
                     ? response.getMessage()
-                    : "Transfer rejected by Core";
+                    : "Transferencia rechazada por el Core";
             throw new IllegalStateException(reason);
         }
         logger.info("Transfer completed successfully for detail {}", detail.getId());
     }
 
-    // RF-05: send beneficiary notification immediately after a successful line.
-    private void notifySuccessfulPayment(PaymentBatch batch, PaymentDetail detail) {
+    private String truncate(String value, int maxLength) {
+        if (value == null) return null;
+        return value.length() <= maxLength ? value : value.substring(0, maxLength);
+    }
+
+    private void notifySuccessfulPayment(PaymentBatch batch, PaymentDetail detail, String companyName) {
+        if ("SENT".equals(detail.getNotificationStatus())) {
+            return;
+        }
         detail.setNotificationStatus("PENDING");
 
         if (!StringUtils.hasText(detail.getBeneficiaryEmail())) {
             logger.warn("Notification not sent for detail {} because email is missing", detail.getId());
-            detail.setNotificationStatus("FAILED");
+            detail.setNotificationStatus("SIN_CORREO");
             return;
         }
 
-        String companyName = resolveCompanyName(batch);
         if (!StringUtils.hasText(companyName)) {
             logger.warn("Notification not sent for detail {} because Core did not return company name", detail.getId());
-            detail.setNotificationStatus("FAILED");
+            detail.setNotificationStatus("SIN_EMPRESA");
             return;
         }
 
@@ -216,7 +240,7 @@ public class PaymentBatchProcessingService implements IPaymentBatchProcessingSer
 
     private BigDecimal resolveMaxAmountForTransfer(PaymentBatch batch) {
         if (batch == null || batch.getServiceType() == null) {
-            throw new IllegalStateException("Batch service type is not configured");
+            return new BigDecimal("999999.99");
         }
 
         String serviceSpecificCode = "MAX_TRANSFER_" + batch.getServiceType().name();
@@ -233,13 +257,12 @@ public class PaymentBatchProcessingService implements IPaymentBatchProcessingSer
                 logger.warn("Could not fetch parameter {} from Core: {}", candidateCode, e.getMessage());
             } catch (NumberFormatException e) {
                 throw new IllegalStateException(
-                        "The max limit returned by Core is not a valid numeric format for " + candidateCode,
+                        "El limite maximo devuelto por el Core no tiene un formato numerico valido para " + candidateCode,
                         e);
             }
         }
 
-        throw new IllegalStateException(
-                "Core did not return a valid max limit for service type "
-                        + batch.getServiceType().name());
+        logger.warn("Core did not return max limit for {}, using fallback 999999.99", batch.getServiceType().name());
+        return new BigDecimal("999999.99");
     }
 }

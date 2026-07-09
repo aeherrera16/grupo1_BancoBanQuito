@@ -25,50 +25,67 @@ public class AccountController {
 
     @GetMapping("/customer/{customerId}")
     public ResponseEntity<List<AccountResponseDTO>> findByCustomerId(
-            @PathVariable Integer customerId) {
-        return ResponseEntity.ok(accountService.findByCustomerId(customerId, 1));
+            @PathVariable Integer customerId,
+            @RequestHeader(value = "X-Core-User-Id", required = false) Integer coreUserId) {
+        return ResponseEntity.ok(accountService.findByCustomerId(customerId, coreUserId));
     }
 
     @GetMapping("/{accountNumber}")
     public ResponseEntity<AccountResponseDTO> findByAccountNumber(
-            @PathVariable String accountNumber) {
-        return ResponseEntity.ok(accountService.findByAccountNumber(accountNumber, 1));
+            @PathVariable String accountNumber,
+            @RequestHeader(value = "X-Core-User-Id", required = false) Integer coreUserId) {
+        return ResponseEntity.ok(accountService.findByAccountNumber(accountNumber, coreUserId));
     }
 
     @GetMapping("/customer/{customerId}/transactions")
     public ResponseEntity<List<TransactionResponseDTO>> findTransactionsByCustomerId(
-            @PathVariable Integer customerId) {
-        return ResponseEntity.ok(accountService.findTransactionsByCustomerId(customerId, 1));
+            @PathVariable Integer customerId,
+            @RequestHeader(value = "X-Core-User-Id", required = false) Integer coreUserId) {
+        return ResponseEntity.ok(accountService.findTransactionsByCustomerId(customerId, coreUserId));
+    }
+
+    @GetMapping("/customer/{customerId}/transactions/paged")
+    public ResponseEntity<com.banquito.core.dto.TransactionPageResponseDTO> findTransactionsByCustomerIdPaged(
+            @PathVariable Integer customerId,
+            @RequestHeader(value = "X-Core-User-Id", required = false) Integer coreUserId,
+            @RequestParam(value = "page", defaultValue = "0") int page,
+            @RequestParam(value = "size", defaultValue = "10") int size) {
+        return ResponseEntity.ok(accountService.findTransactionsByCustomerId(customerId, coreUserId, page, size));
     }
 
     @PostMapping
     public ResponseEntity<AccountResponseDTO> create(
-            @RequestBody AccountRequestDTO request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(accountService.create(request, 1));
+            @RequestBody AccountRequestDTO request,
+            @RequestHeader(value = "X-Core-User-Id", required = false) Integer coreUserId) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(accountService.create(request, coreUserId));
     }
 
     @PatchMapping("/{accountNumber}/inactivate")
     public ResponseEntity<AccountResponseDTO> inactivate(
-            @PathVariable String accountNumber) {
-        return ResponseEntity.ok(accountService.inactivate(accountNumber, 1));
+            @PathVariable String accountNumber,
+            @RequestHeader(value = "X-Core-User-Id", required = false) Integer coreUserId) {
+        return ResponseEntity.ok(accountService.inactivate(accountNumber, coreUserId));
     }
 
     @PatchMapping("/{accountNumber}/block")
     public ResponseEntity<AccountResponseDTO> block(
-            @PathVariable String accountNumber) {
-        return ResponseEntity.ok(accountService.block(accountNumber, 1));
+            @PathVariable String accountNumber,
+            @RequestHeader(value = "X-Core-User-Id", required = false) Integer coreUserId) {
+        return ResponseEntity.ok(accountService.block(accountNumber, coreUserId));
     }
 
     @PatchMapping("/{accountNumber}/suspend")
     public ResponseEntity<AccountResponseDTO> suspend(
-            @PathVariable String accountNumber) {
-        return ResponseEntity.ok(accountService.suspend(accountNumber, 1));
+            @PathVariable String accountNumber,
+            @RequestHeader(value = "X-Core-User-Id", required = false) Integer coreUserId) {
+        return ResponseEntity.ok(accountService.suspend(accountNumber, coreUserId));
     }
 
     @PatchMapping("/{accountNumber}/activate")
     public ResponseEntity<AccountResponseDTO> activate(
-            @PathVariable String accountNumber) {
-        return ResponseEntity.ok(accountService.activate(accountNumber, 1));
+            @PathVariable String accountNumber,
+            @RequestHeader(value = "X-Core-User-Id", required = false) Integer coreUserId) {
+        return ResponseEntity.ok(accountService.activate(accountNumber, coreUserId));
     }
 
     @PostMapping("/{accountNumber}/credit")

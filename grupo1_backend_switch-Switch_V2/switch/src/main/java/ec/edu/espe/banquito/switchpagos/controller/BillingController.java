@@ -1,5 +1,7 @@
 package ec.edu.espe.banquito.switchpagos.controller;
 
+import java.math.BigDecimal;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -18,6 +20,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import ec.edu.espe.banquito.switchpagos.dto.BatchSummaryDTO;
+import ec.edu.espe.banquito.switchpagos.enums.BatchStatusEnum;
 import ec.edu.espe.banquito.switchpagos.exception.ResourceNotFoundException;
 import ec.edu.espe.banquito.switchpagos.model.BatchStatusLog;
 import ec.edu.espe.banquito.switchpagos.model.PaymentBatch;
@@ -27,9 +30,6 @@ import ec.edu.espe.banquito.switchpagos.model.ServiceCharge;
 import ec.edu.espe.banquito.switchpagos.repository.PaymentBatchRepository;
 import ec.edu.espe.banquito.switchpagos.service.impl.BillingService;
 
-/**
- * RF-06: Billing and commission endpoints.
- */
 @RestController
 @CrossOrigin(origins = "*")
 @RequestMapping("/switch/v1/billing")
@@ -47,9 +47,6 @@ public class BillingController {
         this.paymentBatchRepository = paymentBatchRepository;
     }
 
-    /**
-     * Returns the batch billing summary.
-     */
     @GetMapping("/batches/{batchId}/summary")
     public ResponseEntity<?> obtenerResumenBatch(@PathVariable Integer batchId) {
         logger.info("GET /switch/v1/billing/batches/{}/summary", batchId);
@@ -71,9 +68,6 @@ public class BillingController {
         }
     }
 
-    /**
-     * Returns batch payment details.
-     */
     @GetMapping("/batches/{batchId}/detail")
     public ResponseEntity<?> obtenerDetallesBatch(@PathVariable Integer batchId) {
         logger.info("GET /switch/v1/billing/batches/{}/detail", batchId);
@@ -100,23 +94,35 @@ public class BillingController {
         }
     }
 
-    /**
-     * Returns the batch service charge.
-     */
     @GetMapping("/batches/{batchId}/charge")
     public ResponseEntity<?> obtenerCargoServicio(@PathVariable Integer batchId) {
         logger.info("GET /switch/v1/billing/batches/{}/charge", batchId);
 
         try {
             ServiceCharge cargo = billingService.getServiceCharge(batchId)
-                    .orElseThrow(() -> new ResourceNotFoundException("No hay cargo de servicio para el lote: " + batchId));
-            logger.info("Charge retrieved for batch {}", batchId);
-            return ResponseEntity.ok(cargo);
+                    .orElse(null);
 
-        } catch (ResourceNotFoundException e) {
-            logger.warn("Resource not found: {}", e.getMessage());
+            if (cargo != null) {
+                logger.info("Charge retrieved for batch {}", batchId);
+                return ResponseEntity.ok(cargo);
+            }
+
+            PaymentBatch batch = paymentBatchRepository.findById(batchId).orElse(null);
+            if (batch != null && BatchStatusEnum.PROCESSED.equals(batch.getStatus())) {
+                Map<String, Object> zeroCargo = new LinkedHashMap<>();
+                zeroCargo.put("batchId", batchId);
+                zeroCargo.put("successfulTransactions", batch.getSuccessfulRecords() != null ? batch.getSuccessfulRecords() : 0);
+                zeroCargo.put("commissionSubtotal", BigDecimal.ZERO.setScale(2));
+                zeroCargo.put("feeAmount", BigDecimal.ZERO.setScale(2));
+                zeroCargo.put("vatAmount", BigDecimal.ZERO.setScale(2));
+                zeroCargo.put("totalCharge", BigDecimal.ZERO.setScale(2));
+                zeroCargo.put("chargeStatus", "SIN_CARGO");
+                zeroCargo.put("message", "Lote procesado sin transacciones exitosas. No se generó cargo de comisión.");
+                return ResponseEntity.ok(zeroCargo);
+            }
+
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(Map.of("error", e.getMessage()));
+                    .body(Map.of("error", "No hay cargo de servicio para el lote: " + batchId));
 
         } catch (Exception e) {
             logger.error("Error fetching charge for batch {}: {}", batchId, e.getMessage(), e);
@@ -210,25 +216,20 @@ public class BillingController {
         }
     }
 
-    /**
-     * Test endpoint for charge generation.
-     */
     @PostMapping("/test/{batchId}")
     public ResponseEntity<?> forzarGenerarCobro(@PathVariable Integer batchId) {
         logger.warn("POST /switch/v1/billing/test/{} - TEST OPERATION", batchId);
 
         try {
-            // Load batch.
+
             PaymentBatch batch = paymentBatchRepository.findById(batchId)
                     .orElseThrow(() -> new ResourceNotFoundException("Lote no encontrado: " + batchId));
 
             logger.info("Batch found: {}", batch.getFileName());
 
-            // Load details.
             List<PaymentDetail> detalles = billingService.getBatchDetails(batchId);
             logger.info("Retrieved {} details for processing", detalles.size());
 
-            // Generate charge.
             logger.info("Running charge generation for batch {}", batchId);
             billingService.generateCharge(batch, detalles);
 
@@ -257,9 +258,6 @@ public class BillingController {
         }
     }
 
-    /**
-     * Returns all service charges.
-     */
     @GetMapping("/charges")
     public ResponseEntity<?> obtenerTodosCargos() {
         logger.info("GET /switch/v1/billing/charges");
@@ -280,9 +278,6 @@ public class BillingController {
         }
     }
 
-    /**
-     * Returns the company account by parameter code.
-     */
     @GetMapping("/empresa-account/{paramCode}")
     public ResponseEntity<?> obtenerCuentaEmpresa(@PathVariable String paramCode) {
         logger.info("GET /switch/v1/billing/empresa-account/{}", paramCode);
@@ -308,9 +303,6 @@ public class BillingController {
         }
     }
 
-    /**
-     * Returns the default company account.
-     */
     @GetMapping("/empresa-account")
     public ResponseEntity<?> obtenerCuentaEmpresaDefault() {
         logger.info("GET /switch/v1/billing/empresa-account (default)");
@@ -336,9 +328,6 @@ public class BillingController {
         }
     }
 
-    /**
-     * Downloads the settlement receipt.
-     */
     @GetMapping("/batches/{batchId}/download/comprobante")
     public ResponseEntity<?> descargarComprobanteLiquidacion(@PathVariable Integer batchId) {
         logger.info("GET /switch/v1/billing/batches/{}/download/comprobante", batchId);
@@ -364,15 +353,22 @@ public class BillingController {
             comprobante.append(String.format("Recibido: %s%n", resumen.getReceivedAt()));
             comprobante.append("\n");
 
+            BigDecimal commissionSubtotal = resumen.getCommissionSubtotal() != null ? resumen.getCommissionSubtotal() : BigDecimal.ZERO;
+            BigDecimal totalCharge = resumen.getTotalCharge() != null ? resumen.getTotalCharge() : BigDecimal.ZERO;
+            Integer totalRecords = resumen.getTotalRecords() != null ? resumen.getTotalRecords() : 0;
+            Integer successfulRecords = resumen.getSuccessfulRecords() != null ? resumen.getSuccessfulRecords() : 0;
+            Integer rejectedRecords = resumen.getRejectedRecords() != null ? resumen.getRejectedRecords() : 0;
+            BigDecimal totalAmount = resumen.getTotalAmount() != null ? resumen.getTotalAmount() : BigDecimal.ZERO;
+
             comprobante.append("RESUMEN FINANCIERO\n");
             comprobante.append("-".repeat(80)).append("\n");
-            comprobante.append(String.format("Total Registros: %d%n", resumen.getTotalRecords()));
-            comprobante.append(String.format("Registros Exitosos: %d%n", resumen.getSuccessfulRecords()));
-            comprobante.append(String.format("Registros Rechazados: %d%n", resumen.getRejectedRecords()));
-            comprobante.append(String.format("Monto Total Dispersado: $%.2f%n", resumen.getTotalAmount()));
-            comprobante.append(String.format("Subtotal de Comision: $%.2f%n", resumen.getCommissionSubtotal()));
+            comprobante.append(String.format("Total Registros: %d%n", totalRecords));
+            comprobante.append(String.format("Registros Exitosos: %d%n", successfulRecords));
+            comprobante.append(String.format("Registros Rechazados: %d%n", rejectedRecords));
+            comprobante.append(String.format("Monto Total Dispersado: $%.2f%n", totalAmount));
+            comprobante.append(String.format("Subtotal de Comision: $%.2f%n", commissionSubtotal));
             comprobante.append("IVA: 15%\n");
-            comprobante.append(String.format("Total a Debitar: $%.2f%n", resumen.getTotalCharge()));
+            comprobante.append(String.format("Total a Debitar: $%.2f%n", totalCharge));
             comprobante.append("\n");
 
             comprobante.append("DETALLE DE PAGOS\n");
@@ -415,9 +411,6 @@ public class BillingController {
         }
     }
 
-    /**
-     * Downloads the rejection report.
-     */
     @GetMapping("/batches/{batchId}/download/novedades")
     public ResponseEntity<?> descargarReporteNovedadesDetallado(@PathVariable Integer batchId) {
         logger.info("GET /switch/v1/billing/batches/{}/download/novedades", batchId);
@@ -481,4 +474,3 @@ public class BillingController {
         }
     }
 }
-

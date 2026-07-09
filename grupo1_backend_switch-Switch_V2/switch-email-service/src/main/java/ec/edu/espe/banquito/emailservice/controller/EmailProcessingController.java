@@ -15,9 +15,6 @@ import org.springframework.web.bind.annotation.RestController;
 import ec.edu.espe.banquito.emailservice.service.ISftpIntegrationService;
 import ec.edu.espe.banquito.emailservice.service.SftpSchedulerService;
 
-/**
- * Controller for monitoring and managing email processing.
- */
 @RestController
 @RequestMapping("/api/email-processing")
 public class EmailProcessingController {
@@ -35,9 +32,6 @@ public class EmailProcessingController {
         this.sftpSchedulerService = sftpSchedulerService;
     }
 
-    /**
-     * Returns the system status
-     */
     @GetMapping("/status")
     public ResponseEntity<Map<String, Object>> getSystemStatus() {
         try {
@@ -61,10 +55,6 @@ public class EmailProcessingController {
         }
     }
 
-    
-    /**
-     * Returns detailed system information
-     */
     @GetMapping("/info")
     public ResponseEntity<Map<String, String>> getSystemInfo() {
         try {
@@ -80,14 +70,11 @@ public class EmailProcessingController {
         }
     }
 
-    /**
-     * Returns the processor health status
-     */
     @GetMapping("/health")
     public ResponseEntity<Map<String, Object>> health() {
         boolean integrationHealthy = sftpIntegrationService.isIntegrationHealthy();
         boolean schedulerHealthy = sftpSchedulerService.isHealthy();
-        
+
         Map<String, Object> health = new HashMap<>();
         health.put("service", "sftp-processor");
         health.put("status", (integrationHealthy && schedulerHealthy) ? "UP" : "DOWN");
@@ -100,15 +87,12 @@ public class EmailProcessingController {
         return ResponseEntity.ok(health);
     }
 
-    /**
-     * Triggers manual SFTP file processing
-     */
     @PostMapping("/sftp/process")
     public ResponseEntity<Map<String, Object>> processSftpFiles() {
         try {
             LOG.info("Starting manual SFTP file processing");
             sftpSchedulerService.processSftpFiles();
-            
+
             Map<String, Object> response = new HashMap<>();
             response.put("processedFiles", "Processing started - check logs for details");
             response.put("count", 0);
@@ -124,15 +108,12 @@ public class EmailProcessingController {
         }
     }
 
-    /**
-     * Returns the SFTP-specific status
-     */
     @GetMapping("/sftp/status")
     public ResponseEntity<Map<String, Object>> getSftpStatus() {
         try {
             boolean isHealthy = sftpIntegrationService.isIntegrationHealthy();
             String integrationInfo = sftpIntegrationService.getIntegrationInfo();
-            
+
             Map<String, Object> response = new HashMap<>();
             response.put("service", "sftp-processor");
             response.put("healthy", isHealthy);
@@ -149,14 +130,11 @@ public class EmailProcessingController {
         }
     }
 
-    /**
-     * Returns the SFTP-specific health status
-     */
     @GetMapping("/sftp/health")
     public ResponseEntity<Map<String, Object>> sftpHealth() {
         try {
             boolean isHealthy = sftpIntegrationService.isIntegrationHealthy();
-            
+
             Map<String, Object> health = new HashMap<>();
             health.put("service", "sftp-processor");
             health.put("status", isHealthy ? "UP" : "DOWN");

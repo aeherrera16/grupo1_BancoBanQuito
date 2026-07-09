@@ -9,6 +9,5 @@ import java.util.List;
 @Repository
 public interface DetailStatusLogRepository extends JpaRepository<DetailStatusLog, Integer> {
 
-    // Returns detail status history.
     List<DetailStatusLog> findByPaymentDetailIdOrderByChangedAtAsc(Integer paymentDetailId);
 }

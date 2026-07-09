@@ -18,154 +18,148 @@ import ec.edu.espe.banquito.emailservice.client.SwitchApiClient;
 import ec.edu.espe.banquito.emailservice.service.ISftpClientService;
 import ec.edu.espe.banquito.emailservice.service.ISftpIntegrationService;
 
-/**
- * SFTP integration service implementation
- */
 @Service
 public class SftpIntegrationService implements ISftpIntegrationService {
-    
+
     private static final Logger LOG = LoggerFactory.getLogger(SftpIntegrationService.class);
-    
+
     private final ISftpClientService sftpClientService;
     private final SwitchApiClient switchApiClient;
-    
+
     @Value("${sftp.local.directory}")
     private String sftpLocalDirectory;
-    
+
     @Value("${sftp.integration.enabled}")
     private boolean integrationEnabled;
-    
+
     @Autowired
     public SftpIntegrationService(ISftpClientService sftpClientService, SwitchApiClient switchApiClient) {
         this.sftpClientService = sftpClientService;
         this.switchApiClient = switchApiClient;
     }
-    
+
     @Override
     public List<String> processSftpFiles() {
         List<String> processedFiles = new ArrayList<>();
-        
+
         if (!integrationEnabled) {
             LOG.info("SFTP integration disabled");
             return processedFiles;
         }
-        
+
         LOG.info("Starting SFTP file processing");
-        
+
         try {
             if (!sftpClientService.connect()) {
                 LOG.error("Could not connect to SFTP server");
                 return processedFiles;
             }
-            
+
             List<String> downloadedFiles = downloadSftpFiles();
-            
+
             for (String filePath : downloadedFiles) {
                 if (processDownloadedFile(filePath)) {
                     processedFiles.add(filePath);
                 }
             }
-            
+
             LOG.info("SFTP processing completed: {} files processed", processedFiles.size());
-            
+
         } catch (RuntimeException e) {
             LOG.error("Error during SFTP processing: {}", e.getMessage(), e);
         } finally {
             sftpClientService.disconnect();
         }
-        
+
         return processedFiles;
     }
-    
+
     private List<String> downloadSftpFiles() {
         List<String> downloadedFiles = new ArrayList<>();
-        
+
         try {
             Files.createDirectories(Paths.get(sftpLocalDirectory));
-            
+
             List<String> csvFiles = sftpClientService.listCsvFiles("/upload");
-            
+
             for (String csvFile : csvFiles) {
                 String remotePath = "/upload/" + csvFile;
                 String localPath = sftpLocalDirectory + "/" + csvFile;
-                
+
                 if (sftpClientService.downloadFile(remotePath, localPath)) {
                     downloadedFiles.add(localPath);
-                    
+
                     sftpClientService.deleteRemoteFile(remotePath);
                     LOG.info("File {} downloaded and deleted from server", csvFile);
                 }
             }
-            
+
         } catch (java.io.IOException e) {
             LOG.error("Error downloading SFTP files: {}", e.getMessage());
         }
-        
+
         return downloadedFiles;
     }
-    
+
     private boolean processDownloadedFile(String filePath) {
         try {
             File file = new File(filePath);
-            
+
             if (!file.exists() || !file.canRead()) {
                 LOG.warn("Invalid or unreadable file: {}", filePath);
                 return false;
             }
-            
+
             LOG.info("Processing downloaded file: {}", file.getName());
-            
-            boolean success = switchApiClient.sendFileToSwitch(file);
-            
-            if (success) {
+
+            String errorReason = switchApiClient.sendFileToSwitch(file, null);
+
+            if (errorReason == null) {
                 moveToProcessed(file);
                 LOG.info("File sent to switch successfully: {}", file.getName());
                 return true;
             } else {
-                moveToError(file);
-                LOG.warn("Error sending file to switch: {}", file.getName());
+                moveToError(file, errorReason);
+                LOG.warn("Error sending file to switch ({}): {}", file.getName(), errorReason);
                 return false;
             }
-            
+
         } catch (java.io.IOException | RuntimeException e) {
             LOG.error("Error processing downloaded file {}: {}", filePath, e.getMessage());
-            
+
             try {
-                moveToError(new File(filePath));
+                moveToError(new File(filePath), e.getMessage());
             } catch (java.io.IOException moveError) {
                 LOG.error("Error moving file to error directory: {}", moveError.getMessage());
             }
-            
+
             return false;
         }
     }
-    
+
     private void moveToProcessed(File file) throws java.io.IOException {
         Path processedDir = Paths.get(sftpLocalDirectory, "processed");
         Files.createDirectories(processedDir);
-        
-        Path target = processedDir.resolve(file.getName());
-        Files.move(file.toPath(), target, StandardCopyOption.REPLACE_EXISTING);
-        
-        LOG.debug("File moved to processed directory: {}", target);
+        Files.move(file.toPath(), processedDir.resolve(file.getName()), StandardCopyOption.REPLACE_EXISTING);
     }
-    
-    private void moveToError(File file) throws java.io.IOException {
+
+    private void moveToError(File file, String reason) throws java.io.IOException {
         Path errorDir = Paths.get(sftpLocalDirectory, "errors");
         Files.createDirectories(errorDir);
-        
-        Path target = errorDir.resolve(file.getName());
-        Files.move(file.toPath(), target, StandardCopyOption.REPLACE_EXISTING);
-        
-        LOG.debug("File moved to error directory: {}", target);
+        Files.move(file.toPath(), errorDir.resolve(file.getName()), StandardCopyOption.REPLACE_EXISTING);
+        if (reason != null && !reason.isBlank()) {
+            String txtName = file.getName().replaceAll("(?i)\\.csv$", "") + ".motivo.txt";
+            String content = "Archivo: " + file.getName() + "\nMotivo de rechazo: " + reason + "\nFecha: " + java.time.LocalDateTime.now() + "\n";
+            Files.writeString(errorDir.resolve(txtName), content);
+        }
     }
-    
+
     @Override
     public boolean isIntegrationHealthy() {
         if (!integrationEnabled) {
             return true;
         }
-        
+
         try {
             boolean connected = sftpClientService.connect();
             if (connected) {
@@ -177,7 +171,7 @@ public class SftpIntegrationService implements ISftpIntegrationService {
             return false;
         }
     }
-    
+
     @Override
     public String getIntegrationInfo() {
         return String.format("SftpIntegration[enabled=%s, %s, localDir=%s]",

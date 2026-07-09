@@ -16,6 +16,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -23,9 +24,6 @@ import org.springframework.web.multipart.MultipartFile;
 
 import ec.edu.espe.banquito.emailservice.client.SwitchApiClient;
 
-/**
- * Controller for direct SFTP file uploads
- */
 @RestController
 @RequestMapping("/api/sftp")
 public class SftpUploadController {
@@ -42,9 +40,6 @@ public class SftpUploadController {
         this.switchApiClient = switchApiClient;
     }
 
-    /**
-     * Receives files through the HTTP SFTP upload endpoint
-     */
     @PostMapping("/upload")
     public ResponseEntity<Map<String, Object>> receiveSftpFile(@RequestParam("file") MultipartFile file) {
         LOG.info("SFTP file received: {}", file.getOriginalFilename());
@@ -60,12 +55,13 @@ public class SftpUploadController {
             String fileName = file.getOriginalFilename();
             Path filePath = uploadPath.resolve(fileName);
             Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
-            
+
             LOG.info("File saved at: {}", filePath);
 
             LOG.info("Sending file to the main Switch");
             File savedFile = filePath.toFile();
-            boolean sentToSwitch = switchApiClient.sendFileToSwitch(savedFile);
+            String errorReason = switchApiClient.sendFileToSwitch(savedFile, null);
+            boolean sentToSwitch = errorReason == null;
 
             Map<String, Object> response = new HashMap<>();
             response.put("fileName", fileName);
@@ -82,8 +78,9 @@ public class SftpUploadController {
                 return ResponseEntity.ok(response);
             } else {
                 Path errorPath = moveToSubdirectory(filePath, "errors");
-                LOG.error("Error sending file to the Switch");
+                LOG.error("Error sending file to the Switch: {}", errorReason);
                 response.put("errorPath", errorPath.toString());
+                response.put("errorReason", errorReason);
                 response.put("status", "ERROR_SENDING_TO_SWITCH");
                 return ResponseEntity.internalServerError().body(response);
             }
@@ -105,13 +102,10 @@ public class SftpUploadController {
         return targetPath;
     }
 
-    /**
-     * Returns the SFTP server status.
-     */
     @PostMapping("/status")
     public ResponseEntity<Map<String, Object>> getSftpServerStatus() {
         LOG.info("Checking SFTP server status");
-        
+
         try {
             Path uploadPath = Paths.get(localDirectory);
             boolean directoryExists = Files.exists(uploadPath);
@@ -152,5 +146,10 @@ public class SftpUploadController {
                 "error", "Error checking status: " + e.getMessage()
             ));
         }
+    }
+
+    @GetMapping("/status")
+    public ResponseEntity<Map<String, Object>> getSftpServerStatusGet() {
+        return getSftpServerStatus();
     }
 }

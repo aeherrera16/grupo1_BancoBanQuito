@@ -5,6 +5,8 @@ const state: any = {
   accounts: [],
   transactions: [],
   batches: [],
+  paymentBatches: [],
+  sftpBatches: [],
   charges: [],
   companyAccount: null,
 };
@@ -22,6 +24,8 @@ function resetState() {
   state.accounts = [];
   state.transactions = [];
   state.batches = [];
+  state.paymentBatches = [];
+  state.sftpBatches = [];
   state.charges = [];
   state.companyAccount = null;
 }

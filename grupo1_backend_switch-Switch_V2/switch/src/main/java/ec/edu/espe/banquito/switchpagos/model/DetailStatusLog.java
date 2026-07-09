@@ -21,7 +21,6 @@ public class DetailStatusLog {
     @Column(name = "id", nullable = false)
     private Integer id;
 
-    // Detail relation.
     @ManyToOne
     @JoinColumn(name = "payment_detail_id", referencedColumnName = "id", nullable = false)
     private PaymentDetail paymentDetail;
@@ -47,8 +46,6 @@ public class DetailStatusLog {
     public DetailStatusLog(Integer id) {
         this.id = id;
     }
-
-    // Accessors.
 
     public Integer getId() {
         return id;

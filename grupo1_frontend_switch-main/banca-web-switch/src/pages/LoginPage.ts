@@ -1,6 +1,6 @@
-import { login as loginApi } from '../services/api';
+import { login as loginApi, changePassword as changePasswordApi } from '../services/api';
 import { getState, setState, saveSession } from '../hooks/useState';
-import { setMessage, escapeHtml, formatDate } from '../utils/formatters';
+import { setMessage, escapeHtml, formatDate } from '../helpers/formatters';
 import { loadAccounts } from './AccountsPage';
 
 const $ = (selector: string): any => document.querySelector(selector);
@@ -12,9 +12,17 @@ async function login(event: SubmitEvent) {
   setMessage(loginMessage, 'Validando credenciales...');
 
   const form = new FormData(event.currentTarget as HTMLFormElement);
+  const username = form.get('username') as string;
+  const password = form.get('password') as string;
 
   try {
-    const session = await loginApi(form.get('username') as string, form.get('password') as string);
+    const session = await loginApi(username, password);
+
+    if (session.passwordChangeRequired) {
+      setMessage(loginMessage, 'Cambio de contraseña requerido.', 'success');
+      showPasswordChange(username, password);
+      return;
+    }
 
     const realType = session.customerType;
     if (!realType) {
@@ -31,8 +39,50 @@ async function login(event: SubmitEvent) {
   }
 }
 
+function showPasswordChange(username: string, currentPassword: string) {
+  $('[data-view="login"]').classList.add('is-hidden');
+  $('[data-view="password-change"]').classList.remove('is-hidden');
+
+  const form = $('#passwordChangeForm');
+  $('#currentPassword').value = currentPassword;
+
+  form.onsubmit = async (event: SubmitEvent) => {
+    event.preventDefault();
+    const message = $('#passwordChangeMessage');
+    const newPassword = $('#newPassword').value;
+    const confirmPassword = $('#confirmPassword').value;
+
+    if (newPassword !== confirmPassword) {
+      setMessage(message, 'Las contraseñas no coinciden.', 'error');
+      return;
+    }
+
+    if (newPassword === currentPassword) {
+      setMessage(message, 'La nueva contraseña debe ser diferente a la actual.', 'error');
+      return;
+    }
+
+    setMessage(message, 'Actualizando contraseña...');
+    try {
+      const session = await changePasswordApi(username, currentPassword, newPassword);
+
+      const realType = session.customerType;
+      setState({ session, customerType: realType });
+      saveSession();
+
+      setMessage(message, 'Contraseña actualizada con éxito.', 'success');
+      $('[data-view="password-change"]').classList.add('is-hidden');
+      showDashboard();
+      await refreshAll();
+    } catch (error: any) {
+      setMessage(message, error.message || 'Error al cambiar la contraseña.', 'error');
+    }
+  };
+}
+
 function showDashboard() {
   $('[data-view="login"]').classList.add('is-hidden');
+  $('[data-view="password-change"]').classList.add('is-hidden');
   $('[data-view="dashboard"]').classList.remove('is-hidden');
 
   const state = getState();
@@ -68,7 +118,7 @@ function logout() {
 function activateSection(section: string) {
   const state = getState();
   const isCompany = state.customerType === 'JURIDICO';
-  if (!isCompany && ['payments', 'reports'].includes(section)) section = 'overview';
+  if (!isCompany && ['payments', 'reports', 'sftp'].includes(section)) section = 'overview';
 
   $$('.nav-item').forEach((button: any) => button.classList.toggle('is-active', button.dataset.section === section));
   $$('[data-section-panel]').forEach((panel: any) => {
@@ -85,6 +135,12 @@ function renderProfile() {
   const customerName = session.customerName || 'Informacion del cliente';
   const identification = `${session.identificationType || 'ID'} ${session.identification || ''}`.trim();
 
+  const statusPriority = ['SUSPENDIDO', 'BLOQUEADO', 'INACTIVO', 'ACTIVO'];
+  const accounts: any[] = state.accounts || [];
+  const accountStatus = statusPriority.find((s) => accounts.some((a: any) => a.status === s)) || accounts[0]?.status || session.status || 'N/D';
+  const accountStatusLabel = accountStatus;
+  const accountStatusBadgeClass = accountStatus === 'ACTIVO' ? 'is-success' : accountStatus === 'SUSPENDIDO' ? 'is-danger' : accountStatus === 'BLOQUEADO' ? 'is-danger' : 'is-neutral';
+
   $('#profileName').textContent = session.customerName || 'Informacion del cliente';
   $('#profileDetails').innerHTML = `
     <section class="client-identity-card">
@@ -94,7 +150,7 @@ function renderProfile() {
         <strong>${escapeHtml(customerName)}</strong>
         <small>${escapeHtml(identification || 'Identificacion no disponible')}</small>
       </div>
-      <em class="badge ${session.status === 'ACTIVO' ? 'is-success' : 'is-neutral'}">${escapeHtml(session.status || 'N/D')}</em>
+      <em class="badge ${accountStatusBadgeClass}">${escapeHtml(accountStatusLabel)}</em>
     </section>
 
     <section class="bank-reference-card">
@@ -131,6 +187,7 @@ function renderProfile() {
 
 async function refreshAll() {
   await loadAccounts();
+  renderProfile();
 }
 
 export {
